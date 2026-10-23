@@ -1,0 +1,25 @@
+{
+  "admin": {
+    "username": "admin",
+    "name": "System Administrator",
+    "email": "admin@system.com",
+    "role": "Developer",
+    "permissions": [
+      "dashboard",
+      "analytics",
+      "reports",
+      "inventory",
+      "attendance",
+      "attendanceReport",
+      "settings"
+    ],
+    "office": "",
+    "inventoryAccess": [
+      "Rizal",
+      "Cebu",
+      "Thermal"
+    ],
+    "disabled": false,
+    "password": "pbkdf2$120000$2XNgwntuJZcWoUj3o9W8cg$BWEuKPwR2cCnoXY-2bQ3TgNp3_OvNL_8yZEnvS55Hbc"
+  }
+}

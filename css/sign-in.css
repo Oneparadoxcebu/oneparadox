@@ -1,0 +1,194 @@
+html,
+body {
+  height: 100%;
+}
+
+body {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(34, 211, 238, 0.3), transparent 24%),
+    radial-gradient(circle at 88% 82%, rgba(14, 165, 233, 0.28), transparent 30%),
+    linear-gradient(125deg, #04111f 0%, #082f49 46%, #075985 100%);
+  background-size: 140% 140%, 140% 140%, 100% 100%;
+  animation: loginAurora 24s ease-in-out infinite alternate;
+}
+
+body::before {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(186, 230, 253, 0.22) 1px, transparent 1px);
+  background-size: 28px 28px;
+  content: "";
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent 85%);
+  pointer-events: none;
+}
+
+body::after {
+  position: absolute;
+  inset: 0;
+  background: url("https://upload.wikimedia.org/wikipedia/commons/a/ab/Rocket_Launch.gif") center / cover no-repeat;
+  content: "";
+  opacity: 0.22;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+@media (max-width: 600px) {
+  body::after {
+    background-position: center;
+    background-size: cover;
+    opacity: 0.16;
+  }
+}
+
+@keyframes loginAurora {
+  0% {
+    background-position: 0% 0%, 100% 100%, 0% 50%;
+  }
+  100% {
+    background-position: 35% 25%, 65% 75%, 100% 50%;
+  }
+}
+
+.form-signin {
+  position: relative;
+  z-index: 2;
+  max-width: 330px;
+  padding: 2.25rem 2rem 2rem;
+  border: 1px solid rgba(186, 230, 253, 0.2);
+  border-radius: 20px;
+  background: rgba(4, 17, 31, 0.58);
+  box-shadow: 0 24px 70px rgba(1, 8, 18, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  animation: formRise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.form-signin h5 {
+  margin-bottom: 0.75rem !important;
+  color: #b9f3ff;
+  font-size: 1rem;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+}
+
+.form-signin h1 {
+  margin-bottom: 1.5rem !important;
+  color: #f4fbff;
+  font-size: 2rem;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+}
+
+.form-signin .form-floating:focus-within {
+  z-index: 2;
+}
+
+.form-signin .form-control {
+  border-color: rgba(148, 163, 184, 0.35);
+  background-color: rgba(15, 23, 42, 0.72);
+  color: #f4fbff;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.form-signin .form-control::placeholder {
+  color: rgba(226, 232, 240, 0.6);
+}
+
+.form-signin .form-floating > label {
+  color: rgba(226, 232, 240, 0.72);
+}
+
+.form-signin .form-control:focus {
+  transform: translateY(-1px);
+  border-color: #67e8f9;
+  background-color: rgba(15, 32, 54, 0.9);
+  box-shadow: 0 0 0 0.2rem rgba(34, 211, 238, 0.14), 0 8px 20px rgba(2, 132, 199, 0.12);
+}
+
+.form-signin .btn-primary {
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #06b6d4, #2563eb);
+  font-weight: 600;
+  transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.form-signin .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(14, 116, 144, 0.28);
+}
+
+.form-signin .btn-primary:active {
+  transform: translateY(0);
+}
+
+@keyframes formRise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-signin input[type="email"] {
+  margin-bottom: -1px;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.form-signin input[type="password"] {
+  margin-bottom: 10px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+:root[data-bs-theme="light"] body {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(34, 211, 238, 0.18), transparent 24%),
+    radial-gradient(circle at 88% 82%, rgba(14, 165, 233, 0.16), transparent 30%),
+    linear-gradient(125deg, #eaf4f8 0%, #f8fbfc 46%, #dceef3 100%);
+}
+
+:root[data-bs-theme="light"] body::after {
+  opacity: 0.08;
+  mix-blend-mode: multiply;
+}
+
+:root[data-bs-theme="light"] .form-signin {
+  color: #18344a;
+  border-color: rgba(15, 73, 95, 0.16);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 24px 70px rgba(15, 54, 76, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+:root[data-bs-theme="light"] .form-signin h5,
+:root[data-bs-theme="light"] .form-signin h1 {
+  color: #18344a;
+}
+
+:root[data-bs-theme="light"] .form-signin .form-control {
+  border-color: #bfd1da;
+  background-color: rgba(255, 255, 255, 0.92);
+  color: #18344a;
+}
+
+:root[data-bs-theme="light"] .form-signin .form-control::placeholder,
+:root[data-bs-theme="light"] .form-signin .form-floating > label {
+  color: #607789;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .form-signin {
+    animation: none;
+  }
+
+  .form-signin .form-control,
+  .form-signin .btn-primary {
+    transition: none;
+  }
+}

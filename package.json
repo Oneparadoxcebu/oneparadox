@@ -1,0 +1,15 @@
+{
+  "name": "r2-lucky9-games",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "firebase": "^12.19.0",
+    "lucide": "^1.48.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.13.6"
+  }
+}

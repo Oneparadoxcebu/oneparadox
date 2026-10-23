@@ -1,0 +1,2032 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Professional Business Dashboard">
+    <meta name="author" content="">
+    <meta name="generator" content="">
+    <title>Business Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="images/icon256.ico">
+    <link rel="apple-touch-icon" href="images/icon256.ico">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/bootstrap-icons.css">
+    <link href="css/login.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f6fa;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        .navbar {
+            background-color: #1e3a5f !important;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .navbar-brand {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .nav-link {
+            font-weight: 500;
+            font-size: 14px;
+            margin: 0 10px;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover {
+            color: #e0e7ff !important;
+        }
+        .dashboard-container {
+            margin-top: 40px;
+            margin-bottom: 40px;
+            padding: 0 20px;
+        }
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background: white;
+            border: 1px solid #e8eef7;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8c 100%);
+            color: white;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+            font-size: 15px;
+            padding: 18px 20px;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 30px 20px;
+        }
+        .stat-card:hover {
+            background-color: #fafbfc;
+        }
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1e3a5f;
+            margin: 15px 0;
+            letter-spacing: -1px;
+        }
+        .stat-label {
+            color: #697c8f;
+            font-size: 13px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .stat-label-subtitle {
+            color: #a0a8b8;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+        .btn-primary {
+            background: #1e3a5f;
+            border: none;
+            font-weight: 600;
+            border-radius: 6px;
+            padding: 8px 20px;
+            font-size: 14px;
+        }
+        .btn-primary:hover {
+            background: #162d4a;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6b7c93;
+            border: none;
+            font-weight: 600;
+            border-radius: 6px;
+            padding: 8px 20px;
+            font-size: 14px;
+        }
+        .btn-secondary:hover {
+            background: #555c6b;
+            color: white;
+        }
+        .welcome-section {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8c 100%);
+            border-radius: 8px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            color: white;
+        }
+        .welcome-title {
+            color: white;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+        .welcome-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .icon-box {
+            font-size: 40px;
+            color: #1e3a5f;
+            margin-bottom: 15px;
+            display: inline-block;
+            background: #ecf0f7;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .metric-icon {
+            font-size: 24px;
+            color: #1e3a5f;
+            opacity: 0.8;
+        }
+        .feature-card {
+            padding: 20px;
+            border-left: 4px solid #1e3a5f;
+            background: #f9fafb;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            border-left-color: #2d5a8c;
+            background: #f0f4f9;
+            transform: translateX(4px);
+        }
+        .feature-card h6 {
+            color: #1e3a5f;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .feature-card p {
+            color: #697c8f;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+        .section-title {
+            color: #1e3a5f;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .section-title i {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .activity-list {
+            list-style: none;
+            padding: 0;
+        }
+        .activity-item {
+            padding: 14px 0;
+            border-bottom: 1px solid #ecf0f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #1e3a5f;
+        }
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        .activity-badge {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .badge-positive {
+            background: #d4edda;
+            color: #155724;
+        }
+        .badge-neutral {
+            background: #d6d8db;
+            color: #333;
+        }
+        .dropdown-menu {
+            background-color: #ffffff;
+            border: 1px solid #e8eef7;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .dropdown-item {
+            color: #1e3a5f;
+            font-weight: 500;
+            font-size: 14px;
+            padding: 10px 16px;
+            transition: all 0.2s ease;
+        }
+        .dropdown-item:hover {
+            background-color: #f0f4f9;
+            color: #1e3a5f;
+        }
+        .dropdown-item.active {
+            background-color: #e8eef7;
+            color: #1e3a5f;
+        }
+        .dropdown-divider {
+            border-color: #e8eef7;
+            margin: 6px 0;
+        }
+        /* Attendance Modal Styles */
+        .attendance-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .attendance-modal-overlay.active {
+            display: flex;
+        }
+        .attendance-modal {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .attendance-modal h2 {
+            color: #1e3a5f;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        .attendance-modal .employee-name {
+            color: #697c8f;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+        .attendance-modal .current-time {
+            color: #1e3a5f;
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+        }
+        .attendance-modal .current-date {
+            color: #697c8f;
+            font-size: 14px;
+            margin-bottom: 40px;
+        }
+        .attendance-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .attendance-buttons button {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-time-in {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-time-in:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+        .btn-time-out {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-time-out:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+        .btn-close-attendance {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            background-color: #ecf0f7;
+            color: #1e3a5f;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-close-attendance:hover {
+            background-color: #d6dce8;
+        }
+        .attendance-status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            display: none;
+        }
+        .attendance-status.success {
+            background-color: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        .attendance-status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+        /* Attendance Report Modal Styles */
+        .report-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .report-modal-overlay.active {
+            display: flex;
+        }
+        .report-modal {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            width: 95%;
+            max-width: 1000px;
+            margin: 20px auto;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .report-modal h2 {
+            color: #1e3a5f;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+        }
+        .report-modal h2 i {
+            margin-right: 15px;
+            font-size: 32px;
+        }
+        .report-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .report-controls input {
+            padding: 10px 15px;
+            border: 1px solid #e8eef7;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .report-controls button {
+            padding: 10px 20px;
+            background-color: #1e3a5f;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .report-controls button:hover {
+            background-color: #162d4a;
+            transform: translateY(-2px);
+        }
+        .attendance-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .attendance-table thead {
+            background-color: #1e3a5f;
+            color: white;
+        }
+        .attendance-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .attendance-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ecf0f7;
+            font-size: 14px;
+        }
+        .attendance-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+        .badge-time-in {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .badge-time-out {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #697c8f;
+            font-size: 16px;
+        }
+        .btn-close-report {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            background-color: #ecf0f7;
+            color: #1e3a5f;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+        .btn-close-report:hover {
+            background-color: #d6dce8;
+        }
+        /* Add Account Modal Styles */
+        .add-account-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            overflow-y: auto;
+        }
+        .add-account-modal-overlay.active {
+            display: flex;
+        }
+        .add-account-modal {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            width: 90%;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        .add-account-modal h2 {
+            color: #1e3a5f;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            color: #1e3a5f;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e8eef7;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #1e3a5f;
+            box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+        }
+        .permissions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+        .permission-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .permission-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .permission-item label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            color: #1e3a5f;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-submit {
+            background-color: #1e3a5f;
+            color: white;
+        }
+        .btn-submit:hover {
+            background-color: #162d4a;
+            transform: translateY(-2px);
+        }
+        .btn-cancel {
+            background-color: #ecf0f7;
+            color: #1e3a5f;
+        }
+        .btn-cancel:hover {
+            background-color: #d6dce8;
+        }
+        .users-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2100;
+            overflow-y: auto;
+        }
+        .users-modal-overlay.active {
+            display: flex;
+        }
+        .users-modal {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            width: 92%;
+            max-width: 1000px;
+            margin: 20px auto;
+        }
+        .users-modal h2 {
+            color: #1e3a5f;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .users-table th, .users-table td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid #ecf0f7;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        .users-table thead {
+            background: #1e3a5f;
+            color: white;
+        }
+        .users-table tbody tr:hover {
+            background: #f9fafb;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .status-badge.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-badge.disabled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .user-action-btn {
+            border: none;
+            border-radius: 6px;
+            padding: 7px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 6px;
+            cursor: pointer;
+        }
+        .user-action-btn.view {
+            background: #e8eef7;
+            color: #1e3a5f;
+        }
+        .user-action-btn.toggle {
+            background: #1e3a5f;
+            color: white;
+        }
+        .user-action-btn.delete {
+            background: #dc3545;
+            color: white;
+        }
+        .user-details {
+            background: #f9fafb;
+            border: 1px solid #e8eef7;
+            border-radius: 8px;
+            padding: 18px;
+            margin-top: 20px;
+        }
+        .user-details h3 {
+            margin: 0 0 15px;
+            font-size: 18px;
+            color: #1e3a5f;
+        }
+        .user-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .user-detail-item {
+            background: white;
+            border: 1px solid #e8eef7;
+            border-radius: 6px;
+            padding: 12px;
+        }
+        .user-detail-item label {
+            display: block;
+            font-size: 11px;
+            color: #697c8f;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+        .user-detail-item strong {
+            color: #1e3a5f;
+            font-size: 14px;
+        }
+        .users-empty-state {
+            text-align: center;
+            color: #697c8f;
+            padding: 30px 15px;
+            font-size: 15px;
+        }
+        .edit-account-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2200;
+            overflow-y: auto;
+        }
+        .edit-account-modal-overlay.active {
+            display: flex;
+        }
+        .edit-account-modal {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            width: 90%;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        .edit-account-modal h2 {
+            color: #1e3a5f;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
+    </style>
+    <script>
+        const dashboardUsername = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser");
+        const dashboardAccount = JSON.parse(localStorage.getItem("userAccounts") || "{}")[dashboardUsername];
+        if (dashboardAccount?.role === "Station") window.location.replace("requests.html");
+    </script>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-graph-up me-2"></i>Business Dashboard
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="adminMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-list me-1"></i>Menu
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminMenu">
+                            <li><a class="dropdown-item" data-inventory-access="Requests" href="requests.html"><i class="bi bi-inbox me-2"></i>Requests</a></li>
+                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Cebu" href="inventory.html?office=Cebu"><i class="bi bi-boxes me-2"></i>Inventory of Cebu</a></li>
+                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Thermal" href="inventory.html?office=Thermal"><i class="bi bi-boxes me-2"></i>Thermal Inventory</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" data-permission="settings" href="dashboard.html#settings"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                            <li id="addAccountMenuItemDivider" style="display: none;"><hr class="dropdown-divider"></li>
+                            <li id="addAccountMenuItemContainer" style="display: none;">
+                                <a class="dropdown-item" href="#add-account" id="addAccountBtn"><i class="bi bi-person-plus me-2"></i>Add Account</a>
+                            </li>
+                            <li id="usersMenuItemDivider" style="display: none;"><hr class="dropdown-divider"></li>
+                            <li id="usersMenuItemContainer" style="display: none;">
+                                <a class="dropdown-item" href="#users" id="usersMenuBtn"><i class="bi bi-people me-2"></i>Users</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <span class="nav-link" id="userDisplay" style="cursor: default;">User</span>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-danger ms-2" id="logoutBtn">Logout</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid dashboard-container">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <div class="welcome-title">Welcome back, <span id="usernameDisplay">User</span></div>
+            <div class="welcome-subtitle">
+                <i class="bi bi-clock-fill" style="font-size: 14px; margin-right: 8px;"></i><span id="liveClock">00:00:00</span>
+            </div>
+        </div>
+
+        <!-- Inventory Graph Section -->
+        <div class="row mb-4" style="margin-top: 30px;">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-boxes me-2"></i>Inventory Overview
+                    </div>
+                    <div class="card-body">
+                        <canvas id="inventoryChart" style="max-height: 400px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Stats -->
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ecf0f7; color: #697c8f; text-align: center; font-size: 12px;">
+            <p>Last updated: <span id="lastUpdateTime">Just now</span> | Data refreshes automatically every 5 minutes</p>
+        </div>
+    </div>
+
+    <!-- Add Account Modal -->
+    <div class="add-account-modal-overlay" id="addAccountModal">
+        <div class="add-account-modal">
+            <h2><i class="bi bi-person-plus me-2"></i>Add New Account</h2>
+            
+            <div class="form-group">
+                <label for="newAccountName">Name</label>
+                <input type="text" id="newAccountName" placeholder="Enter full name" />
+            </div>
+
+            <div class="form-group">
+                <label for="newAccountUsername">Username</label>
+                <input type="text" id="newAccountUsername" placeholder="Enter username" />
+            </div>
+            
+            <div class="form-group">
+                <label for="newAccountEmail">Email</label>
+                <input type="email" id="newAccountEmail" placeholder="Enter email" />
+            </div>
+            
+            <div class="form-group">
+                <label for="newAccountPassword">Password</label>
+                <input type="password" id="newAccountPassword" placeholder="Enter password" />
+            </div>
+
+            <div class="form-group">
+                <label for="newAccountOffice">Office</label>
+                <select id="newAccountOffice">
+                    <option value="">Select an office</option>
+                    <option value="Rizal">Rizal</option>
+                    <option value="Cebu">Cebu</option>
+                    <option value="Thermal">Thermal</option>
+                    <option value="Both">All Offices</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="newAccountRole">Role</label>
+                <select id="newAccountRole">
+                    <option value="">Select a role</option>
+                    <option value="Developer">Developer</option>
+                    <option value="IT Admin">IT Admin</option>
+                    <option value="IT Manager">IT Manager</option>
+                    <option value="IT Supervisor">IT Supervisor</option>
+                    <option value="IT Support">IT Support</option>
+                    <option value="Management">Management</option>
+                    <option value="Station">Station</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Inventory Access</label>
+                <div class="permissions-grid">
+                    <div class="permission-item">
+                        <input type="checkbox" id="permInventoryRizal" value="Rizal" />
+                        <label for="permInventoryRizal">Rizal Inventory</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="permInventoryCebu" value="Cebu" />
+                        <label for="permInventoryCebu">Cebu Inventory</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="permInventoryThermal" value="Thermal" />
+                        <label for="permInventoryThermal">Thermal Inventory</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="permInventoryRequests" value="Requests" />
+                        <label for="permInventoryRequests">Requests</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Menu Access Permissions</label>
+                <div class="permissions-grid" id="addAccountMenuPermissions">
+                    <div class="permission-item">
+                        <input type="checkbox" id="permDashboard" value="dashboard" checked />
+                        <label for="permDashboard">Dashboard</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="permAnalytics" value="analytics" />
+                        <label for="permAnalytics">Analytics</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="permReports" value="reports" />
+                        <label for="permReports">Reports</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="permInventory" value="inventory" />
+                        <label for="permInventory">Inventory</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="permSettings" value="settings" />
+                        <label for="permSettings">Settings</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button type="button" class="btn-submit" id="submitAddAccountBtn">Add Account</button>
+                <button type="button" class="btn-cancel" id="cancelAddAccountBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Management Modal -->
+    <div class="users-modal-overlay" id="usersModal">
+        <div class="users-modal">
+            <h2><i class="bi bi-people me-2"></i>User Management</h2>
+
+            <div id="usersTableContainer"></div>
+            <div id="userDetailsPanel" class="user-details" style="display: none;"></div>
+
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button class="btn-cancel" id="closeUsersModalBtn" style="flex: 1;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Account Modal -->
+    <div class="edit-account-modal-overlay" id="editAccountModal">
+        <div class="edit-account-modal">
+            <h2><i class="bi bi-pencil-square me-2"></i>Edit Account</h2>
+
+            <div class="form-group">
+                <label for="editAccountName">Name</label>
+                <input type="text" id="editAccountName" placeholder="Enter full name" />
+            </div>
+
+            <div class="form-group">
+                <label for="editAccountUsername">Username</label>
+                <input type="text" id="editAccountUsername" placeholder="Enter username" />
+            </div>
+
+            <div class="form-group">
+                <label for="editAccountEmail">Email</label>
+                <input type="email" id="editAccountEmail" placeholder="Enter email" />
+            </div>
+
+            <div class="form-group">
+                <label for="editAccountPassword">Password</label>
+                <input type="password" id="editAccountPassword" placeholder="Enter password" />
+            </div>
+
+            <div class="form-group">
+                <label for="editAccountOffice">Office</label>
+                <select id="editAccountOffice">
+                    <option value="">Select an office</option>
+                    <option value="Rizal">Rizal</option>
+                    <option value="Cebu">Cebu</option>
+                    <option value="Thermal">Thermal</option>
+                    <option value="Both">All Offices</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="editAccountRole">Role</label>
+                <select id="editAccountRole">
+                    <option value="">Select a role</option>
+                    <option value="Developer">Developer</option>
+                    <option value="IT Admin">IT Admin</option>
+                    <option value="IT Manager">IT Manager</option>
+                    <option value="IT Supervisor">IT Supervisor</option>
+                    <option value="IT Support">IT Support</option>
+                    <option value="Management">Management</option>
+                    <option value="Station">Station</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Inventory Access</label>
+                <div class="permissions-grid">
+                    <div class="permission-item">
+                        <input type="checkbox" id="editPermInventoryRizal" value="Rizal" />
+                        <label for="editPermInventoryRizal">Rizal Inventory</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="editPermInventoryCebu" value="Cebu" />
+                        <label for="editPermInventoryCebu">Cebu Inventory</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="editPermInventoryThermal" value="Thermal" />
+                        <label for="editPermInventoryThermal">Thermal Inventory</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="editPermInventoryRequests" value="Requests" />
+                        <label for="editPermInventoryRequests">Requests</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Menu Access Permissions</label>
+                <div class="permissions-grid" id="editAccountMenuPermissions">
+                    <div class="permission-item">
+                        <input type="checkbox" id="editPermDashboard" value="dashboard" checked />
+                        <label for="editPermDashboard">Dashboard</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="editPermAnalytics" value="analytics" />
+                        <label for="editPermAnalytics">Analytics</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="editPermReports" value="reports" />
+                        <label for="editPermReports">Reports</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="editPermInventory" value="inventory" />
+                        <label for="editPermInventory">Inventory</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="editPermSettings" value="settings" />
+                        <label for="editPermSettings">Settings</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-submit" id="submitEditAccountBtn">Save Changes</button>
+                <button class="btn-cancel" id="cancelEditAccountBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/auth-session.js?v=20260921-2"></script>
+    <script src="js/firebase-auth.js?v=20261023-1"></script>
+    <script>
+        // Get username from localStorage or sessionStorage
+        document.addEventListener("DOMContentLoaded", function () {
+            const username = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "User";
+            const accounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
+            const account = accounts[username];
+            const displayName = (account && account.name) ? account.name : username;
+
+            if (account && account.disabled) {
+                localStorage.removeItem("loggedInUser");
+                sessionStorage.removeItem("loggedInUser");
+                alert('This account has been disabled. Please contact an administrator.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById("usernameDisplay").textContent = displayName;
+            document.getElementById("userDisplay").textContent = displayName;
+
+            const office = account && account.office ? account.office.trim() : '';
+            const inventoryOverviewCardHeader = document.querySelector('.card-header');
+            if (inventoryOverviewCardHeader) {
+                inventoryOverviewCardHeader.innerHTML = `<i class="bi bi-boxes me-2"></i>Inventory Overview${office ? ` - ${office}` : ''}`;
+            }
+            
+            // Update last update time
+            const now = new Date();
+            document.getElementById("lastUpdateTime").textContent = now.toLocaleTimeString();
+
+            // Initialize Inventory Chart
+            const ctx = document.getElementById('inventoryChart');
+            if (ctx) {
+                const inventoryKey = office ? `posInventoryData_${office}` : 'posInventoryData';
+                const officeSpecificInventory = JSON.parse(localStorage.getItem(inventoryKey) || 'null');
+                let inventoryData = officeSpecificInventory || JSON.parse(localStorage.getItem('posInventoryData')) || {
+                    models: ['V2 PRO', 'V2', 'V2S', 'SENRAISE'],
+                    quantities: [26, 91, 143, 860]
+                };
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: inventoryData.models,
+                        datasets: [{
+                            label: 'Stock Quantity',
+                            data: inventoryData.quantities,
+                            backgroundColor: [
+                                '#1e3a5f',
+                                '#2d5a8c',
+                                '#17a2b8',
+                                '#28a745'
+                            ],
+                            borderColor: [
+                                '#1e3a5f',
+                                '#2d5a8c',
+                                '#17a2b8',
+                                '#28a745'
+                            ],
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    font: { size: 14, weight: 600 },
+                                    color: '#1e3a5f',
+                                    padding: 15
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    font: { size: 13 },
+                                    color: '#697c8f'
+                                },
+                                grid: {
+                                    color: '#ecf0f7',
+                                    drawBorder: false
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: { size: 13 },
+                                    color: '#697c8f'
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+        // Logout function
+        document.getElementById("logoutBtn").addEventListener("click", function () {
+            localStorage.removeItem("loggedInUser");
+            sessionStorage.removeItem("loggedInUser");
+            window.location.href = "index.html";
+        });
+
+        function openMenuActionFromHash() {
+            const action = window.location.hash;
+
+            if (action === "#add-account") {
+                document.getElementById("addAccountBtn").click();
+            } else if (action === "#users") {
+                document.getElementById("usersMenuBtn").click();
+            }
+        }
+
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Live Clock Update
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const hoursStr = String(hours).padStart(2, '0');
+            document.getElementById('liveClock').textContent = `${hoursStr}:${minutes}:${seconds} ${ampm}`;
+        }
+
+        // ===== ROLE & PERMISSION MANAGEMENT =====
+        const ROLES = {
+            Developer: 'Developer',
+            ITAdmin: 'IT Admin',
+            ITManager: 'IT Manager',
+            ITSupervisor: 'IT Supervisor',
+            ITSupport: 'IT Support',
+            Management: 'Management'
+        };
+
+        // Initialize accounts storage
+        function initializeAccounts() {
+            let accounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
+            const accountEntries = Object.entries(accounts);
+
+            if (accountEntries.length === 0) {
+                // Create default admin account
+                accounts['admin'] = {
+                    name: 'System Administrator',
+                    username: 'admin',
+                    email: 'admin@system.com',
+                    password: 'admin123',
+                    role: 'Developer',
+                    permissions: ['dashboard', 'analytics', 'reports', 'inventory', 'settings'],
+                    disabled: false
+                };
+            }
+
+            Object.keys(accounts).forEach(username => {
+                if (typeof accounts[username] === 'object' && accounts[username] !== null) {
+                    accounts[username].name = accounts[username].name || username;
+                    accounts[username].username = accounts[username].username || username;
+                    accounts[username].office = accounts[username].office || '';
+
+                    const inventoryAccess = Array.isArray(accounts[username].inventoryAccess)
+                        ? accounts[username].inventoryAccess.filter(value => ['Rizal', 'Cebu', 'Thermal', 'Requests'].includes(value))
+                        : [];
+
+                    if (accounts[username].office === 'Both') {
+                        accounts[username].inventoryAccess = ['Rizal', 'Cebu', 'Thermal', ...(inventoryAccess.includes('Requests') ? ['Requests'] : [])];
+                    } else if (inventoryAccess.length > 0) {
+                        accounts[username].inventoryAccess = inventoryAccess;
+                    } else if (accounts[username].role === 'Developer') {
+                        accounts[username].inventoryAccess = ['Rizal', 'Cebu', 'Thermal'];
+                    } else {
+                        accounts[username].inventoryAccess = [];
+                    }
+                    if (accounts[username].role === 'Station') {
+                        accounts[username].inventoryAccess = ['Requests'];
+                        accounts[username].permissions = [];
+                    }
+
+                    accounts[username].disabled = Boolean(accounts[username].disabled);
+                    if (!accounts[username].permissions) {
+                        accounts[username].permissions = ['dashboard'];
+                    }
+                }
+            });
+
+            localStorage.setItem('userAccounts', JSON.stringify(accounts));
+            return accounts;
+        }
+
+        // Get current user role
+        function getCurrentUserRole() {
+            const username = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "User";
+            const accounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
+            
+            // For demo purposes, default to Developer if user is "User"
+            if (username === 'User' || username === 'admin') {
+                return 'Developer';
+            }
+            
+            const userAccount = accounts[username];
+            return userAccount ? userAccount.role : 'Management';
+        }
+
+        // Get current user permissions
+        function getCurrentUserPermissions() {
+            const username = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "User";
+            const accounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
+            
+            if (username === 'User' || username === 'admin') {
+                return ['dashboard', 'analytics', 'reports', 'inventory', 'settings'];
+            }
+            
+            const userAccount = accounts[username];
+            return userAccount ? userAccount.permissions : ['dashboard'];
+        }
+
+        function getCurrentUserInventoryAccess() {
+            const username = localStorage.getItem('loggedInUser') || sessionStorage.getItem('loggedInUser') || 'User';
+            const accounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
+            const userAccount = accounts[username];
+
+            if (username === 'admin' || (userAccount && userAccount.role === 'Developer')) {
+                return ['Rizal', 'Cebu', 'Thermal', 'Requests'];
+            }
+
+            if (!userAccount) {
+                return [];
+            }
+
+            if (userAccount.office === 'Both') {
+                return ['Rizal', 'Cebu', 'Thermal', ...(Array.isArray(userAccount.inventoryAccess) && userAccount.inventoryAccess.includes('Requests') ? ['Requests'] : [])];
+            }
+
+            if (Array.isArray(userAccount.inventoryAccess) && userAccount.inventoryAccess.length > 0) {
+                return userAccount.inventoryAccess.filter(value => ['Rizal', 'Cebu', 'Thermal', 'Requests'].includes(value));
+            }
+
+            return userAccount.office ? [userAccount.office] : [];
+        }
+
+        // Show/hide developer-only account management actions based on role
+        function updateAddAccountVisibility() {
+            const currentRole = getCurrentUserRole();
+            const addAccountMenuContainer = document.getElementById('addAccountMenuItemContainer');
+            const addAccountMenuDivider = document.getElementById('addAccountMenuItemDivider');
+            const usersMenuContainer = document.getElementById('usersMenuItemContainer');
+            const usersMenuDivider = document.getElementById('usersMenuItemDivider');
+            
+            if (currentRole === 'Developer') {
+                addAccountMenuContainer.style.display = 'block';
+                addAccountMenuDivider.style.display = 'block';
+                usersMenuContainer.style.display = 'block';
+                usersMenuDivider.style.display = 'block';
+            } else {
+                addAccountMenuContainer.style.display = 'none';
+                addAccountMenuDivider.style.display = 'none';
+                usersMenuContainer.style.display = 'none';
+                usersMenuDivider.style.display = 'none';
+            }
+        }
+
+        function getAccounts() {
+            return JSON.parse(localStorage.getItem('userAccounts')) || {};
+        }
+
+        function isLocalAccountsHost() {
+            const hostname = window.location.hostname || '';
+            return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+        }
+
+        function getBackendApiUrl(pathname = '/api/accounts') {
+            const protocol = window.location.protocol || 'http:';
+            const host = window.location.hostname || 'localhost';
+            const backendOrigin = `${protocol}//${host}:3100`;
+
+            return `${backendOrigin}${pathname}`;
+        }
+
+        async function saveAccounts(accounts, deleteUsernames = []) {
+            if (!isLocalAccountsHost()) {
+                if (!window.firebaseAuthSession) throw new Error('Firebase authentication is unavailable.');
+                if (getCurrentUserRole() === 'Developer') {
+                    const result = await window.firebaseAuthSession.api('/accounts', {
+                        method: 'PUT',
+                        body: JSON.stringify({ accounts, deleteUsernames })
+                    });
+                    if (!result.accounts) throw new Error('The account service did not return the saved accounts.');
+                    localStorage.setItem('userAccounts', JSON.stringify(result.accounts));
+                    return;
+                }
+
+                const existingAccounts = getAccounts();
+                for (const [username, account] of Object.entries(accounts)) {
+                    if (JSON.stringify(existingAccounts[username]) === JSON.stringify(account)) continue;
+                    await window.firebaseAuthSession.api(`/accounts/${encodeURIComponent(username)}`, {
+                        method: 'POST',
+                        body: JSON.stringify({ account })
+                    });
+                }
+                for (const username of deleteUsernames) {
+                    await window.firebaseAuthSession.api(`/accounts/${encodeURIComponent(username)}`, { method: 'DELETE' });
+                }
+                const safeAccounts = Object.fromEntries(Object.entries(accounts).map(([username, account]) => {
+                    const safeAccount = { ...account };
+                    delete safeAccount.password;
+                    return [username, safeAccount];
+                }));
+                localStorage.setItem('userAccounts', JSON.stringify(safeAccounts));
+                return;
+            }
+
+            localStorage.setItem('userAccounts', JSON.stringify(accounts));
+
+            const backendUrl = getBackendApiUrl('/api/accounts');
+
+            try {
+                const response = await fetch(backendUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(accounts)
+                });
+
+                const result = await response.json();
+                if (!result || !result.ok) {
+                    throw new Error(result && result.message ? result.message : 'Backend save failed.');
+                }
+            } catch (error) {
+                console.warn('Unable to sync accounts to the shared backend.', error);
+            }
+        }
+
+        async function loadAccountsFromBackend() {
+            if (!isLocalAccountsHost()) {
+                if (getCurrentUserRole() !== 'Developer') return;
+                try {
+                    const result = await window.firebaseAuthSession.api('/accounts', { method: 'GET' });
+                    if (!result.accounts) throw new Error('The account service returned an invalid account list.');
+                    localStorage.setItem('userAccounts', JSON.stringify(result.accounts));
+                    renderUsersTable();
+                } catch (error) {
+                    console.error('Unable to load Firebase accounts.', error);
+                    alert(`Unable to load accounts: ${error.message || 'Please try again.'}`);
+                }
+                return;
+            }
+
+            const backendUrl = getBackendApiUrl('/api/accounts');
+
+            try {
+                const response = await fetch(backendUrl, { cache: 'no-store' });
+                const result = await response.json();
+
+                if (!result || !result.ok || !result.accounts) {
+                    return;
+                }
+
+                const localAccounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
+                const mergedAccounts = Object.keys(result.accounts).reduce((accounts, username) => ({
+                    ...accounts,
+                    [username]: {
+                        ...result.accounts[username],
+                        ...(localAccounts[username] && localAccounts[username].password
+                            ? { password: localAccounts[username].password }
+                            : {})
+                    }
+                }), {});
+
+                localStorage.setItem('userAccounts', JSON.stringify(mergedAccounts));
+                await saveAccounts(mergedAccounts);
+                updateAddAccountVisibility();
+                updateMenuVisibility();
+            } catch (error) {
+                console.warn('Unable to load shared accounts.', error);
+            }
+        }
+
+        function getAccountStatus(account) {
+            return account && account.disabled ? 'Disabled' : 'Active';
+        }
+
+        function renderUsersTable() {
+            const accounts = getAccounts();
+            const tableContainer = document.getElementById('usersTableContainer');
+            const keys = Object.keys(accounts);
+
+            if (keys.length === 0) {
+                tableContainer.innerHTML = '<div class="users-empty-state">No user accounts found.</div>';
+                document.getElementById('userDetailsPanel').style.display = 'none';
+                return;
+            }
+
+            const rows = keys.map(username => {
+                const account = accounts[username];
+                const status = getAccountStatus(account);
+                const office = account && account.office ? account.office : 'N/A';
+                const detailButton = `
+                    <button class="user-action-btn view" data-action="view" data-username="${escapeHtml(username)}">View</button>
+                `;
+                const editButton = `
+                    <button class="user-action-btn toggle" data-action="edit" data-username="${escapeHtml(username)}">Edit</button>
+                `;
+                const toggleButtonText = account && account.disabled ? 'Enable' : 'Disable';
+                const toggleButton = `
+                    <button class="user-action-btn toggle" data-action="toggle" data-username="${escapeHtml(username)}">${toggleButtonText}</button>
+                `;
+                const deleteButton = `
+                    <button class="user-action-btn delete" data-action="delete" data-username="${escapeHtml(username)}">Delete</button>
+                `;
+
+                return `
+                    <tr>
+                        <td>${escapeHtml(account.name || username || 'N/A')}</td>
+                        <td>${escapeHtml(username)}</td>
+                        <td>${escapeHtml(account.email || 'N/A')}</td>
+                        <td>${escapeHtml(account.role || 'N/A')}</td>
+                        <td>${escapeHtml(office)}</td>
+                        <td><span class="status-badge ${account && account.disabled ? 'disabled' : 'active'}">${status}</span></td>
+                        <td>${detailButton}${editButton}${toggleButton}${deleteButton}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            tableContainer.innerHTML = `
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Office</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+
+            document.querySelectorAll('.user-action-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const action = this.dataset.action;
+                    const username = this.dataset.username;
+                    void handleUserAction(action, username);
+                });
+            });
+        }
+
+        function showUserDetails(username) {
+            const accounts = getAccounts();
+            const account = accounts[username];
+            const panel = document.getElementById('userDetailsPanel');
+
+            if (!account) {
+                panel.style.display = 'none';
+                panel.dataset.activeUsername = '';
+                return;
+            }
+
+            panel.dataset.activeUsername = username;
+            panel.innerHTML = `
+                <h3>Account Information: ${escapeHtml(username)}</h3>
+                <div class="user-detail-grid">
+                    <div class="user-detail-item">
+                        <label>Name</label>
+                        <strong>${escapeHtml(account.name || 'N/A')}</strong>
+                    </div>
+                    <div class="user-detail-item">
+                        <label>Username</label>
+                        <strong>${escapeHtml(account.username || username)}</strong>
+                    </div>
+                    <div class="user-detail-item">
+                        <label>Email</label>
+                        <strong>${escapeHtml(account.email || 'N/A')}</strong>
+                    </div>
+                    <div class="user-detail-item">
+                        <label>Role</label>
+                        <strong>${escapeHtml(account.role || 'N/A')}</strong>
+                    </div>
+                    <div class="user-detail-item">
+                        <label>Office</label>
+                        <strong>${escapeHtml(account.office || 'N/A')}</strong>
+                    </div>
+                    <div class="user-detail-item">
+                        <label>Status</label>
+                        <strong>${getAccountStatus(account)}</strong>
+                    </div>
+                    <div class="user-detail-item">
+                        <label>Permissions</label>
+                        <strong>${escapeHtml((account.permissions || []).join(', ') || 'None')}</strong>
+                    </div>
+                    <div class="user-detail-item">
+                        <label>Inventory Access</label>
+                        <strong>${escapeHtml((account.inventoryAccess || []).join(', ') || 'None')}</strong>
+                    </div>
+                    <div class="user-detail-item">
+                        <label>Password</label>
+                        <strong>${escapeHtml(account.password || 'N/A')}</strong>
+                    </div>
+                </div>
+            `;
+            panel.style.display = 'block';
+
+            document.querySelectorAll('.user-action-btn.view').forEach(button => {
+                button.textContent = button.dataset.username === username ? 'Hide' : 'View';
+            });
+        }
+
+        function openEditAccountModal(username) {
+            const accounts = getAccounts();
+            const account = accounts[username];
+            if (!account) {
+                alert('Account not found.');
+                return;
+            }
+
+            const modal = document.getElementById('editAccountModal');
+            const originalUsername = username;
+            modal.dataset.originalUsername = originalUsername;
+
+            document.getElementById('editAccountName').value = account.name || '';
+            document.getElementById('editAccountUsername').value = username;
+            document.getElementById('editAccountEmail').value = account.email || '';
+            document.getElementById('editAccountPassword').value = account.password || '';
+            document.getElementById('editAccountOffice').value = account.office || '';
+            document.getElementById('editAccountRole').value = account.role || '';
+            document.getElementById('editPermInventoryRizal').checked = Array.isArray(account.inventoryAccess) && account.inventoryAccess.includes('Rizal');
+            document.getElementById('editPermInventoryCebu').checked = Array.isArray(account.inventoryAccess) && account.inventoryAccess.includes('Cebu');
+            document.getElementById('editPermInventoryThermal').checked = Array.isArray(account.inventoryAccess) && account.inventoryAccess.includes('Thermal');
+            document.getElementById('editPermInventoryRequests').checked = Array.isArray(account.inventoryAccess) && account.inventoryAccess.includes('Requests');
+
+            document.querySelectorAll('#editAccountMenuPermissions input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = (account.permissions || []).includes(checkbox.value);
+            });
+            applyStationRoleAccess(editRoleSelect, editInventoryCheckboxes, editRequestsCheckbox, editMenuCheckboxes);
+
+            modal.classList.add('active');
+        }
+
+        function resetEditAccountForm() {
+            document.getElementById('editAccountName').value = '';
+            document.getElementById('editAccountUsername').value = '';
+            document.getElementById('editAccountEmail').value = '';
+            document.getElementById('editAccountPassword').value = '';
+            document.getElementById('editAccountOffice').value = '';
+            document.getElementById('editPermInventoryRizal').checked = false;
+            document.getElementById('editPermInventoryCebu').checked = false;
+            document.getElementById('editPermInventoryThermal').checked = false;
+            document.getElementById('editPermInventoryRequests').checked = false;
+            document.getElementById('editAccountRole').value = '';
+            document.querySelectorAll('#editAccountMenuPermissions input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = checkbox.id === 'editPermDashboard';
+            });
+            applyStationRoleAccess(editRoleSelect, editInventoryCheckboxes, editRequestsCheckbox, editMenuCheckboxes);
+            document.getElementById('editAccountModal').dataset.originalUsername = '';
+        }
+
+        async function handleUserAction(action, username) {
+            const currentUsername = localStorage.getItem('loggedInUser') || sessionStorage.getItem('loggedInUser') || 'User';
+            const accounts = getAccounts();
+            const account = accounts[username];
+            const panel = document.getElementById('userDetailsPanel');
+
+            if (!account) {
+                alert('Account not found.');
+                return;
+            }
+
+            if (action === 'view') {
+                const isCurrentlyVisible = panel.style.display !== 'none' && panel.dataset.activeUsername === username;
+
+                if (isCurrentlyVisible) {
+                    panel.style.display = 'none';
+                    panel.dataset.activeUsername = '';
+                    document.querySelectorAll('.user-action-btn.view').forEach(button => {
+                        if (button.dataset.username === username) {
+                            button.textContent = 'View';
+                        }
+                    });
+                    return;
+                }
+
+                showUserDetails(username);
+                return;
+            }
+
+            if (action === 'edit') {
+                openEditAccountModal(username);
+                return;
+            }
+
+            if (username === currentUsername) {
+                alert('You cannot disable or delete your own account while logged in.');
+                return;
+            }
+
+            if (action === 'toggle') {
+                account.disabled = !Boolean(account.disabled);
+                try {
+                    await saveAccounts(accounts);
+                } catch (error) {
+                    account.disabled = !account.disabled;
+                    alert(`Unable to update account: ${error.message || 'Please try again.'}`);
+                    return;
+                }
+                renderUsersTable();
+                if (document.getElementById('userDetailsPanel').style.display !== 'none') {
+                    showUserDetails(username);
+                }
+                alert(`${username} has been ${account.disabled ? 'disabled' : 'enabled'}.`);
+                return;
+            }
+
+            if (action === 'delete') {
+                const confirmed = window.confirm(`Delete account "${username}"? This action cannot be undone.`);
+                if (!confirmed) {
+                    return;
+                }
+                delete accounts[username];
+                try {
+                    await saveAccounts(accounts, [username]);
+                } catch (error) {
+                    alert(`Unable to delete account: ${error.message || 'Please try again.'}`);
+                    return;
+                }
+                renderUsersTable();
+                document.getElementById('userDetailsPanel').style.display = 'none';
+                alert(`Account "${username}" was deleted.`);
+            }
+        }
+
+        // Add Account Modal Handlers
+        document.getElementById('addAccountBtn').addEventListener('click', function (e) {
+            e.preventDefault();
+            document.getElementById('addAccountModal').classList.add('active');
+        });
+
+        document.getElementById('usersMenuBtn').addEventListener('click', function (e) {
+            e.preventDefault();
+            renderUsersTable();
+            document.getElementById('usersModal').classList.add('active');
+        });
+
+        openMenuActionFromHash();
+
+        document.getElementById('closeUsersModalBtn').addEventListener('click', function () {
+            document.getElementById('usersModal').classList.remove('active');
+            document.getElementById('userDetailsPanel').style.display = 'none';
+        });
+
+        document.getElementById('usersModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+                document.getElementById('userDetailsPanel').style.display = 'none';
+            }
+        });
+
+        document.getElementById('cancelAddAccountBtn').addEventListener('click', function () {
+            document.getElementById('addAccountModal').classList.remove('active');
+            resetAddAccountForm();
+        });
+
+        document.getElementById('cancelEditAccountBtn').addEventListener('click', function () {
+            document.getElementById('editAccountModal').classList.remove('active');
+            resetEditAccountForm();
+        });
+
+        document.getElementById('submitEditAccountBtn').addEventListener('click', async function () {
+            const originalUsername = document.getElementById('editAccountModal').dataset.originalUsername;
+            const name = document.getElementById('editAccountName').value.trim();
+            const username = document.getElementById('editAccountUsername').value.trim();
+            const email = document.getElementById('editAccountEmail').value.trim();
+            const password = document.getElementById('editAccountPassword').value.trim();
+            const office = document.getElementById('editAccountOffice').value;
+            const role = document.getElementById('editAccountRole').value;
+            const inventoryAccess = [];
+
+            document.querySelectorAll('#editAccountModal input[id^="editPermInventory"]:checked').forEach(checkbox => {
+                inventoryAccess.push(checkbox.value);
+            });
+
+            const normalizedInventoryAccess = role === 'Station'
+                ? ['Requests']
+                : office === 'Both'
+                ? ['Rizal', 'Cebu', 'Thermal', ...(inventoryAccess.includes('Requests') ? ['Requests'] : [])]
+                : inventoryAccess;
+
+            if (!name || !username || !email || (isLocalAccountsHost() && !password) || !office || !role) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const permissions = [];
+            document.querySelectorAll('#editAccountMenuPermissions input[type="checkbox"]:checked').forEach(checkbox => {
+                permissions.push(checkbox.value);
+            });
+            if (role === 'Station') permissions.length = 0;
+
+            if (permissions.length === 0 && !normalizedInventoryAccess.includes('Requests')) {
+                alert('Please select at least one menu permission');
+                return;
+            }
+
+            let accounts = getAccounts();
+            if (!accounts[originalUsername]) {
+                alert('Account not found.');
+                return;
+            }
+
+            if (originalUsername !== username && accounts[username]) {
+                alert('Username already exists');
+                return;
+            }
+
+            const currentLoggedInUser = localStorage.getItem('loggedInUser') || sessionStorage.getItem('loggedInUser');
+            const updatedAccount = {
+                name: name,
+                username: username,
+                email: email,
+                password: password,
+                office: office,
+                inventoryAccess: normalizedInventoryAccess,
+                role: role,
+                permissions: permissions,
+                disabled: accounts[originalUsername].disabled || false
+            };
+
+            delete accounts[originalUsername];
+            accounts[username] = updatedAccount;
+            try {
+                if (!isLocalAccountsHost()) {
+                    const result = await window.firebaseAuthSession.api(`/accounts/${encodeURIComponent(originalUsername)}`, {
+                        method: 'POST',
+                        body: JSON.stringify({ account: updatedAccount })
+                    });
+                    accounts[username] = result.account;
+                    localStorage.setItem('userAccounts', JSON.stringify(accounts));
+                } else {
+                    await saveAccounts(accounts, originalUsername === username ? [] : [originalUsername]);
+                }
+            } catch (error) {
+                alert(`Unable to update account: ${error.message || 'Please try again.'}`);
+                return;
+            }
+
+            if (currentLoggedInUser === originalUsername) {
+                localStorage.setItem('loggedInUser', username);
+                sessionStorage.setItem('loggedInUser', username);
+            }
+
+            renderUsersTable();
+            if (document.getElementById('userDetailsPanel').dataset.activeUsername === originalUsername) {
+                showUserDetails(username);
+            }
+            document.getElementById('editAccountModal').classList.remove('active');
+            resetEditAccountForm();
+            alert('Account updated successfully!');
+        });
+
+        // Close modal when clicking on overlay
+        document.getElementById('addAccountModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+                resetAddAccountForm();
+            }
+        });
+
+        document.getElementById('editAccountModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+                resetEditAccountForm();
+            }
+        });
+
+        // Submit new account
+        document.getElementById('submitAddAccountBtn').addEventListener('click', async function () {
+            const name = document.getElementById('newAccountName').value.trim();
+            const username = document.getElementById('newAccountUsername').value.trim();
+            const email = document.getElementById('newAccountEmail').value.trim();
+            const password = document.getElementById('newAccountPassword').value.trim();
+            const office = document.getElementById('newAccountOffice').value;
+            const role = document.getElementById('newAccountRole').value;
+            const inventoryAccess = [];
+
+            document.querySelectorAll('#addAccountModal input[id^="permInventory"]:checked').forEach(checkbox => {
+                inventoryAccess.push(checkbox.value);
+            });
+
+            const normalizedInventoryAccess = role === 'Station'
+                ? ['Requests']
+                : office === 'Both'
+                ? ['Rizal', 'Cebu', 'Thermal', ...(inventoryAccess.includes('Requests') ? ['Requests'] : [])]
+                : inventoryAccess;
+
+            if (!name || !username || !email || !password || !office || !role) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            // Get selected permissions
+            const permissions = [];
+            const permCheckboxes = document.querySelectorAll('#addAccountMenuPermissions input[type="checkbox"]:checked');
+            permCheckboxes.forEach(checkbox => {
+                permissions.push(checkbox.value);
+            });
+            if (role === 'Station') permissions.length = 0;
+
+            if (permissions.length === 0 && !normalizedInventoryAccess.includes('Requests')) {
+                alert('Please select at least one menu permission');
+                return;
+            }
+
+            // Add account to storage
+            let accounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
+            
+            if (accounts[username]) {
+                alert('Username already exists');
+                return;
+            }
+
+            accounts[username] = {
+                name: name,
+                username: username,
+                email: email,
+                password: password,
+                office: office,
+                inventoryAccess: normalizedInventoryAccess,
+                role: role,
+                permissions: permissions,
+                disabled: false
+            };
+
+            try {
+                await saveAccounts(accounts);
+            } catch (error) {
+                delete accounts[username];
+                alert(`Unable to create account: ${error.message || 'Please try again.'}`);
+                return;
+            }
+            alert('Account created successfully!');
+            document.getElementById('addAccountModal').classList.remove('active');
+            resetAddAccountForm();
+        });
+
+        // Reset form
+        function resetAddAccountForm() {
+            document.getElementById('newAccountName').value = '';
+            document.getElementById('newAccountUsername').value = '';
+            document.getElementById('newAccountEmail').value = '';
+            document.getElementById('newAccountPassword').value = '';
+            document.getElementById('newAccountOffice').value = '';
+            document.getElementById('permInventoryRizal').checked = false;
+            document.getElementById('permInventoryCebu').checked = false;
+            document.getElementById('permInventoryThermal').checked = false;
+            document.getElementById('permInventoryRequests').checked = false;
+            document.getElementById('newAccountRole').value = '';
+            document.querySelectorAll('#addAccountMenuPermissions input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = checkbox.id === 'permDashboard';
+            });
+            applyStationRoleAccess(addRoleSelect, addInventoryCheckboxes, addRequestsCheckbox, addMenuCheckboxes);
+        }
+
+        function applyStationRoleAccess(roleSelect, inventoryCheckboxes, requestsCheckbox, menuCheckboxes) {
+            const isStation = roleSelect.value === 'Station';
+            inventoryCheckboxes.forEach(checkbox => {
+                const isRequests = checkbox === requestsCheckbox;
+                checkbox.disabled = isStation;
+                if (isStation) checkbox.checked = isRequests;
+            });
+            menuCheckboxes.forEach(checkbox => {
+                checkbox.disabled = isStation;
+                if (isStation) checkbox.checked = false;
+            });
+        }
+
+        const addRoleSelect = document.getElementById('newAccountRole');
+        const addInventoryCheckboxes = Array.from(document.querySelectorAll('#addAccountModal input[id^="permInventory"]'));
+        const addRequestsCheckbox = document.getElementById('permInventoryRequests');
+        const addMenuCheckboxes = Array.from(document.querySelectorAll('#addAccountMenuPermissions input[type="checkbox"]'));
+        addRoleSelect.addEventListener('change', () => applyStationRoleAccess(addRoleSelect, addInventoryCheckboxes, addRequestsCheckbox, addMenuCheckboxes));
+
+        const editRoleSelect = document.getElementById('editAccountRole');
+        const editInventoryCheckboxes = Array.from(document.querySelectorAll('#editAccountModal input[id^="editPermInventory"]'));
+        const editRequestsCheckbox = document.getElementById('editPermInventoryRequests');
+        const editMenuCheckboxes = Array.from(document.querySelectorAll('#editAccountMenuPermissions input[type="checkbox"]'));
+        editRoleSelect.addEventListener('change', () => applyStationRoleAccess(editRoleSelect, editInventoryCheckboxes, editRequestsCheckbox, editMenuCheckboxes));
+
+        // Update menu visibility based on user role and permissions
+        function updateMenuVisibility() {
+            const permissions = new Set(getCurrentUserPermissions());
+            const allowedInventoryOffices = new Set(getCurrentUserInventoryAccess());
+            const currentRole = getCurrentUserRole();
+
+            document.querySelectorAll('#adminMenu + .dropdown-menu [data-permission]').forEach(item => {
+                const menuEntry = item.closest('li');
+                if (item.dataset.inventoryOffice) {
+                    if (menuEntry) {
+                        menuEntry.style.display = permissions.has(item.dataset.permission) && allowedInventoryOffices.has(item.dataset.inventoryOffice) ? '' : 'none';
+                    }
+                    return;
+                }
+                if (menuEntry) menuEntry.style.display = permissions.has(item.dataset.permission) ? '' : 'none';
+            });
+            document.querySelectorAll('#adminMenu + .dropdown-menu [data-inventory-access]').forEach(item => {
+                const menuEntry = item.closest('li');
+                if (menuEntry) menuEntry.style.display = allowedInventoryOffices.has(item.dataset.inventoryAccess) ? '' : 'none';
+            });
+
+            document.querySelectorAll('#adminMenu + .dropdown-menu .dropdown-divider').forEach(divider => {
+                const dividerEntry = divider.closest('li');
+                const followingItems = [];
+                let nextEntry = dividerEntry && dividerEntry.nextElementSibling;
+                while (nextEntry && !nextEntry.querySelector('.dropdown-divider')) {
+                    followingItems.push(nextEntry);
+                    nextEntry = nextEntry.nextElementSibling;
+                }
+                if (dividerEntry) dividerEntry.style.display = followingItems.some(item => item.style.display !== 'none') ? '' : 'none';
+            });
+
+            try {
+                localStorage.setItem('dashboardMenuState', JSON.stringify({
+                    currentRole,
+                    permissions: Array.from(permissions),
+                    allowedInventoryOffices: Array.from(allowedInventoryOffices),
+                    developerOnlyMenuVisible: currentRole === 'Developer'
+                }));
+            } catch (error) {
+                console.warn('Unable to save dashboard menu state.', error);
+            }
+        }
+        
+        // Update clock immediately and then every second
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Initialize role-based features on page load
+        initializeAccounts();
+        updateAddAccountVisibility();
+        updateMenuVisibility();
+        loadAccountsFromBackend();
+    </script>
+</body>
+</html>

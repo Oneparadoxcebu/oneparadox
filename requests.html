@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Workspace Requests">
+    <title>Requests</title>
+    <link rel="icon" type="image/x-icon" href="images/icon256.ico">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/theme-switch.css?v=20260928-3">
+    <link rel="stylesheet" href="css/app-redesign.css?v=20260929-11">
+    <script src="js/theme-switch.js?v=20260929-1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@1.48.0/dist/umd/lucide.min.js" defer></script>
+    <script src="js/lucide-icons.js?v=20261023-1" defer></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="requests.html"><i class="bi bi-inbox me-2"></i>Requests</a>
+            <div class="collapse navbar-collapse show" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item d-flex align-items-center ms-2">
+                        <label class="theme-switch" for="themeToggleBtn" title="Toggle light and dark mode"><input id="themeToggleBtn" type="checkbox" role="switch" aria-label="Dark mode" aria-checked="false"><span class="theme-switch-track" aria-hidden="true"><i class="bi bi-sun-fill"></i><i class="bi bi-moon-stars-fill"></i><span class="theme-switch-thumb"><i class="bi bi-sun-fill"></i></span></span></label>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="adminMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-list me-1"></i>Menu
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminMenu">
+                            <li><a class="dropdown-item active" data-inventory-access="Requests" href="requests.html" aria-current="page"><i class="bi bi-inbox me-2"></i>Requests</a></li>
+                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Cebu" href="inventory.html?office=Cebu"><i class="bi bi-boxes me-2"></i>Inventory of Cebu</a></li>
+                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Thermal" href="inventory.html?office=Thermal"><i class="bi bi-boxes me-2"></i>Thermal Inventory</a></li>
+                            <li><button class="dropdown-item" id="changePasswordMenuBtn" type="button"><i class="bi bi-key me-2"></i>Change Password</button></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <span class="nav-link user-display" id="userDisplay" style="cursor: default;">
+                            <span class="user-display-name">User</span>
+                            <small class="user-display-username">@User</small>
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-danger ms-2" id="logoutBtn" type="button">Logout</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container-fluid inventory-container">
+        <section class="welcome-section">
+            <h1 class="welcome-title">Requests</h1>
+            <p class="welcome-subtitle mb-0">Submit Thermal Paper requests. Requests are saved locally in this browser for testing.</p>
+        </section>
+        <section class="card p-4 mb-4" aria-labelledby="thermalPaperRequestTitle">
+            <h2 class="h5 mb-3" id="thermalPaperRequestTitle"><i class="bi bi-send me-2"></i>Request Thermal Paper</h2>
+            <form id="thermalPaperRequestForm" class="row g-3">
+                <div class="col-md-3">
+                    <label for="thermalPaperStation" class="form-label">Station</label>
+                    <input id="thermalPaperStation" class="form-control" type="text" maxlength="120" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="thermalPaperRequestee" class="form-label">Name of Requestee</label>
+                    <input id="thermalPaperRequestee" class="form-control" type="text" maxlength="120" required>
+                </div>
+                <div class="col-md-2">
+                    <label for="thermalPaperQuantity" class="form-label">Quantity</label>
+                    <input id="thermalPaperQuantity" class="form-control" type="number" min="1" step="1" required>
+                </div>
+                <div class="col-md-2">
+                    <label for="thermalPaperUnit" class="form-label">Unit</label>
+                    <select id="thermalPaperUnit" class="form-select" required>
+                        <option value="Boxes">Boxes</option>
+                        <option value="Rolls">Rolls</option>
+                        <option value="Pcs">Pcs</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="thermalPaperNotes" class="form-label">Notes (optional)</label>
+                    <input id="thermalPaperNotes" class="form-control" type="text" maxlength="500" placeholder="Add details for this request">
+                </div>
+                <div class="col-12 d-flex align-items-center gap-3">
+                    <button id="submitThermalPaperRequest" class="btn btn-primary" type="submit"><i class="bi bi-send me-2"></i>Submit Request</button>
+                    <span id="requestFormMessage" class="text-muted" role="status" aria-live="polite"></span>
+                </div>
+            </form>
+        </section>
+        <section class="card p-4" aria-labelledby="submittedThermalPaperRequestsTitle">
+            <h2 class="h5 mb-3" id="submittedThermalPaperRequestsTitle"><i class="bi bi-inbox me-2"></i>Submitted Thermal Paper Requests</h2>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Item</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Station</th>
+                            <th scope="col">Name of Requestee</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="submittedThermalPaperRequestsBody">
+                        <tr><td colspan="7" class="text-center text-muted py-4">Loading requests…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div class="account-modal-overlay" id="changePasswordModal" style="display: none; position: fixed; inset: 0; z-index: 2200; align-items: center; justify-content: center; padding: 1rem; background: rgba(0, 0, 0, 0.5);">
+        <div class="account-modal" role="dialog" aria-modal="true" aria-labelledby="changePasswordTitle" style="width: min(100%, 520px); padding: 2rem; border-radius: 12px; background: var(--ui-surface, #fff);">
+            <h2 id="changePasswordTitle"><i class="bi bi-key me-2"></i>Change Password</h2>
+            <div class="account-form-group"><label for="newPasswordInput">New Password</label><input id="newPasswordInput" type="password" autocomplete="new-password"></div>
+            <div class="account-form-group"><label for="confirmPasswordInput">Confirm New Password</label><input id="confirmPasswordInput" type="password" autocomplete="new-password"></div>
+            <div class="account-modal-buttons"><button type="button" class="btn-submit" id="savePasswordBtn">Save Password</button><button type="button" class="btn-cancel" id="cancelPasswordBtn">Cancel</button></div>
+        </div>
+    </div>
+
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth-session.js?v=20260921-2"></script>
+    <script src="js/firebase-auth.js?v=20261023-1"></script>
+    <script src="js/firebase-shared.js?v=20261023-6"></script>
+    <script src="js/password-security.js?v=20260919-1"></script>
+    <script src="js/change-password.js?v=20261023-2"></script>
+    <script>
+        const username = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "User";
+        const accounts = JSON.parse(localStorage.getItem("userAccounts") || "{}");
+        const account = accounts[username];
+        const userDisplay = document.getElementById("userDisplay");
+        userDisplay.querySelector(".user-display-name").textContent = account?.name || username;
+        userDisplay.querySelector(".user-display-username").textContent = `@${username}`;
+
+        const permissions = new Set(
+            username === "User" || username === "admin" || !Array.isArray(account?.permissions)
+                ? ["inventory"]
+                : account.permissions
+        );
+        const inventoryAccess = new Set(
+            username === "admin" || account?.role === "Developer"
+                ? ["Rizal", "Cebu", "Thermal", "Requests"]
+                : account?.role === "Station"
+                    ? ["Requests"]
+                : account?.office === "Both"
+                    ? ["Rizal", "Cebu", "Thermal", ...(Array.isArray(account?.inventoryAccess) && account.inventoryAccess.includes("Requests") ? ["Requests"] : [])]
+                    : Array.isArray(account?.inventoryAccess)
+                        ? account.inventoryAccess
+                        : account?.office ? [account.office] : []
+        );
+        document.querySelectorAll("#adminMenu + .dropdown-menu [data-permission]").forEach(item => {
+            const allowed = permissions.has(item.dataset.permission) && inventoryAccess.has(item.dataset.inventoryOffice);
+            item.closest("li").style.display = allowed ? "" : "none";
+        });
+        document.querySelectorAll("#adminMenu + .dropdown-menu [data-inventory-access]").forEach(item => {
+            item.closest("li").style.display = inventoryAccess.has(item.dataset.inventoryAccess) ? "" : "none";
+        });
+        if (new URLSearchParams(window.location.search).get("changePassword") === "1") {
+            document.getElementById("changePasswordMenuBtn").click();
+        }
+        if (username !== "User" && username !== "admin" && account?.role !== "Developer" && !inventoryAccess.has("Requests")) {
+            window.location.replace("dashboard.html");
+        }
+
+        const requestForm = document.getElementById("thermalPaperRequestForm");
+        const requestSubmitButton = document.getElementById("submitThermalPaperRequest");
+        const requestFormMessage = document.getElementById("requestFormMessage");
+        const submittedRequestsBody = document.getElementById("submittedThermalPaperRequestsBody");
+
+        function escapeRequestHtml(value) {
+            return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function getRequestStatusBadgeClass(status) {
+            switch (String(status || "").trim().toLowerCase()) {
+                case "approved":
+                    return "text-bg-success";
+                case "rejected":
+                    return "text-bg-danger";
+                case "pending":
+                default:
+                    return "text-bg-warning";
+            }
+        }
+
+        function renderSubmittedRequests(requests) {
+            const sortedRequests = [...requests].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+            if (!sortedRequests.length) {
+                submittedRequestsBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No Thermal Paper requests submitted yet.</td></tr>';
+                return;
+            }
+
+            submittedRequestsBody.innerHTML = sortedRequests.map(request => {
+                const status = request.status || "Pending";
+                const requestedDate = request.createdAt ? new Date(request.createdAt).toLocaleString() : "-";
+                const notes = request.notes ? escapeRequestHtml(request.notes) : "-";
+                const rejectionNote = request.rejectionNote
+                    ? `<br><span class="text-danger">${escapeRequestHtml(request.rejectionNote)}</span>`
+                    : "";
+                return `<tr>
+                    <td>${escapeRequestHtml(request.item || "Thermal Paper")}</td>
+                    <td>${escapeRequestHtml(request.quantity)} ${escapeRequestHtml(request.unit)}</td>
+                    <td>${escapeRequestHtml(request.station || "-")}</td>
+                    <td>${escapeRequestHtml(request.requestee || "-")}</td>
+                    <td>${escapeRequestHtml(requestedDate)}</td>
+                    <td><span class="badge ${getRequestStatusBadgeClass(status)}">${escapeRequestHtml(status)}</span></td>
+                    <td>${notes}${rejectionNote}</td>
+                </tr>`;
+            }).join("");
+        }
+
+        async function loadSubmittedRequests() {
+            try {
+                renderSubmittedRequests(await window.sharedRequests.load());
+            } catch (error) {
+                console.error("Unable to load submitted Thermal Paper requests.", error);
+                submittedRequestsBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Unable to load requests. Please try refreshing the page.</td></tr>';
+            }
+        }
+
+        requestForm.addEventListener("submit", async event => {
+            event.preventDefault();
+            if (!requestForm.reportValidity()) return;
+
+            const quantity = Number(document.getElementById("thermalPaperQuantity").value);
+            if (!Number.isInteger(quantity) || quantity < 1) {
+                requestFormMessage.textContent = "Enter a whole-number quantity greater than zero.";
+                return;
+            }
+
+            const station = document.getElementById("thermalPaperStation").value.trim();
+            const requestee = document.getElementById("thermalPaperRequestee").value.trim();
+            if (!station || !requestee) {
+                requestFormMessage.textContent = "Enter the station and name of the requestee.";
+                return;
+            }
+
+            const request = {
+                id: `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+                item: "Thermal Paper",
+                quantity,
+                unit: document.getElementById("thermalPaperUnit").value,
+                station,
+                requestee,
+                notes: document.getElementById("thermalPaperNotes").value.trim(),
+                requestedBy: account?.name || username,
+                requestedByUsername: username,
+                status: "Pending",
+                createdAt: new Date().toISOString()
+            };
+
+            requestSubmitButton.disabled = true;
+            requestFormMessage.textContent = "Submitting request…";
+            try {
+                await window.sharedRequests.create(request);
+                requestForm.reset();
+                document.getElementById("thermalPaperUnit").value = "Boxes";
+                requestFormMessage.textContent = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+                    ? "Request saved locally in this browser."
+                    : "Request submitted successfully.";
+                await loadSubmittedRequests();
+            } catch (error) {
+                console.error("Unable to submit Thermal Paper request.", error);
+                const reason = error instanceof Error ? error.message : String(error);
+                requestFormMessage.textContent = `Request could not be submitted: ${reason}`;
+            } finally {
+                requestSubmitButton.disabled = false;
+            }
+        });
+
+        loadSubmittedRequests();
+        window.addEventListener("storage", event => {
+            if (event.key === window.sharedRequests.storageKey) loadSubmittedRequests();
+        });
+        window.setInterval(loadSubmittedRequests, 30000);
+
+        document.getElementById("logoutBtn").addEventListener("click", () => {
+            window.authSession.logout();
+            window.location.href = "index.html";
+        });
+    </script>
+</body>
+</html>

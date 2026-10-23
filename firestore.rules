@@ -1,0 +1,76 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isDeveloper() {
+      return signedIn() && request.auth.token.role == "Developer";
+    }
+
+    function hasPermission(permission) {
+      return isDeveloper() ||
+        (signedIn() &&
+          request.auth.token.permissions is list &&
+          permission in request.auth.token.permissions);
+    }
+
+    function hasInventoryAccess(office) {
+      return isDeveloper() ||
+        (hasPermission("inventory") &&
+          request.auth.token.inventoryAccess is list &&
+          office in request.auth.token.inventoryAccess);
+    }
+
+    match /workspaceRequests/{requestId} {
+      allow read, write: if false;
+    }
+
+    match /accounts/{username} {
+      allow read, write: if false;
+    }
+
+    match /inventoryData/{office} {
+      allow read, write: if hasInventoryAccess(office);
+    }
+
+    match /inventoryHistory/{office} {
+      allow read, write: if hasInventoryAccess(office);
+    }
+
+    match /attendanceRecords/{recordId} {
+      allow read, write: if hasPermission("dashboard") || hasPermission("attendance");
+    }
+
+    match /attendanceHistory/{entryId} {
+      allow read, write: if hasPermission("dashboard") || hasPermission("attendance");
+    }
+
+    match /attendanceTasks/{taskId} {
+      allow read, write: if hasPermission("dashboard") || hasPermission("attendance");
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if signedIn();
+      allow write: if isDeveloper();
+    }
+
+    match /todoTasks/{taskId} {
+      allow read, write: if hasPermission("dashboard") || hasPermission("analytics");
+    }
+
+    match /onlinePresence/{sessionId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() &&
+        request.resource.data.username == request.auth.token.username;
+      allow delete: if signedIn() &&
+        resource.data.username == request.auth.token.username;
+    }
+
+    match /onlineChats/{chatId}/messages/{messageId} {
+      allow read, write: if false;
+    }
+  }
+}
