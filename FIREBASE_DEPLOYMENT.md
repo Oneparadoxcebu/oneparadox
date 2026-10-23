@@ -4,7 +4,7 @@ The site is deployed separately through GitHub Pages. The Firebase Functions API
 
 ## One-time Firebase setup
 
-1. Enable Firebase Authentication for the project. The app signs in through Firebase custom tokens; the account records are maintained in Firestore.
+1. Enable Firebase Authentication for the project. The app signs in through Firebase custom tokens; the account records are maintained in Firestore. Cloud Functions deployment requires the project to be on the Firebase **Blaze** plan.
 2. Create or select a Firebase project matching the project ID in `js/firebase-auth.js` and `js/firebase-shared.js`.
 3. Install the Firebase CLI and authenticate locally with an account that can deploy Functions and Firestore rules.
    Set the active Google Cloud project so the account seeder uses the same project:
@@ -31,12 +31,11 @@ The site is deployed separately through GitHub Pages. The Firebase Functions API
 
 ## GitHub deployment
 
-Add these repository Actions secrets before pushing to `main`:
+Add this repository Actions secret before running the backend workflow:
 
-- `FIREBASE_PROJECT_ID`: `oneparadox-c5c48`.
 - `FIREBASE_SERVICE_ACCOUNT`: JSON for a Google service account with Firebase Functions deployment and Firestore rules deployment permissions.
 
-The Firebase workflow deploys only Functions and Firestore rules. The Pages workflow stages only public HTML, CSS, JavaScript, images, and fonts; it does not publish local seed data or credentials. Requests, password updates, and direct-chat messages use authenticated Functions endpoints; `workspaceRequests`, `accounts`, and `onlineChats` deny direct browser access.
+The Firebase workflow explicitly targets `oneparadox-c5c48`; `.firebaserc` also sets it as the default project. The workflow deploys only Functions and Firestore rules. The Pages workflow stages only public HTML, CSS, JavaScript, images, and fonts; it does not publish local seed data or credentials. Requests, password updates, and direct-chat messages use authenticated Functions endpoints; `workspaceRequests`, `accounts`, and `onlineChats` deny direct browser access.
 
 ## Verification
 
