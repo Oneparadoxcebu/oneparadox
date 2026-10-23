@@ -50,6 +50,9 @@
             }
         }
         if (!response.ok) {
+            if (response.status === 404 && action === "Sign-in") {
+                throw new Error(`Firebase login function was not found at ${functionsBase}/login. Deploy the "api" function to project ${firebaseConfig.projectId} in region ${firebaseConfig.functionsRegion}, then reload the site.`);
+            }
             const message = result.error?.message || result.message || responseText || `${action} failed (${response.status}).`;
             throw new Error(message);
         }
