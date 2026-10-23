@@ -21,7 +21,7 @@
         } catch (error) {
             console.error(`Firebase Functions request failed for ${path}.`, error);
             throw new Error(
-                `The Firebase backend at ${functionsBase} did not return a browser-accessible response. The configured endpoint currently returns 404, which usually means the "api" Cloud Function is not deployed to project ${firebaseConfig.projectId} in ${firebaseConfig.functionsRegion}. Check the "Deploy Firebase backend" GitHub Actions run and ensure FIREBASE_SERVICE_ACCOUNT is configured.`
+                `The browser could not reach the Firebase backend at ${functionsBase}. This usually means the "api" Cloud Function is not deployed to project ${firebaseConfig.projectId} in ${firebaseConfig.functionsRegion}, or the deployed endpoint is missing its CORS response. Check the "Deploy Firebase backend" GitHub Actions run and ensure FIREBASE_SERVICE_ACCOUNT is configured.`
             );
         }
     }

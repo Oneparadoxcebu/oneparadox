@@ -35,7 +35,7 @@ Add this repository Actions secret before running the backend workflow:
 
 - `FIREBASE_SERVICE_ACCOUNT`: JSON for a Google service account with Firebase Functions deployment and Firestore rules deployment permissions.
 
-The Firebase workflow explicitly targets `oneparadox-c5c48`; `.firebaserc` also sets it as the default project. The workflow deploys only Functions and Firestore rules. The Pages workflow stages only public HTML, CSS, JavaScript, images, and fonts; it does not publish local seed data or credentials. Requests, password updates, and direct-chat messages use authenticated Functions endpoints; `workspaceRequests`, `accounts`, and `onlineChats` deny direct browser access.
+The Firebase workflow explicitly targets `oneparadox-c5c48`; `.firebaserc` also sets it as the default project. It deploys Functions and Firestore rules on every push to `main`, runs the Functions tests first, and checks that the login endpoint is deployed. The Pages workflow stages only public HTML, CSS, JavaScript, images, and fonts; it does not publish local seed data or credentials. Requests, password updates, and direct-chat messages use authenticated Functions endpoints; `workspaceRequests`, `accounts`, and `onlineChats` deny direct browser access.
 
 ## Verification
 
