@@ -1,9 +1,16 @@
 (function () {
-    const firebaseConfig = {
+    const firebaseConfig = Object.freeze({
         apiKey: "AIzaSyAwN4KgKfGTRiDqiSqPaSeeyDda_4qmEmo",
+        authDomain: "oneparadox-c5c48.firebaseapp.com",
+        storageBucket: "oneparadox-c5c48.firebasestorage.app",
+        messagingSenderId: "1011766262049",
+        appId: "1:1011766262049:web:6c2641612938379dab2660",
+        measurementId: "G-P1FSYLFE5Z",
+        functionsRegion: "us-central1",
         projectId: "oneparadox-c5c48"
-    };
-    const functionsBase = "https://us-central1-oneparadox-c5c48.cloudfunctions.net/api";
+    });
+    window.firebaseProjectConfig = firebaseConfig;
+    const functionsBase = `https://${firebaseConfig.functionsRegion}-${firebaseConfig.projectId}.cloudfunctions.net/api`;
     const tokenStorageKey = "firebaseAuthTokens";
     const identityToolkitBase = "https://identitytoolkit.googleapis.com/v1";
     const secureTokenBase = "https://securetoken.googleapis.com/v1";
@@ -33,9 +40,17 @@
     }
 
     async function parseResponse(response, action) {
-        const result = await response.json().catch(() => ({}));
+        const responseText = await response.text();
+        let result = {};
+        if (responseText) {
+            try {
+                result = JSON.parse(responseText);
+            } catch (error) {
+                result = {};
+            }
+        }
         if (!response.ok) {
-            const message = result.error?.message || result.message || `${action} failed (${response.status}).`;
+            const message = result.error?.message || result.message || responseText || `${action} failed (${response.status}).`;
             throw new Error(message);
         }
         return result;
@@ -115,5 +130,5 @@
         sessionStorage.removeItem(tokenStorageKey);
     }
 
-    window.firebaseAuthSession = { api, getIdToken, signIn, signOut };
+    window.firebaseAuthSession = { api, getIdToken, signIn, signOut, config: firebaseConfig };
 })();

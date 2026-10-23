@@ -19,7 +19,7 @@ async function main() {
         projectId: process.env.FIREBASE_PROJECT_ID ||
             process.env.GOOGLE_CLOUD_PROJECT ||
             process.env.GCLOUD_PROJECT ||
-            "nineteenaces-8ba08"
+            "oneparadox-c5c48"
     });
     const collection = getFirestore().collection("accounts");
     const entries = Object.entries(accounts);

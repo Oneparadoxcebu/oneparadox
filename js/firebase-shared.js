@@ -1,15 +1,29 @@
 (function () {
     const firebaseConfig = {
-        apiKey: "AIzaSyAwN4KgKfGTRiDqiSqPaSeeyDda_4qmEmo",
-        authDomain: "oneparadox-c5c48.firebaseapp.com",
-        projectId: "oneparadox-c5c48",
-        storageBucket: "oneparadox-c5c48.firebasestorage.app",
-        messagingSenderId: "1011766262049",
-        appId: "1:1011766262049:web:6c2641612938379dab2660",
-        measurementId: "G-P1FSYLFE5Z"
+        ...(window.firebaseProjectConfig || window.firebaseAuthSession?.config || {})
     };
 
-    const firestoreRestBase = "https://firestore.googleapis.com/v1/projects/oneparadox-c5c48/databases/(default)/documents";
+    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+        throw new Error("Firebase project configuration is missing. Load firebase-auth.js before firebase-shared.js.");
+    }
+
+    const firestoreRestBase = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(firebaseConfig.projectId)}/databases/(default)/documents`;
+
+    async function assertFirestoreResponse(response, action) {
+        if (response.ok) return;
+        const responseText = await response.text();
+        let message = responseText;
+        try {
+            const result = JSON.parse(responseText);
+            message = result.error?.message || result.message || responseText;
+        } catch (error) {
+            message = responseText;
+        }
+        if (response.status === 401 || response.status === 403) {
+            throw new Error(`${action} denied by Firestore (${response.status}): ${message}. Verify the signed-in account and Firestore rules in project ${firebaseConfig.projectId}.`);
+        }
+        throw new Error(`${action} failed (${response.status}): ${message || "Firestore returned an empty error response."}`);
+    }
 
     async function firestoreFetch(url, options = {}) {
         const headers = new Headers(options.headers || {});
@@ -19,7 +33,12 @@
         } else if (!isLocalRequestTesting()) {
             throw new Error("Sign in with your Firebase account to access Firestore.");
         }
-        return fetch(url, { ...options, headers });
+        try {
+            return await fetch(url, { ...options, headers });
+        } catch (error) {
+            console.error("Firestore REST request could not reach Google APIs.", error);
+            throw new Error(`Could not connect to Firestore project ${firebaseConfig.projectId}. Check your network and Firebase project configuration.`);
+        }
     }
 
     function toFirestoreValue(value) {
@@ -52,7 +71,7 @@
             const params = new URLSearchParams({ key: firebaseConfig.apiKey, pageSize: "300" });
             if (pageToken) params.set("pageToken", pageToken);
             const response = await firestoreFetch(`${firestoreRestBase}/${collectionPath}?${params.toString()}`, { cache: "no-store" });
-            if (!response.ok) throw new Error(`Firestore collection read failed: ${response.status}`);
+            await assertFirestoreResponse(response, "Firestore collection read");
             const result = await response.json();
             documents.push(...(result.documents || []));
             pageToken = result.nextPageToken || "";
@@ -77,7 +96,7 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ fields: Object.keys(account).reduce((fields, key) => ({ ...fields, [key]: toFirestoreValue(account[key]) }), {}) })
             });
-            if (!response.ok) throw new Error(`Firestore account write failed: ${response.status}`);
+            await assertFirestoreResponse(response, "Firestore account write");
         }));
     }
 
@@ -87,7 +106,7 @@
 
     async function deleteAccountFromFirestore(username) {
         const response = await firestoreFetch(`${firestoreRestBase}/accounts/${encodeURIComponent(username)}?key=${firebaseConfig.apiKey}`, { method: "DELETE" });
-        if (!response.ok) throw new Error(`Firestore account delete failed: ${response.status}`);
+        await assertFirestoreResponse(response, "Firestore account delete");
     }
 
     async function saveAccountThemeToFirestore(username, theme) {
@@ -97,7 +116,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ fields: { theme: toFirestoreValue(theme) } })
         });
-        if (!response.ok) throw new Error(`Account theme update failed: ${response.status}`);
+        await assertFirestoreResponse(response, "Account theme update");
     }
 
     async function loadAttendanceFromFirestore() {
@@ -116,7 +135,7 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ fields: Object.keys(record).reduce((fields, key) => ({ ...fields, [key]: toFirestoreValue(record[key]) }), {}) })
             });
-            if (!response.ok) throw new Error(`Firestore attendance write failed: ${response.status}`);
+            await assertFirestoreResponse(response, "Firestore attendance write");
         }));
     }
 
@@ -134,7 +153,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ fields: Object.keys(entry).reduce((fields, key) => ({ ...fields, [key]: toFirestoreValue(entry[key]) }), {}) })
         });
-        if (!response.ok) throw new Error(`Firestore attendance history write failed: ${response.status}`);
+        await assertFirestoreResponse(response, "Firestore attendance history write");
     }
 
     async function loadAttendanceTasksFromFirestore() {
@@ -155,14 +174,14 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ fields: Object.keys(task).reduce((fields, key) => ({ ...fields, [key]: toFirestoreValue(task[key]) }), {}) })
                 });
-                if (!response.ok) throw new Error(`Firestore attendance task write failed: ${response.status}`);
+                await assertFirestoreResponse(response, "Firestore attendance task write");
             }),
             ...existingDocuments
                 .filter(document => !taskIds.has(document.name.split("/").pop()))
                 .map(async document => {
                     const taskId = document.name.split("/").pop();
                     const response = await firestoreFetch(`${firestoreRestBase}/attendanceTasks/${encodeURIComponent(taskId)}?key=${firebaseConfig.apiKey}`, { method: "DELETE" });
-                    if (!response.ok) throw new Error(`Firestore attendance task delete failed: ${response.status}`);
+                    await assertFirestoreResponse(response, "Firestore attendance task delete");
                 })
         ]);
     }
@@ -173,7 +192,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ fields: Object.keys(announcement).reduce((fields, key) => ({ ...fields, [key]: toFirestoreValue(announcement[key]) }), {}) })
         });
-        if (!response.ok) throw new Error(`Announcement write failed: ${response.status}`);
+        await assertFirestoreResponse(response, "Announcement write");
     }
 
     async function loadAnnouncementsFromFirestore(since) {
@@ -199,14 +218,14 @@
             .map(([recordId]) => recordId);
         await Promise.all(recordIds.map(async recordId => {
             const response = await firestoreFetch(`${firestoreRestBase}/attendanceRecords/${encodeURIComponent(recordId)}?key=${firebaseConfig.apiKey}`, { method: "DELETE" });
-            if (!response.ok) throw new Error(`Firestore attendance delete failed: ${response.status}`);
+            await assertFirestoreResponse(response, "Firestore attendance delete");
         }));
     }
 
     async function loadInventoryFromFirestore(office) {
         const response = await firestoreFetch(`${firestoreRestBase}/inventoryData/${encodeURIComponent(office)}?key=${firebaseConfig.apiKey}`, { cache: "no-store" });
         if (response.status === 404) return null;
-        if (!response.ok) throw new Error(`Firestore inventory read failed: ${response.status}`);
+        await assertFirestoreResponse(response, "Firestore inventory read");
         const document = await response.json();
         return Object.keys(document.fields || {}).reduce((inventory, key) => ({ ...inventory, [key]: fromFirestoreValue(document.fields[key]) }), {});
     }
@@ -217,18 +236,18 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ fields: Object.keys(inventory).reduce((fields, key) => ({ ...fields, [key]: toFirestoreValue(inventory[key]) }), {}) })
         });
-        if (!response.ok) throw new Error(`Firestore inventory write failed: ${response.status}`);
+        await assertFirestoreResponse(response, "Firestore inventory write");
     }
 
     async function clearInventoryFromFirestore(office) {
         const response = await firestoreFetch(`${firestoreRestBase}/inventoryData/${encodeURIComponent(office)}?key=${firebaseConfig.apiKey}`, { method: "DELETE" });
-        if (!response.ok && response.status !== 404) throw new Error(`Firestore inventory delete failed: ${response.status}`);
+        if (response.status !== 404) await assertFirestoreResponse(response, "Firestore inventory delete");
     }
 
     async function loadInventoryHistoryFromFirestore(office) {
         const response = await firestoreFetch(`${firestoreRestBase}/inventoryHistory/${encodeURIComponent(office)}?key=${firebaseConfig.apiKey}`, { cache: "no-store" });
         if (response.status === 404) return [];
-        if (!response.ok) throw new Error(`Firestore inventory history read failed: ${response.status}`);
+        await assertFirestoreResponse(response, "Firestore inventory history read");
         const document = await response.json();
         return document.fields?.entries ? fromFirestoreValue(document.fields.entries) : [];
     }
@@ -239,7 +258,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ fields: { entries: toFirestoreValue(entries.slice(0, 200)) } })
         });
-        if (!response.ok) throw new Error(`Firestore inventory history write failed: ${response.status}`);
+        await assertFirestoreResponse(response, "Firestore inventory history write");
     }
 
     async function loadTodoTasksFromFirestore() {
@@ -257,7 +276,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ fields })
         });
-        if (!response.ok) throw new Error(`Firestore to-do task write failed: ${response.status}`);
+        await assertFirestoreResponse(response, "Firestore to-do task write");
     }
 
     const workspaceRequestsStorageKey = "workspaceRequests";
@@ -309,7 +328,7 @@
 
     async function deleteTodoTaskFromFirestore(taskId) {
         const response = await firestoreFetch(`${firestoreRestBase}/todoTasks/${encodeURIComponent(taskId)}?key=${firebaseConfig.apiKey}`, { method: "DELETE" });
-        if (!response.ok && response.status !== 404) throw new Error(`Firestore to-do task delete failed: ${response.status}`);
+        if (response.status !== 404) await assertFirestoreResponse(response, "Firestore to-do task delete");
     }
 
     async function loadOnlinePresenceFromFirestore() {
@@ -327,7 +346,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ fields })
         });
-        if (!response.ok) throw new Error(`Online presence write failed: ${response.status}`);
+        await assertFirestoreResponse(response, "Online presence write");
     }
 
     async function removeOnlinePresenceFromFirestore(sessionId) {
@@ -335,7 +354,7 @@
             method: "DELETE",
             keepalive: true
         });
-        if (!response.ok && response.status !== 404) throw new Error(`Online presence delete failed: ${response.status}`);
+        if (response.status !== 404) await assertFirestoreResponse(response, "Online presence delete");
     }
 
     async function loadOnlineChatMessagesFromFirestore(chatId) {
@@ -360,7 +379,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ fields })
         });
-        if (!response.ok) throw new Error(`Online chat message write failed: ${response.status}`);
+        await assertFirestoreResponse(response, "Online chat message write");
     }
 
     async function saveOnlineChatMessage(chatId, message) {

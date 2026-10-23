@@ -10,7 +10,7 @@ The site is deployed separately through GitHub Pages. The Firebase Functions API
    Set the active Google Cloud project so the account seeder uses the same project:
 
    ```powershell
-   gcloud config set project nineteenaces-8ba08
+   gcloud config set project oneparadox-c5c48
    ```
 
 4. Put the account map in the ignored local file `data/accounts.json`. Do not commit this file or service-account credentials.
@@ -26,14 +26,14 @@ The site is deployed separately through GitHub Pages. The Firebase Functions API
 6. Deploy the backend and rules:
 
    ```powershell
-   firebase deploy --only functions,firestore:rules --project nineteenaces-8ba08
+   firebase deploy --only functions,firestore:rules --project oneparadox-c5c48
    ```
 
 ## GitHub deployment
 
 Add these repository Actions secrets before pushing to `main`:
 
-- `FIREBASE_PROJECT_ID`: the Firebase project ID.
+- `FIREBASE_PROJECT_ID`: `oneparadox-c5c48`.
 - `FIREBASE_SERVICE_ACCOUNT`: JSON for a Google service account with Firebase Functions deployment and Firestore rules deployment permissions.
 
 The Firebase workflow deploys only Functions and Firestore rules. The Pages workflow stages only public HTML, CSS, JavaScript, images, and fonts; it does not publish local seed data or credentials. Requests, password updates, and direct-chat messages use authenticated Functions endpoints; `workspaceRequests`, `accounts`, and `onlineChats` deny direct browser access.
