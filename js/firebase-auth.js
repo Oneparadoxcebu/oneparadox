@@ -1,12 +1,23 @@
 (function () {
     const firebaseConfig = {
-        apiKey: "AIzaSyA259wFRhJ89YtjrAnnyiHsebXS3cgTY-g",
-        projectId: "nineteenaces-8ba08"
+        apiKey: "AIzaSyAwN4KgKfGTRiDqiSqPaSeeyDda_4qmEmo",
+        projectId: "oneparadox-c5c48"
     };
-    const functionsBase = "https://us-central1-nineteenaces-8ba08.cloudfunctions.net/api";
+    const functionsBase = "https://us-central1-oneparadox-c5c48.cloudfunctions.net/api";
     const tokenStorageKey = "firebaseAuthTokens";
     const identityToolkitBase = "https://identitytoolkit.googleapis.com/v1";
     const secureTokenBase = "https://securetoken.googleapis.com/v1";
+
+    async function fetchFunctions(path, options) {
+        try {
+            return await fetch(`${functionsBase}${path}`, options);
+        } catch (error) {
+            console.error(`Firebase Functions request failed for ${path}.`, error);
+            throw new Error(
+                `Unable to reach the Firebase backend at ${functionsBase}. Deploy the Firebase Functions API and check its GitHub Actions run.`
+            );
+        }
+    }
 
     function readTokens() {
         try {
@@ -82,12 +93,12 @@
         headers.set("Authorization", `Bearer ${idToken}`);
         if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
-        const response = await fetch(`${functionsBase}${path}`, { ...options, headers });
+        const response = await fetchFunctions(path, { ...options, headers });
         return parseResponse(response, "Firebase service request");
     }
 
     async function signIn(usernameOrEmail, password) {
-        const response = await fetch(`${functionsBase}/login`, {
+        const response = await fetchFunctions("/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ usernameOrEmail, password })

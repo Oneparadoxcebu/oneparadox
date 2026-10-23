@@ -1,15 +1,15 @@
 (function () {
     const firebaseConfig = {
-        apiKey: "AIzaSyA259wFRhJ89YtjrAnnyiHsebXS3cgTY-g",
-        authDomain: "nineteenaces-8ba08.firebaseapp.com",
-        projectId: "nineteenaces-8ba08",
-        storageBucket: "nineteenaces-8ba08.firebasestorage.app",
+        apiKey: "AIzaSyAwN4KgKfGTRiDqiSqPaSeeyDda_4qmEmo",
+        authDomain: "oneparadox-c5c48.firebaseapp.com",
+        projectId: "oneparadox-c5c48",
+        storageBucket: "oneparadox-c5c48.firebasestorage.app",
         messagingSenderId: "1011766262049",
         appId: "1:1011766262049:web:6c2641612938379dab2660",
         measurementId: "G-P1FSYLFE5Z"
     };
 
-    const firestoreRestBase = "https://firestore.googleapis.com/v1/projects/nineteenaces-8ba08/databases/(default)/documents";
+    const firestoreRestBase = "https://firestore.googleapis.com/v1/projects/oneparadox-c5c48/databases/(default)/documents";
 
     async function firestoreFetch(url, options = {}) {
         const headers = new Headers(options.headers || {});
