@@ -1,545 +1,513 @@
 (function () {
-    const firebaseConfig = {
-        ...(window.firebaseProjectConfig || window.firebaseAuthSession?.config || {})
-    };
+    "use strict";
 
-    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-        throw new Error("Firebase project configuration is missing. Load firebase-auth.js before firebase-shared.js.");
+    if (!window.firebase || !window.firebaseConfig) {
+        throw new Error("Firebase SDK or configuration is missing.");
     }
 
-    const firestoreRestBase = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(firebaseConfig.projectId)}/databases/(default)/documents`;
+    const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(window.firebaseConfig);
+    const auth = app.auth();
+    const db = app.firestore();
+    const USERS = "users";
+    const INVENTORY = "inventory";
 
-    async function assertFirestoreResponse(response, action) {
-        if (response.ok) return;
-        const responseText = await response.text();
-        let message = responseText;
+    function profileFromSnapshot(snapshot) {
+        return snapshot.exists ? { uid: snapshot.id, ...snapshot.data() } : null;
+    }
+
+    async function getProfile(uid = auth.currentUser?.uid) {
+        if (!uid) return null;
+        return profileFromSnapshot(await db.collection(USERS).doc(uid).get());
+    }
+
+    function accountMap(profiles) {
+        return Object.fromEntries(profiles
+            .filter(profile => profile && profile.username)
+            .map(profile => [profile.username, profile]));
+    }
+
+    function cleanProfile(profile) {
+        const {
+            uid,
+            username,
+            name,
+            email,
+            role,
+            permissions,
+            office,
+            inventoryAccess,
+            disabled,
+            theme
+        } = profile;
+        return {
+            ...(uid ? { uid } : {}),
+            username: String(username || "").trim(),
+            name: String(name || "").trim(),
+            email: String(email || "").trim().toLowerCase(),
+            role: String(role || "Management"),
+            permissions: Array.isArray(permissions) ? permissions : [],
+            office: String(office || ""),
+            inventoryAccess: Array.isArray(inventoryAccess) ? inventoryAccess : [],
+            disabled: Boolean(disabled),
+            ...(theme === "light" || theme === "dark" ? { theme } : {})
+        };
+    }
+
+    function stableSerialize(value) {
+        if (Array.isArray(value)) return `[${value.map(stableSerialize).join(",")}]`;
+        if (value && typeof value === "object") {
+            return `{${Object.keys(value).filter(key => value[key] !== undefined).sort()
+                .map(key => `${JSON.stringify(key)}:${stableSerialize(value[key])}`).join(",")}}`;
+        }
+        return JSON.stringify(value);
+    }
+
+    function removeUndefined(value) {
+        if (Array.isArray(value)) return value.map(item => item === undefined ? null : removeUndefined(item));
+        if (value && typeof value === "object") {
+            const prototype = Object.getPrototypeOf(value);
+            if (prototype !== Object.prototype && prototype !== null) return value;
+            return Object.fromEntries(Object.entries(value)
+                .filter(([, item]) => item !== undefined)
+                .map(([key, item]) => [key, removeUndefined(item)]));
+        }
+        return value;
+    }
+
+    async function getProfileByUsername(username) {
+        const normalized = String(username || "").trim().toLowerCase();
+        const result = await db.collection(USERS).where("username", "==", normalized).limit(1).get();
+        return result.empty ? null : profileFromSnapshot(result.docs[0]);
+    }
+
+    async function createAccount(username, profile) {
+        const normalizedUsername = String(username || profile.username || "").trim().toLowerCase();
+        const email = String(profile.email || "").trim().toLowerCase();
+        const password = String(profile.password || "");
+        if (!normalizedUsername || !email || password.length < 6) {
+            throw new Error("A username, valid email address, and password of at least 6 characters are required.");
+        }
+
+        const existing = await getProfileByUsername(normalizedUsername);
+        if (existing) throw new Error("That username is already in use.");
+
+        const secondaryName = `oneparadox-user-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const secondaryApp = firebase.initializeApp(window.firebaseConfig, secondaryName);
+        let createdUser = null;
         try {
-            const result = JSON.parse(responseText);
-            message = result.error?.message || result.message || responseText;
+            const credential = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
+            createdUser = credential.user;
+            const clean = cleanProfile({ ...profile, username: normalizedUsername, email, uid: credential.user.uid, disabled: false });
+            await db.collection(USERS).doc(credential.user.uid).set(clean);
+            return clean;
         } catch (error) {
-            message = responseText;
-        }
-        if (response.status === 401 || response.status === 403) {
-            throw new Error(`${action} denied by Firestore (${response.status}): ${message}. Verify the signed-in account and Firestore rules in project ${firebaseConfig.projectId}.`);
-        }
-        throw new Error(`${action} failed (${response.status}): ${message || "Firestore returned an empty error response."}`);
-    }
-
-    async function firestoreFetch(url, options = {}) {
-        const headers = new Headers(options.headers || {});
-        const idToken = await window.firebaseAuthSession?.getIdToken();
-        if (idToken) {
-            headers.set("Authorization", `Bearer ${idToken}`);
-        } else if (!isLocalRequestTesting()) {
-            throw new Error("Sign in with your Firebase account to access Firestore.");
-        }
-        try {
-            return await fetch(url, { ...options, headers });
-        } catch (error) {
-            console.error("Firestore REST request could not reach Google APIs.", error);
-            throw new Error(`Could not connect to Firestore project ${firebaseConfig.projectId}. Check your network and Firebase project configuration.`);
+            if (createdUser) {
+                try {
+                    await createdUser.delete();
+                } catch (cleanupError) {
+                    console.error("Firebase Authentication account cleanup failed after profile creation failed.", cleanupError);
+                }
+            }
+            throw error;
+        } finally {
+            await secondaryApp.delete();
         }
     }
 
-    function toFirestoreValue(value) {
-        if (value === null) return { nullValue: null };
-        if (typeof value === "boolean") return { booleanValue: value };
-        if (typeof value === "number") return { doubleValue: value };
-        if (Array.isArray(value)) return { arrayValue: { values: value.map(toFirestoreValue) } };
-        if (typeof value === "object") {
-            return { mapValue: { fields: Object.keys(value).reduce((fields, key) => ({ ...fields, [key]: toFirestoreValue(value[key]) }), {}) } };
+    async function saveOne(username, profile) {
+        const current = await getProfileByUsername(username);
+        if (!current) {
+            if (!profile.password) throw new Error("A password is required when creating an account.");
+            return createAccount(username, profile);
         }
-        return { stringValue: String(value) };
+        if (String(profile.username || username).toLowerCase() !== current.username ||
+            String(profile.email || current.email).toLowerCase() !== current.email) {
+            throw new Error("Changing a username or email requires updating the Firebase Authentication account.");
+        }
+        const clean = cleanProfile({ ...current, ...profile, uid: current.uid, username: current.username, email: current.email });
+        await db.collection(USERS).doc(current.uid).set(clean);
+        return clean;
     }
 
-    function fromFirestoreValue(value) {
-        if (value.stringValue !== undefined) return value.stringValue;
-        if (value.booleanValue !== undefined) return value.booleanValue;
-        if (value.integerValue !== undefined) return Number(value.integerValue);
-        if (value.doubleValue !== undefined) return value.doubleValue;
-        if (value.nullValue !== undefined) return null;
-        if (value.arrayValue) return (value.arrayValue.values || []).map(fromFirestoreValue);
-        if (value.mapValue) return Object.keys(value.mapValue.fields || {}).reduce((object, key) => ({ ...object, [key]: fromFirestoreValue(value.mapValue.fields[key]) }), {});
-        return null;
+    async function deleteAccount() {
+        throw new Error("Firebase Spark cannot delete another user's Authentication account. Disable the account instead.");
     }
 
-    async function loadFirestoreCollection(collectionPath) {
-        const documents = [];
-        let pageToken = "";
-
-        do {
-            const params = new URLSearchParams({ key: firebaseConfig.apiKey, pageSize: "300" });
-            if (pageToken) params.set("pageToken", pageToken);
-            const response = await firestoreFetch(`${firestoreRestBase}/${collectionPath}?${params.toString()}`, { cache: "no-store" });
-            await assertFirestoreResponse(response, "Firestore collection read");
-            const result = await response.json();
-            documents.push(...(result.documents || []));
-            pageToken = result.nextPageToken || "";
-        } while (pageToken);
-
-        return documents;
+    async function loadAccounts() {
+        const current = await getProfile();
+        if (!current || current.disabled) throw new Error("Sign in with an enabled account to load user profiles.");
+        if (current.role !== "Developer") return accountMap([current]);
+        const result = await db.collection(USERS).get();
+        return accountMap(result.docs.map(profileFromSnapshot));
     }
 
-    async function loadAccountsFromFirestore() {
-        const documents = await loadFirestoreCollection("accounts");
-        return documents.reduce((accounts, document) => {
-            const username = document.name.split("/").pop();
-            accounts[username] = Object.keys(document.fields || {}).reduce((account, key) => ({ ...account, [key]: fromFirestoreValue(document.fields[key]) }), {});
-            return accounts;
-        }, {});
+    async function saveAccounts(accounts) {
+        const current = await loadAccounts();
+        const desired = accounts || {};
+        const tasks = [];
+        for (const [username, profile] of Object.entries(desired)) {
+            if (!current[username]) {
+                tasks.push(createAccount(username, profile));
+            } else {
+                const merged = cleanProfile({ ...current[username], ...profile });
+                if (JSON.stringify(merged) !== JSON.stringify(cleanProfile(current[username]))) {
+                    tasks.push(saveOne(username, profile));
+                }
+            }
+        }
+        for (const username of Object.keys(current)) {
+            if (!desired[username]) tasks.push(deleteAccount(username));
+        }
+        await Promise.all(tasks);
+        return loadAccounts();
     }
 
-    async function saveAccountsToFirestore(accounts) {
-        await Promise.all(Object.entries(accounts).map(async ([username, account]) => {
-            const response = await firestoreFetch(`${firestoreRestBase}/accounts/${encodeURIComponent(username)}?key=${firebaseConfig.apiKey}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ fields: Object.keys(account).reduce((fields, key) => ({ ...fields, [key]: toFirestoreValue(account[key]) }), {}) })
-            });
-            await assertFirestoreResponse(response, "Firestore account write");
-        }));
+    async function saveTheme(username, theme) {
+        const profile = await getProfile();
+        if (!profile || profile.username !== username || !["light", "dark"].includes(theme)) {
+            throw new Error("You can only save a theme preference for your own account.");
+        }
+        await db.collection(USERS).doc(profile.uid).update({ theme });
     }
 
-    async function saveAccountToFirestore(username, account) {
-        return saveAccountsToFirestore({ [username]: account });
+    function requireSignedIn() {
+        if (!auth.currentUser) throw new Error("You must be signed in to use Firestore.");
+        return auth.currentUser;
     }
 
-    async function deleteAccountFromFirestore(username) {
-        const response = await firestoreFetch(`${firestoreRestBase}/accounts/${encodeURIComponent(username)}?key=${firebaseConfig.apiKey}`, { method: "DELETE" });
-        await assertFirestoreResponse(response, "Firestore account delete");
-    }
-
-    async function saveAccountThemeToFirestore(username, theme) {
-        const params = new URLSearchParams({ key: firebaseConfig.apiKey, "updateMask.fieldPaths": "theme" });
-        const response = await firestoreFetch(`${firestoreRestBase}/accounts/${encodeURIComponent(username)}?${params.toString()}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fields: { theme: toFirestoreValue(theme) } })
+    function assertInventoryOffice(office) {
+        if (!["Rizal", "Cebu", "Thermal"].includes(office)) throw new Error("Unknown inventory office.");
+        return getProfile().then(profile => {
+            if (!profile || profile.disabled ||
+                (profile.role !== "Developer" && profile.office !== "Both" &&
+                    (!Array.isArray(profile.inventoryAccess) || !profile.inventoryAccess.includes(office)))) {
+                throw new Error("Your account does not have access to this inventory office.");
+            }
+            return profile;
         });
-        await assertFirestoreResponse(response, "Account theme update");
     }
 
-    async function loadAttendanceFromFirestore() {
-        const documents = await loadFirestoreCollection("attendanceRecords");
-        return documents.reduce((records, document) => {
-            const recordId = document.name.split("/").pop();
-            records[recordId] = Object.keys(document.fields || {}).reduce((record, key) => ({ ...record, [key]: fromFirestoreValue(document.fields[key]) }), {});
-            return records;
-        }, {});
-    }
-
-    async function saveAttendanceToFirestore(records) {
-        await Promise.all(Object.entries(records).map(async ([recordId, record]) => {
-            const response = await firestoreFetch(`${firestoreRestBase}/attendanceRecords/${encodeURIComponent(recordId)}?key=${firebaseConfig.apiKey}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ fields: Object.keys(record).reduce((fields, key) => ({ ...fields, [key]: toFirestoreValue(record[key]) }), {}) })
-            });
-            await assertFirestoreResponse(response, "Firestore attendance write");
-        }));
-    }
-
-    async function loadAttendanceHistoryFromFirestore() {
-        const documents = await loadFirestoreCollection("attendanceHistory");
-        return documents.map(document => ({
-            id: document.name.split("/").pop(),
-            ...Object.keys(document.fields || {}).reduce((entry, key) => ({ ...entry, [key]: fromFirestoreValue(document.fields[key]) }), {})
-        }));
-    }
-
-    async function saveAttendanceHistoryToFirestore(entry) {
-        const response = await firestoreFetch(`${firestoreRestBase}/attendanceHistory/${encodeURIComponent(entry.id)}?key=${firebaseConfig.apiKey}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fields: Object.keys(entry).reduce((fields, key) => ({ ...fields, [key]: toFirestoreValue(entry[key]) }), {}) })
-        });
-        await assertFirestoreResponse(response, "Firestore attendance history write");
-    }
-
-    async function loadAttendanceTasksFromFirestore() {
-        const documents = await loadFirestoreCollection("attendanceTasks");
-        return documents.map(document => ({
-            id: document.name.split("/").pop(),
-            ...Object.keys(document.fields || {}).reduce((task, key) => ({ ...task, [key]: fromFirestoreValue(document.fields[key]) }), {})
-        }));
-    }
-
-    async function saveAttendanceTasksToFirestore(tasks) {
-        const existingDocuments = await loadFirestoreCollection("attendanceTasks");
-        const taskIds = new Set(tasks.map(task => task.id));
-        await Promise.all([
-            ...tasks.map(async task => {
-                const response = await firestoreFetch(`${firestoreRestBase}/attendanceTasks/${encodeURIComponent(task.id)}?key=${firebaseConfig.apiKey}`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ fields: Object.keys(task).reduce((fields, key) => ({ ...fields, [key]: toFirestoreValue(task[key]) }), {}) })
-                });
-                await assertFirestoreResponse(response, "Firestore attendance task write");
-            }),
-            ...existingDocuments
-                .filter(document => !taskIds.has(document.name.split("/").pop()))
-                .map(async document => {
-                    const taskId = document.name.split("/").pop();
-                    const response = await firestoreFetch(`${firestoreRestBase}/attendanceTasks/${encodeURIComponent(taskId)}?key=${firebaseConfig.apiKey}`, { method: "DELETE" });
-                    await assertFirestoreResponse(response, "Firestore attendance task delete");
-                })
+    async function loadInventory(office) {
+        requireSignedIn();
+        await assertInventoryOffice(office);
+        const inventoryRef = db.collection(INVENTORY).doc(office);
+        const [metadata, chunks] = await Promise.all([
+            inventoryRef.get(),
+            inventoryRef.collection("chunks").orderBy(firebase.firestore.FieldPath.documentId()).get()
         ]);
+        if (!metadata.exists) return null;
+        return {
+            ...metadata.data(),
+            recordsData: chunks.docs.flatMap(snapshot => snapshot.data().records || [])
+        };
     }
 
-    async function saveAnnouncementToFirestore(announcement) {
-        const response = await firestoreFetch(`${firestoreRestBase}/announcements/${encodeURIComponent(announcement.id)}?key=${firebaseConfig.apiKey}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fields: Object.keys(announcement).reduce((fields, key) => ({ ...fields, [key]: toFirestoreValue(announcement[key]) }), {}) })
+    async function watchInventory(office, onChange, onError) {
+        requireSignedIn();
+        await assertInventoryOffice(office);
+        const inventoryRef = db.collection(INVENTORY).doc(office);
+        let metadataReady = false;
+        let chunksReady = false;
+        let metadata = null;
+        let chunks = [];
+        let firstSnapshotResolved = false;
+        let resolveInitial;
+        let rejectInitial;
+        const initial = new Promise((resolve, reject) => {
+            resolveInitial = resolve;
+            rejectInitial = reject;
         });
-        await assertFirestoreResponse(response, "Announcement write");
-    }
-
-    async function loadAnnouncementsFromFirestore(since) {
-        const documents = await loadFirestoreCollection("announcements");
-        return documents.map(document => ({
-            id: document.name.split("/").pop(),
-            ...Object.keys(document.fields || {}).reduce((announcement, key) => ({ ...announcement, [key]: fromFirestoreValue(document.fields[key]) }), {})
-        })).filter(announcement => Number(announcement.createdAt) > since)
-            .sort((first, second) => Number(first.createdAt) - Number(second.createdAt));
-    }
-
-    async function clearAttendanceFromFirestore(date) {
-        return clearAttendanceRangeFromFirestore(date, date);
-    }
-
-    async function clearAttendanceRangeFromFirestore(start, end) {
-        const records = await loadAttendanceFromFirestore();
-        const recordIds = Object.entries(records)
-            .filter(([recordId, record]) => {
-                const recordDate = record.date || recordId.split(":")[0];
-                return !start || !end || (recordDate >= start && recordDate <= end);
-            })
-            .map(([recordId]) => recordId);
-        await Promise.all(recordIds.map(async recordId => {
-            const response = await firestoreFetch(`${firestoreRestBase}/attendanceRecords/${encodeURIComponent(recordId)}?key=${firebaseConfig.apiKey}`, { method: "DELETE" });
-            await assertFirestoreResponse(response, "Firestore attendance delete");
-        }));
-    }
-
-    async function loadInventoryFromFirestore(office) {
-        const response = await firestoreFetch(`${firestoreRestBase}/inventoryData/${encodeURIComponent(office)}?key=${firebaseConfig.apiKey}`, { cache: "no-store" });
-        if (response.status === 404) return null;
-        await assertFirestoreResponse(response, "Firestore inventory read");
-        const document = await response.json();
-        return Object.keys(document.fields || {}).reduce((inventory, key) => ({ ...inventory, [key]: fromFirestoreValue(document.fields[key]) }), {});
-    }
-
-    async function saveInventoryToFirestore(office, inventory) {
-        const response = await firestoreFetch(`${firestoreRestBase}/inventoryData/${encodeURIComponent(office)}?key=${firebaseConfig.apiKey}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fields: Object.keys(inventory).reduce((fields, key) => ({ ...fields, [key]: toFirestoreValue(inventory[key]) }), {}) })
-        });
-        await assertFirestoreResponse(response, "Firestore inventory write");
-    }
-
-    async function clearInventoryFromFirestore(office) {
-        const response = await firestoreFetch(`${firestoreRestBase}/inventoryData/${encodeURIComponent(office)}?key=${firebaseConfig.apiKey}`, { method: "DELETE" });
-        if (response.status !== 404) await assertFirestoreResponse(response, "Firestore inventory delete");
-    }
-
-    async function loadInventoryHistoryFromFirestore(office) {
-        const response = await firestoreFetch(`${firestoreRestBase}/inventoryHistory/${encodeURIComponent(office)}?key=${firebaseConfig.apiKey}`, { cache: "no-store" });
-        if (response.status === 404) return [];
-        await assertFirestoreResponse(response, "Firestore inventory history read");
-        const document = await response.json();
-        return document.fields?.entries ? fromFirestoreValue(document.fields.entries) : [];
-    }
-
-    async function saveInventoryHistoryToFirestore(office, entries) {
-        const response = await firestoreFetch(`${firestoreRestBase}/inventoryHistory/${encodeURIComponent(office)}?key=${firebaseConfig.apiKey}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fields: { entries: toFirestoreValue(entries.slice(0, 200)) } })
-        });
-        await assertFirestoreResponse(response, "Firestore inventory history write");
-    }
-
-    async function loadTodoTasksFromFirestore() {
-        const documents = await loadFirestoreCollection("todoTasks");
-        return documents.map(document => ({
-            id: document.name.split("/").pop(),
-            ...Object.keys(document.fields || {}).reduce((task, key) => ({ ...task, [key]: fromFirestoreValue(document.fields[key]) }), {})
-        }));
-    }
-
-    async function saveTodoTaskToFirestore(task) {
-        const fields = Object.keys(task).filter(key => key !== "id").reduce((result, key) => ({ ...result, [key]: toFirestoreValue(task[key]) }), {});
-        const response = await firestoreFetch(`${firestoreRestBase}/todoTasks/${encodeURIComponent(task.id)}?key=${firebaseConfig.apiKey}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fields })
-        });
-        await assertFirestoreResponse(response, "Firestore to-do task write");
-    }
-
-    const workspaceRequestsStorageKey = "workspaceRequests";
-
-    function loadWorkspaceRequestsLocally() {
-        const storedRequests = localStorage.getItem(workspaceRequestsStorageKey);
-        if (!storedRequests) return [];
-
-        const requests = JSON.parse(storedRequests);
-        if (!Array.isArray(requests)) {
-            throw new Error("Locally stored workspace requests are invalid.");
-        }
-        return requests;
-    }
-
-    function saveWorkspaceRequestLocally(request) {
-        if (!request || typeof request.id !== "string" || !request.id) {
-            throw new Error("A request ID is required to save a workspace request.");
-        }
-
-        const requests = loadWorkspaceRequestsLocally();
-        const existingIndex = requests.findIndex(existingRequest => existingRequest.id === request.id);
-        if (existingIndex >= 0) {
-            requests[existingIndex] = request;
-        } else {
-            requests.push(request);
-        }
-        localStorage.setItem(workspaceRequestsStorageKey, JSON.stringify(requests));
-    }
-
-    function deleteWorkspaceRequestLocally(requestId) {
-        if (typeof requestId !== "string" || !requestId) {
-            throw new Error("A request ID is required to delete a workspace request.");
-        }
-
-        const requests = loadWorkspaceRequestsLocally();
-        const remainingRequests = requests.filter(request => request.id !== requestId);
-        if (remainingRequests.length === requests.length) {
-            throw new Error("The selected workspace request could not be found.");
-        }
-        localStorage.setItem(workspaceRequestsStorageKey, JSON.stringify(remainingRequests));
-    }
-
-    function isLocalRequestTesting() {
-        const hostname = window.location.hostname || "";
-        return (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]") &&
-            !sessionStorage.getItem("firebaseAuthTokens");
-    }
-
-    async function deleteTodoTaskFromFirestore(taskId) {
-        const response = await firestoreFetch(`${firestoreRestBase}/todoTasks/${encodeURIComponent(taskId)}?key=${firebaseConfig.apiKey}`, { method: "DELETE" });
-        if (response.status !== 404) await assertFirestoreResponse(response, "Firestore to-do task delete");
-    }
-
-    async function loadOnlinePresenceFromFirestore() {
-        const documents = await loadFirestoreCollection("onlinePresence");
-        return documents.map(document => ({
-            id: document.name.split("/").pop(),
-            ...Object.keys(document.fields || {}).reduce((entry, key) => ({ ...entry, [key]: fromFirestoreValue(document.fields[key]) }), {})
-        }));
-    }
-
-    async function saveOnlinePresenceToFirestore(sessionId, presence) {
-        const fields = Object.keys(presence).reduce((result, key) => ({ ...result, [key]: toFirestoreValue(presence[key]) }), {});
-        const response = await firestoreFetch(`${firestoreRestBase}/onlinePresence/${encodeURIComponent(sessionId)}?key=${firebaseConfig.apiKey}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fields })
-        });
-        await assertFirestoreResponse(response, "Online presence write");
-    }
-
-    async function removeOnlinePresenceFromFirestore(sessionId) {
-        const response = await firestoreFetch(`${firestoreRestBase}/onlinePresence/${encodeURIComponent(sessionId)}?key=${firebaseConfig.apiKey}`, {
-            method: "DELETE",
-            keepalive: true
-        });
-        if (response.status !== 404) await assertFirestoreResponse(response, "Online presence delete");
-    }
-
-    async function loadOnlineChatMessagesFromFirestore(chatId) {
-        const documents = await loadFirestoreCollection(`onlineChats/${encodeURIComponent(chatId)}/messages`);
-        return documents.map(document => ({
-            id: document.name.split("/").pop(),
-            ...Object.keys(document.fields || {}).reduce((message, key) => ({ ...message, [key]: fromFirestoreValue(document.fields[key]) }), {})
-        }));
-    }
-
-    async function loadOnlineChatMessages(chatId) {
-        if (isLocalRequestTesting()) return loadOnlineChatMessagesFromFirestore(chatId);
-        const result = await window.firebaseAuthSession.api(`/chats/${encodeURIComponent(chatId)}/messages`, { method: "GET" });
-        if (!Array.isArray(result.messages)) throw new Error("The chat service returned an invalid message list.");
-        return result.messages;
-    }
-
-    async function saveOnlineChatMessageToFirestore(chatId, message) {
-        const fields = Object.keys(message).filter(key => key !== "id").reduce((result, key) => ({ ...result, [key]: toFirestoreValue(message[key]) }), {});
-        const response = await firestoreFetch(`${firestoreRestBase}/onlineChats/${encodeURIComponent(chatId)}/messages/${encodeURIComponent(message.id)}?key=${firebaseConfig.apiKey}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fields })
-        });
-        await assertFirestoreResponse(response, "Online chat message write");
-    }
-
-    async function saveOnlineChatMessage(chatId, message) {
-        if (isLocalRequestTesting()) return saveOnlineChatMessageToFirestore(chatId, message);
-        await window.firebaseAuthSession.api(`/chats/${encodeURIComponent(chatId)}/messages`, {
-            method: "POST",
-            body: JSON.stringify(message)
-        });
-    }
-
-    window.sharedAttendance = {
-        ready: Promise.resolve(),
-        async load() {
-            return loadAttendanceFromFirestore();
-        },
-        async save(records) {
-            const normalizedRecords = Object.entries(records).reduce((normalized, [key, record]) => ({
-                ...normalized,
-                [key]: { ...record, date: record.date || key.split(":")[0] }
-            }), {});
-            return saveAttendanceToFirestore(normalizedRecords);
-        },
-        async loadHistory() {
-            return loadAttendanceHistoryFromFirestore();
-        },
-        async saveHistory(entry) {
-            return saveAttendanceHistoryToFirestore(entry);
-        },
-        async loadTasks() {
-            return loadAttendanceTasksFromFirestore();
-        },
-        async saveTasks(tasks) {
-            return saveAttendanceTasksToFirestore(tasks);
-        },
-        async clearDate(date) {
-            return clearAttendanceFromFirestore(date);
-        },
-        async clearRange(start, end) {
-            return clearAttendanceRangeFromFirestore(start, end);
-        },
-        async loadAccounts() {
-            if (!isLocalRequestTesting() && window.firebaseAuthSession) {
-                const result = await window.firebaseAuthSession.api("/accounts", { method: "GET" });
-                if (!result.accounts || typeof result.accounts !== "object") throw new Error("The account service returned an invalid account list.");
-                return result.accounts;
+        const emit = () => {
+            if (!metadataReady || !chunksReady) return;
+            const value = metadata ? { ...metadata, recordsData: chunks.flatMap(chunk => chunk.records || []) } : null;
+            onChange(value);
+            if (!firstSnapshotResolved) {
+                firstSnapshotResolved = true;
+                resolveInitial(value);
             }
-            return loadAccountsFromFirestore();
-        },
-        async saveAccounts(accounts) {
-            if (!isLocalRequestTesting() && window.firebaseAuthSession) {
-                const result = await window.firebaseAuthSession.api("/accounts", {
-                    method: "PUT",
-                    body: JSON.stringify({ accounts })
-                });
-                if (!result.accounts) throw new Error("The account service did not return the saved accounts.");
-                return result.accounts;
+        };
+        const fail = error => {
+            if (!firstSnapshotResolved) {
+                firstSnapshotResolved = true;
+                rejectInitial(error);
             }
-            return saveAccountsToFirestore(accounts);
-        },
-        async deleteAccount(username) {
-            if (!isLocalRequestTesting() && window.firebaseAuthSession) {
-                return window.firebaseAuthSession.api(`/accounts/${encodeURIComponent(username)}`, { method: "DELETE" });
+            onError(error);
+        };
+        const stopMetadata = inventoryRef.onSnapshot(snapshot => {
+            metadata = snapshot.exists ? snapshot.data() : null;
+            metadataReady = true;
+            emit();
+        }, fail);
+        const stopChunks = inventoryRef.collection("chunks")
+            .orderBy(firebase.firestore.FieldPath.documentId())
+            .onSnapshot(snapshot => {
+                chunks = snapshot.docs.map(doc => doc.data());
+                chunksReady = true;
+                emit();
+            }, fail);
+        const stop = () => {
+            stopMetadata();
+            stopChunks();
+        };
+        stop.initial = initial;
+        return stop;
+    }
+
+    function splitRecords(records) {
+        const chunks = [];
+        let chunk = [];
+        let size = 2;
+        for (const record of records) {
+            const recordSize = new TextEncoder().encode(JSON.stringify(record)).length + 1;
+            if (recordSize > 700000) throw new Error("An inventory record exceeds the supported Firestore document size.");
+            if (chunk.length && (chunk.length >= 100 || size + recordSize > 700000)) {
+                chunks.push(chunk);
+                chunk = [];
+                size = 2;
             }
-            return deleteAccountFromFirestore(username);
+            chunk.push(record);
+            size += recordSize;
         }
-    };
+        if (chunk.length) chunks.push(chunk);
+        return chunks;
+    }
 
-    window.sharedInventory = {
-        ready: Promise.resolve(),
-        load: office => loadInventoryFromFirestore(office),
-        save: (office, inventory) => saveInventoryToFirestore(office, inventory),
-        clear: office => clearInventoryFromFirestore(office),
-        loadHistory: office => loadInventoryHistoryFromFirestore(office),
-        saveHistory: (office, entries) => saveInventoryHistoryToFirestore(office, entries)
-    };
-
-    window.sharedTodoList = {
-        ready: Promise.resolve(),
-        load: () => loadTodoTasksFromFirestore(),
-        save: task => saveTodoTaskToFirestore(task),
-        delete: taskId => deleteTodoTaskFromFirestore(taskId)
-    };
-
-    window.sharedRequests = {
-        ready: Promise.resolve(),
-        storageKey: workspaceRequestsStorageKey,
-        async load() {
-            if (isLocalRequestTesting()) return loadWorkspaceRequestsLocally();
-            const result = await window.firebaseAuthSession.api("/requests", { method: "GET" });
-            if (!Array.isArray(result.requests)) throw new Error("The request service returned an invalid response.");
-            return result.requests;
-        },
-        async create(request) {
-            if (isLocalRequestTesting()) {
-                saveWorkspaceRequestLocally(request);
-                return request;
+    async function saveInventory(office, inventory) {
+        requireSignedIn();
+        await assertInventoryOffice(office);
+        const inventoryRef = db.collection(INVENTORY).doc(office);
+        const chunksRef = inventoryRef.collection("chunks");
+        const existing = await chunksRef.get();
+        const records = Array.isArray(inventory.recordsData) ? inventory.recordsData : [];
+        const chunks = splitRecords(records);
+        const writes = [];
+        chunks.forEach((chunk, index) => {
+            const id = String(index).padStart(5, "0");
+            const payload = { records: removeUndefined(chunk) };
+            const old = existing.docs.find(snapshot => snapshot.id === id);
+            if (!old || stableSerialize(old.data()) !== stableSerialize(payload)) {
+                writes.push({ type: "set", ref: chunksRef.doc(id), payload });
             }
-            const result = await window.firebaseAuthSession.api("/requests", {
-                method: "POST",
-                body: JSON.stringify(request)
+        });
+        existing.docs.forEach(snapshot => {
+            if (Number(snapshot.id) >= chunks.length) writes.push({ type: "delete", ref: snapshot.ref });
+        });
+        for (let offset = 0; offset < writes.length; offset += 450) {
+            const batch = db.batch();
+            writes.slice(offset, offset + 450).forEach(write => {
+                if (write.type === "delete") batch.delete(write.ref);
+                else batch.set(write.ref, write.payload);
             });
-            if (!result.request) throw new Error("The request service did not confirm the saved request.");
-            return result.request;
-        },
-        async save(request) {
-            if (isLocalRequestTesting()) {
-                saveWorkspaceRequestLocally(request);
-                return;
-            }
-            if (!request || typeof request.id !== "string" || !request.id) {
-                throw new Error("A request ID is required to update a workspace request.");
-            }
-            await window.firebaseAuthSession.api(`/requests/${encodeURIComponent(request.id)}`, {
-                method: "PATCH",
-                body: JSON.stringify(request)
-            });
-        },
-        async delete(requestId) {
-            if (isLocalRequestTesting()) {
-                deleteWorkspaceRequestLocally(requestId);
-                return;
-            }
-            await window.firebaseAuthSession.api(`/requests/${encodeURIComponent(requestId)}`, { method: "DELETE" });
+            await batch.commit();
         }
-    };
+        await inventoryRef.set({
+            summaryData: removeUndefined(inventory.summaryData || {}),
+            updatedAt: inventory.updatedAt || new Date().toISOString(),
+            recordCount: records.length
+        });
+    }
 
-    window.sharedOnlinePresence = {
-        ready: Promise.resolve(),
-        load: () => loadOnlinePresenceFromFirestore(),
-        save: (sessionId, presence) => saveOnlinePresenceToFirestore(sessionId, presence),
-        remove: sessionId => removeOnlinePresenceFromFirestore(sessionId)
-    };
+    async function loadHistory(office) {
+        requireSignedIn();
+        await assertInventoryOffice(office);
+        const snapshot = await db.collection(INVENTORY).doc(office).collection("history")
+            .orderBy("timestamp", "desc").limit(200).get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
 
-    window.sharedOnlineChat = {
-        ready: Promise.resolve(),
-        load: chatId => loadOnlineChatMessages(chatId),
-        send: (chatId, message) => saveOnlineChatMessage(chatId, message)
-    };
+    async function saveHistory(office, history) {
+        requireSignedIn();
+        await assertInventoryOffice(office);
+        const profile = await getProfile();
+        const historyRef = db.collection(INVENTORY).doc(office).collection("history");
+        const existing = await historyRef.get();
+        const entries = (Array.isArray(history) ? history : [])
+            .filter(entry => (entry.username || entry.user) === profile.username)
+            .slice(0, 200);
+        const wanted = new Set();
+        const writes = [];
+        entries.forEach(entry => {
+            const id = encodeURIComponent(`${entry.timestamp || ""}_${entry.username || entry.user || ""}_${entry.serialNumber || ""}_${entry.field || ""}`).slice(0, 500);
+            wanted.add(id);
+            const payload = removeUndefined({ ...entry });
+            if (!existing.docs.some(doc => doc.id === id && stableSerialize(doc.data()) === stableSerialize(payload))) {
+                writes.push({ type: "set", ref: historyRef.doc(id), payload });
+            }
+        });
+        existing.docs.forEach(doc => {
+            if (!wanted.has(doc.id) && doc.data().username === profile.username) {
+                writes.push({ type: "delete", ref: doc.ref });
+            }
+        });
+        for (let offset = 0; offset < writes.length; offset += 450) {
+            const batch = db.batch();
+            writes.slice(offset, offset + 450).forEach(write => {
+                if (write.type === "delete") batch.delete(write.ref);
+                else batch.set(write.ref, write.payload);
+            });
+            await batch.commit();
+        }
+    }
 
-    window.sharedAnnouncements = {
-        send: announcement => saveAnnouncementToFirestore(announcement),
-        loadSince: timestamp => loadAnnouncementsFromFirestore(timestamp)
-    };
+    async function loadPresence() {
+        requireSignedIn();
+        const snapshot = await db.collection("onlinePresence").get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
 
+    async function savePresence(sessionId, data) {
+        const user = requireSignedIn();
+        await db.collection("onlinePresence").doc(`${user.uid}_${sessionId}`).set({ ...data, uid: user.uid });
+    }
+
+    async function removePresence(sessionId) {
+        const user = requireSignedIn();
+        await db.collection("onlinePresence").doc(`${user.uid}_${sessionId}`).delete();
+    }
+
+    function canSubmitRequests(profile) {
+        return profile.role === "Developer" ||
+            (Array.isArray(profile.inventoryAccess) && profile.inventoryAccess.includes("Requests"));
+    }
+
+    function canManageRequests(profile) {
+        return profile.role === "Developer" ||
+            (Array.isArray(profile.permissions) && profile.permissions.includes("inventory") &&
+                Array.isArray(profile.inventoryAccess) && profile.inventoryAccess.includes("Thermal"));
+    }
+
+    async function loadRequests() {
+        const profile = await getProfile();
+        const user = requireSignedIn();
+        if (!profile || profile.disabled || (!canSubmitRequests(profile) && !canManageRequests(profile))) {
+            throw new Error("Your account does not have access to Requests.");
+        }
+
+        let query = db.collection("workspaceRequests");
+        if (!canManageRequests(profile)) query = query.where("createdByUid", "==", user.uid);
+        const snapshot = await query.get();
+        return snapshot.docs
+            .map(document => ({ id: document.id, ...document.data() }))
+            .sort((first, second) => String(second.createdAt || "").localeCompare(String(first.createdAt || "")));
+    }
+
+    async function createRequest(input) {
+        const profile = await getProfile();
+        const user = requireSignedIn();
+        if (!profile || profile.disabled || !canSubmitRequests(profile)) {
+            throw new Error("Your account does not have permission to submit Requests.");
+        }
+
+        const reference = db.collection("workspaceRequests").doc();
+        const request = {
+            id: reference.id,
+            item: "Thermal Paper",
+            quantity: Number(input.quantity),
+            unit: String(input.unit || ""),
+            station: String(input.station || "").trim(),
+            requestee: String(input.requestee || "").trim(),
+            notes: String(input.notes || "").trim(),
+            requestedBy: profile.name || profile.username,
+            requestedByUsername: profile.username,
+            createdByUid: user.uid,
+            status: "Pending",
+            createdAt: new Date().toISOString()
+        };
+        await reference.set(request);
+        return request;
+    }
+
+    async function saveRequest(request) {
+        const profile = await getProfile();
+        if (!profile || profile.disabled || !canManageRequests(profile)) {
+            throw new Error("Thermal Inventory access is required to manage Requests.");
+        }
+        if (!request?.id || !["Pending", "Approved", "Rejected"].includes(request.status)) {
+            throw new Error("A valid request ID and status are required.");
+        }
+        const rejectionNote = String(request.rejectionNote || "").trim();
+        if (rejectionNote.length > 500) throw new Error("Rejection notes cannot exceed 500 characters.");
+        await db.collection("workspaceRequests").doc(request.id).update({
+            status: request.status,
+            rejectionNote
+        });
+    }
+
+    async function deleteRequest(requestId) {
+        const profile = await getProfile();
+        if (!profile || profile.disabled || !canManageRequests(profile)) {
+            throw new Error("Thermal Inventory access is required to manage Requests.");
+        }
+        if (!requestId) throw new Error("A request ID is required to delete a request.");
+        await db.collection("workspaceRequests").doc(requestId).delete();
+    }
+
+    async function loadChat(chatId) {
+        const profile = await getProfile();
+        if (!profile || profile.disabled) throw new Error("An enabled account is required to load chat.");
+        const messages = db.collection("onlineChats").doc(chatId).collection("messages");
+        const [sent, received] = await Promise.all([
+            messages.where("senderUsername", "==", profile.username).get(),
+            messages.where("recipientUsername", "==", profile.username).get()
+        ]);
+        const unique = new Map();
+        [...sent.docs, ...received.docs].forEach(doc => unique.set(doc.id, { id: doc.id, ...doc.data() }));
+        return [...unique.values()].sort((first, second) => Number(first.createdAt) - Number(second.createdAt));
+    }
+
+    async function watchChat(chatId, onChange, onError) {
+        const profile = await getProfile();
+        if (!profile || profile.disabled) throw new Error("An enabled account is required to load chat.");
+        const messages = db.collection("onlineChats").doc(chatId).collection("messages");
+        let sent = [];
+        let received = [];
+        const emit = () => {
+            const unique = new Map();
+            [...sent, ...received].forEach(doc => unique.set(doc.id, { id: doc.id, ...doc.data() }));
+            onChange([...unique.values()].sort((first, second) => Number(first.createdAt) - Number(second.createdAt)));
+        };
+        const stopSent = messages.where("senderUsername", "==", profile.username).onSnapshot(snapshot => {
+            sent = snapshot.docs;
+            emit();
+        }, onError);
+        const stopReceived = messages.where("recipientUsername", "==", profile.username).onSnapshot(snapshot => {
+            received = snapshot.docs;
+            emit();
+        }, onError);
+        return () => {
+            stopSent();
+            stopReceived();
+        };
+    }
+
+    async function sendChat(chatId, data) {
+        const profile = await getProfile();
+        if (!profile || profile.disabled || data.senderUsername !== profile.username) {
+            throw new Error("The message sender does not match the signed-in account.");
+        }
+        await db.collection("onlineChats").doc(chatId).collection("messages").doc(data.id).set(removeUndefined(data));
+    }
+
+    window.firebaseApp = app;
+    window.firebaseAuth = auth;
+    window.firebaseDb = db;
+    window.firebaseProfiles = { get: getProfile, getByUsername: getProfileByUsername };
     window.sharedAccounts = {
-        ready: window.sharedAttendance.ready,
-        load: () => window.sharedAttendance.loadAccounts(),
-        save: accounts => window.sharedAttendance.saveAccounts(accounts),
-        saveOne: (username, account) => isLocalRequestTesting()
-            ? saveAccountToFirestore(username, account)
-            : window.firebaseAuthSession.api(`/accounts/${encodeURIComponent(username)}`, {
-                method: "POST",
-                body: JSON.stringify({ account })
-            }),
-        saveTheme: (username, theme) => isLocalRequestTesting()
-            ? saveAccountThemeToFirestore(username, theme)
-            : window.firebaseAuthSession.api("/account/theme", {
-                method: "PATCH",
-                body: JSON.stringify({ theme })
-            }),
-        delete: username => window.sharedAttendance.deleteAccount(username)
+        load: loadAccounts,
+        save: saveAccounts,
+        saveOne,
+        create: createAccount,
+        delete: deleteAccount,
+        saveTheme
+    };
+    window.sharedInventory = { load: loadInventory, watch: watchInventory, save: saveInventory, loadHistory, saveHistory };
+    window.sharedOnlinePresence = { load: loadPresence, save: savePresence, remove: removePresence };
+    window.sharedOnlineChat = { load: loadChat, watch: watchChat, send: sendChat };
+    window.sharedRequests = {
+        storageKey: "workspaceRequests",
+        load: loadRequests,
+        create: createRequest,
+        save: saveRequest,
+        delete: deleteRequest
     };
 })();

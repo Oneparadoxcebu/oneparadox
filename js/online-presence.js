@@ -1,10 +1,11 @@
-(function () {
+(async function () {
     "use strict";
 
+    if (window.authSession) await window.authSession.ready;
     if (window.self !== window.top || !window.sharedOnlinePresence) return;
 
-    const HEARTBEAT_INTERVAL_MS = 60000;
-    const ONLINE_WINDOW_MS = 180000;
+    const HEARTBEAT_INTERVAL_MS = 300000;
+    const ONLINE_WINDOW_MS = 600000;
     const OFFICES = ["Rizal", "Cebu"];
     const username = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser");
     const accounts = JSON.parse(localStorage.getItem("userAccounts") || "{}");
@@ -18,7 +19,7 @@
         ? window.crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const displayName = account.name || username;
-    const isDeveloper = account.role === "Developer" || username.toLowerCase() === "admin";
+    const isDeveloper = account.role === "Developer";
     const permissions = new Set(Array.isArray(account.permissions) ? account.permissions : []);
     const userChatOffices = isDeveloper
         ? [...OFFICES]
@@ -96,11 +97,12 @@
     let activeChatPerson = null;
     let activeChatOffice = "";
     let chatOpenRequest = 0;
-    let chatRequestInProgress = false;
+    let activeChatUnsubscribe = null;
 
     function setOpen(isOpen) {
         panel.hidden = !isOpen;
         toggleButton.setAttribute("aria-expanded", String(isOpen));
+        if (isOpen) void refreshPresence(true);
     }
 
     function escapeHtml(value) {
@@ -160,27 +162,12 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    async function refreshChat() {
-        if (!activeChatId || chatWindow.hidden || chatRequestInProgress) return;
-        chatRequestInProgress = true;
-        try {
-            const messages = await window.sharedOnlineChat.load(activeChatId);
-            if (!chatWindow.hidden && activeChatId) {
-                renderChatMessages(messages);
-                setChatStatus("");
-            }
-        } catch (error) {
-            setChatStatus("Chat is unavailable. Check the onlineChats Firestore rule and Firebase quota.", true);
-            console.warn("Online chat could not be refreshed.", error);
-        } finally {
-            chatRequestInProgress = false;
-        }
-    }
-
     async function openChatWith(person) {
         if (!person?.username || String(person.username).toLowerCase() === username.toLowerCase()) return;
         if (!userChatOffices.includes(selectedOffice) || !Array.isArray(person.chatOffices) || !person.chatOffices.includes(selectedOffice)) return;
         const requestId = ++chatOpenRequest;
+        if (activeChatUnsubscribe) activeChatUnsubscribe();
+        activeChatUnsubscribe = null;
         activeChatPerson = person;
         activeChatOffice = selectedOffice;
         activeChatId = "";
@@ -196,7 +183,16 @@
             const chatId = await createChatId(person.username, activeChatOffice);
             if (requestId !== chatOpenRequest) return;
             activeChatId = chatId;
-            await refreshChat();
+            const unsubscribe = await window.sharedOnlineChat.watch(chatId, messages => {
+                if (requestId !== chatOpenRequest || activeChatId !== chatId) return;
+                renderChatMessages(messages);
+                setChatStatus("");
+            }, error => {
+                setChatStatus("Chat is unavailable. Check the onlineChats Firestore rule and Firebase quota.", true);
+                console.warn("Online chat listener failed.", error);
+            });
+            if (requestId !== chatOpenRequest) unsubscribe();
+            else activeChatUnsubscribe = unsubscribe;
         } catch (error) {
             setChatStatus("Unable to open this chat. Try again.", true);
             console.warn("Online chat could not be opened.", error);
@@ -297,7 +293,7 @@
         tab.setAttribute("aria-selected", String(tab.dataset.officeTab === selectedOffice));
     });
 
-    async function refreshPresence() {
+    async function refreshPresence(refreshList = false) {
         if (requestInProgress || Date.now() < retryPresenceAfter) return;
         requestInProgress = true;
         try {
@@ -309,13 +305,15 @@
                 chatOffices: userChatOffices,
                 lastSeen: Date.now()
             });
-            const now = Date.now();
-            const records = await window.sharedOnlinePresence.load();
-            cachedOnlinePeople = records.filter(person => Number(person.lastSeen) >= now - ONLINE_WINDOW_MS);
             presenceAvailable = true;
             consecutivePresenceFailures = 0;
             retryPresenceAfter = 0;
-            renderPeople();
+            if (refreshList && !panel.hidden) {
+                const now = Date.now();
+                const records = await window.sharedOnlinePresence.load();
+                cachedOnlinePeople = records.filter(person => Number(person.lastSeen) >= now - ONLINE_WINDOW_MS);
+                renderPeople();
+            }
         } catch (error) {
             presenceAvailable = false;
             consecutivePresenceFailures += 1;
@@ -345,6 +343,8 @@
     });
     chatWindow.querySelector(".online-chat-close").addEventListener("click", () => {
         chatOpenRequest += 1;
+        if (activeChatUnsubscribe) activeChatUnsubscribe();
+        activeChatUnsubscribe = null;
         chatWindow.hidden = true;
         activeChatId = "";
         activeChatPerson = null;
@@ -371,7 +371,6 @@
             });
             chatInput.value = "";
             setChatStatus("");
-            await refreshChat();
         } catch (error) {
             setChatStatus("Message could not be sent. Check the onlineChats Firestore rule and Firebase quota.", true);
             console.warn("Online chat message could not be sent.", error);
@@ -387,14 +386,15 @@
         if (event.key === "Escape") setOpen(false);
     });
     document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") void refreshPresence();
+        if (document.visibilityState === "visible") void refreshPresence(!panel.hidden);
     });
     window.addEventListener("pagehide", () => {
-        void window.sharedOnlinePresence.remove(sessionId).catch(() => {});
+        void window.sharedOnlinePresence.remove(sessionId).catch(error => {
+            console.warn("Online presence could not be removed on page exit.", error);
+        });
     }, { once: true });
 
     setOffice(selectedOffice);
     void refreshPresence();
-    window.setInterval(() => void refreshPresence(), HEARTBEAT_INTERVAL_MS);
-    window.setInterval(() => void refreshChat(), 4000);
+    window.setInterval(() => void refreshPresence(!panel.hidden), HEARTBEAT_INTERVAL_MS);
 })();

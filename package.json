@@ -1,15 +1,8 @@
 {
-  "name": "r2-lucky9-games",
+  "name": "one-paradox",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "firebase": "^12.19.0",
-    "lucide": "^1.48.0"
-  },
-  "overrides": {
-    "@grpc/grpc-js": "^1.13.6"
+    "check": "node --check js/firebase-config.js && node --check js/firebase-shared.js && node --check js/auth-session.js && node --check js/login.js && node --check js/change-password.js && node --check js/online-presence.js && node --check functions/index.js"
   }
 }

@@ -3,6 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js?v=20261024-1"></script>
+    <script src="js/firebase-shared.js?v=20261024-3"></script>
+    <script src="js/auth-session.js?v=20260921-2"></script>
     <meta name="description" content="Workspace Requests">
     <title>Requests</title>
     <link rel="icon" type="image/x-icon" href="images/icon256.ico">
@@ -119,12 +125,12 @@
     </div>
 
     <script src="js/bootstrap.bundle.min.js"></script>
-    <script src="js/auth-session.js?v=20260921-2"></script>
-    <script src="js/firebase-auth.js?v=20261023-7"></script>
-    <script src="js/firebase-shared.js?v=20261023-7"></script>
     <script src="js/password-security.js?v=20260919-1"></script>
     <script src="js/change-password.js?v=20261023-2"></script>
     <script>
+        (async function () {
+        if (window.authSession) await window.authSession.ready;
+        if (window.authSession && !window.authSession.get()) return;
         const username = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "User";
         const accounts = JSON.parse(localStorage.getItem("userAccounts") || "{}");
         const account = accounts[username];
@@ -214,7 +220,8 @@
                 renderSubmittedRequests(await window.sharedRequests.load());
             } catch (error) {
                 console.error("Unable to load submitted Thermal Paper requests.", error);
-                submittedRequestsBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Unable to load requests. Please try refreshing the page.</td></tr>';
+                const reason = error instanceof Error ? error.message : String(error);
+                submittedRequestsBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Unable to load requests: ${escapeRequestHtml(reason)}</td></tr>`;
             }
         }
 
@@ -255,9 +262,7 @@
                 await window.sharedRequests.create(request);
                 requestForm.reset();
                 document.getElementById("thermalPaperUnit").value = "Boxes";
-                requestFormMessage.textContent = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-                    ? "Request saved locally in this browser."
-                    : "Request submitted successfully.";
+                requestFormMessage.textContent = "Request submitted successfully and saved to Firebase.";
                 await loadSubmittedRequests();
             } catch (error) {
                 console.error("Unable to submit Thermal Paper request.", error);
@@ -278,6 +283,7 @@
             window.authSession.logout();
             window.location.href = "index.html";
         });
+        })();
     </script>
 </body>
 </html>

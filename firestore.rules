@@ -1,76 +1,168 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
       return request.auth != null;
     }
 
-    function isDeveloper() {
-      return signedIn() && request.auth.token.role == "Developer";
+    function profilePath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
     }
 
-    function hasPermission(permission) {
-      return isDeveloper() ||
-        (signedIn() &&
-          request.auth.token.permissions is list &&
-          permission in request.auth.token.permissions);
+    function enabledUser() {
+      return signedIn()
+        && exists(profilePath(request.auth.uid))
+        && get(profilePath(request.auth.uid)).data.disabled == false;
     }
 
-    function hasInventoryAccess(office) {
-      return isDeveloper() ||
-        (hasPermission("inventory") &&
-          request.auth.token.inventoryAccess is list &&
-          office in request.auth.token.inventoryAccess);
+    function currentProfile() {
+      return get(profilePath(request.auth.uid)).data;
     }
 
-    match /workspaceRequests/{requestId} {
-      allow read, write: if false;
+    function isAdmin() {
+      return enabledUser() && currentProfile().role == 'Developer';
     }
 
-    match /accounts/{username} {
-      allow read, write: if false;
+    function canAccessOffice(office) {
+      return enabledUser()
+        && (isAdmin()
+          || (currentProfile().permissions is list
+            && 'inventory' in currentProfile().permissions
+            && (currentProfile().office == 'Both'
+              || (currentProfile().inventoryAccess is list
+                && office in currentProfile().inventoryAccess))));
     }
 
-    match /inventoryData/{office} {
-      allow read, write: if hasInventoryAccess(office);
+    function canChatInOffice(office) {
+      return enabledUser()
+        && (isAdmin()
+          || (currentProfile().permissions is list
+            && (('chatRizal' in currentProfile().permissions && office == 'Rizal')
+              || ('chatCebu' in currentProfile().permissions && office == 'Cebu'))));
     }
 
-    match /inventoryHistory/{office} {
-      allow read, write: if hasInventoryAccess(office);
+    function canSubmitRequests() {
+      return enabledUser()
+        && (isAdmin()
+          || (currentProfile().inventoryAccess is list
+            && 'Requests' in currentProfile().inventoryAccess));
     }
 
-    match /attendanceRecords/{recordId} {
-      allow read, write: if hasPermission("dashboard") || hasPermission("attendance");
+    function canManageRequests() {
+      return enabledUser()
+        && (isAdmin()
+          || (currentProfile().permissions is list
+            && 'inventory' in currentProfile().permissions
+            && currentProfile().inventoryAccess is list
+            && 'Thermal' in currentProfile().inventoryAccess));
     }
 
-    match /attendanceHistory/{entryId} {
-      allow read, write: if hasPermission("dashboard") || hasPermission("attendance");
+    match /users/{uid} {
+      allow get: if (signedIn() && request.auth.uid == uid)
+        || (enabledUser() && isAdmin());
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'uid', 'username', 'name', 'email', 'role', 'permissions',
+          'office', 'inventoryAccess', 'disabled', 'theme'
+        ]);
+      allow update: if isAdmin()
+          && request.resource.data.keys().hasOnly([
+            'uid', 'username', 'name', 'email', 'role', 'permissions',
+            'office', 'inventoryAccess', 'disabled', 'theme'
+          ])
+        || enabledUser()
+          && request.auth.uid == uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['theme'])
+          && request.resource.data.theme in ['light', 'dark'];
+      allow delete: if isAdmin();
     }
 
-    match /attendanceTasks/{taskId} {
-      allow read, write: if hasPermission("dashboard") || hasPermission("attendance");
-    }
+    match /inventory/{office} {
+      allow read, write: if canAccessOffice(office);
 
-    match /announcements/{announcementId} {
-      allow read: if signedIn();
-      allow write: if isDeveloper();
-    }
+      match /chunks/{chunkId} {
+        allow read, write: if canAccessOffice(office);
+      }
 
-    match /todoTasks/{taskId} {
-      allow read, write: if hasPermission("dashboard") || hasPermission("analytics");
+      match /history/{entryId} {
+        allow read: if canAccessOffice(office);
+        allow create, update: if canAccessOffice(office)
+          && (request.resource.data.username == currentProfile().username
+            || request.resource.data.user == currentProfile().username);
+        allow delete: if canAccessOffice(office)
+          && (resource.data.username == currentProfile().username
+            || resource.data.user == currentProfile().username);
+      }
     }
 
     match /onlinePresence/{sessionId} {
-      allow read: if signedIn();
-      allow create, update: if signedIn() &&
-        request.resource.data.username == request.auth.token.username;
-      allow delete: if signedIn() &&
-        resource.data.username == request.auth.token.username;
+      allow read: if enabledUser();
+      allow create, update: if enabledUser()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.username == currentProfile().username
+        && request.resource.data.keys().hasOnly([
+          'uid', 'username', 'name', 'role', 'offices', 'chatOffices', 'lastSeen'
+        ]);
+      allow delete: if enabledUser() && resource.data.uid == request.auth.uid;
     }
 
     match /onlineChats/{chatId}/messages/{messageId} {
-      allow read, write: if false;
+      allow read: if enabledUser()
+        && (resource.data.senderUsername == currentProfile().username
+          || resource.data.recipientUsername == currentProfile().username);
+      allow create: if enabledUser()
+        && request.resource.data.senderUsername == currentProfile().username
+        && canChatInOffice(request.resource.data.office)
+        && request.resource.data.senderName == currentProfile().name
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 1000
+        && request.resource.data.keys().hasOnly([
+          'id', 'senderUsername', 'senderName', 'recipientUsername',
+          'office', 'text', 'createdAt'
+        ]);
+      allow update, delete: if false;
+    }
+
+    match /workspaceRequests/{requestId} {
+      allow get, list: if canManageRequests()
+        || (canSubmitRequests() && resource.data.createdByUid == request.auth.uid);
+      allow create: if canSubmitRequests()
+        && request.resource.data.keys().hasAll([
+          'id', 'item', 'quantity', 'unit', 'station', 'requestee', 'notes',
+          'requestedBy', 'requestedByUsername', 'createdByUid', 'status', 'createdAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'id', 'item', 'quantity', 'unit', 'station', 'requestee', 'notes',
+          'requestedBy', 'requestedByUsername', 'createdByUid', 'status', 'createdAt'
+        ])
+        && request.resource.data.id == requestId
+        && request.resource.data.item == 'Thermal Paper'
+        && request.resource.data.quantity is int
+        && request.resource.data.quantity > 0
+        && request.resource.data.unit in ['Boxes', 'Rolls', 'Pcs']
+        && request.resource.data.station is string
+        && request.resource.data.station.size() > 0
+        && request.resource.data.station.size() <= 120
+        && request.resource.data.requestee is string
+        && request.resource.data.requestee.size() > 0
+        && request.resource.data.requestee.size() <= 120
+        && request.resource.data.notes is string
+        && request.resource.data.notes.size() <= 500
+        && request.resource.data.requestedBy == (currentProfile().name == ''
+          ? currentProfile().username
+          : currentProfile().name)
+        && request.resource.data.requestedByUsername == currentProfile().username
+        && request.resource.data.createdByUid == request.auth.uid
+        && request.resource.data.status == 'Pending'
+        && request.resource.data.createdAt is string;
+      allow update: if canManageRequests()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'rejectionNote'])
+        && request.resource.data.status in ['Pending', 'Approved', 'Rejected']
+        && request.resource.data.rejectionNote is string
+        && request.resource.data.rejectionNote.size() <= 500;
+      allow delete: if canManageRequests();
     }
   }
 }

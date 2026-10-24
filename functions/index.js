@@ -54,7 +54,23 @@ async function authenticate(request) {
     const authorization = request.get("Authorization") || "";
     const token = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
     if (!token) throw Object.assign(new Error("Sign in is required."), { status: 401 });
-    return auth.verifyIdToken(token);
+    const claims = await auth.verifyIdToken(token);
+    if (typeof claims.username === "string") return claims;
+
+    const profile = await db.collection("users").doc(claims.uid).get();
+    if (!profile.exists || profile.data().disabled) {
+        throw Object.assign(new Error("An enabled app account is required."), { status: 403 });
+    }
+    const account = profile.data();
+    return {
+        ...claims,
+        username: account.username,
+        name: account.name || account.username,
+        role: account.role || "Management",
+        permissions: Array.isArray(account.permissions) ? account.permissions : [],
+        inventoryAccess: Array.isArray(account.inventoryAccess) ? account.inventoryAccess : [],
+        office: account.office || ""
+    };
 }
 
 async function handleLogin(request, response) {

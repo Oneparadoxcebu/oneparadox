@@ -3,6 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js?v=20261024-1"></script>
+    <script src="js/firebase-shared.js?v=20261024-3"></script>
+    <script src="js/auth-session.js?v=20260921-2"></script>
     <meta name="description" content="Professional Business Dashboard">
     <meta name="author" content="">
     <meta name="generator" content="">
@@ -760,9 +766,13 @@
         }
     </style>
     <script>
-        const dashboardUsername = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser");
-        const dashboardAccount = JSON.parse(localStorage.getItem("userAccounts") || "{}")[dashboardUsername];
-        if (dashboardAccount?.role === "Station") window.location.replace("requests.html");
+        if (window.authSession) {
+            window.authSession.ready.then(() => {
+                const dashboardUsername = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser");
+                const dashboardAccount = JSON.parse(localStorage.getItem("userAccounts") || "{}")[dashboardUsername];
+                if (dashboardAccount?.role === "Station") window.location.replace("requests.html");
+            });
+        }
     </script>
 </head>
 <body>
@@ -1064,11 +1074,11 @@
 
     <script src="js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="js/auth-session.js?v=20260921-2"></script>
-    <script src="js/firebase-auth.js?v=20261023-7"></script>
     <script>
         // Get username from localStorage or sessionStorage
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", async function () {
+            if (window.authSession) await window.authSession.ready;
+            if (window.authSession && !window.authSession.get()) return;
             const username = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "User";
             const accounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
             const account = accounts[username];
@@ -1365,34 +1375,14 @@
 
         async function saveAccounts(accounts, deleteUsernames = []) {
             if (!isLocalAccountsHost()) {
-                if (!window.firebaseAuthSession) throw new Error('Firebase authentication is unavailable.');
-                if (getCurrentUserRole() === 'Developer') {
-                    const result = await window.firebaseAuthSession.api('/accounts', {
-                        method: 'PUT',
-                        body: JSON.stringify({ accounts, deleteUsernames })
-                    });
-                    if (!result.accounts) throw new Error('The account service did not return the saved accounts.');
-                    localStorage.setItem('userAccounts', JSON.stringify(result.accounts));
-                    return;
+                if (!window.sharedAccounts) throw new Error('Firebase account storage is unavailable.');
+                if (getCurrentUserRole() !== 'Developer') {
+                    throw new Error('Only a Developer account can manage user profiles.');
                 }
-
-                const existingAccounts = getAccounts();
-                for (const [username, account] of Object.entries(accounts)) {
-                    if (JSON.stringify(existingAccounts[username]) === JSON.stringify(account)) continue;
-                    await window.firebaseAuthSession.api(`/accounts/${encodeURIComponent(username)}`, {
-                        method: 'POST',
-                        body: JSON.stringify({ account })
-                    });
-                }
-                for (const username of deleteUsernames) {
-                    await window.firebaseAuthSession.api(`/accounts/${encodeURIComponent(username)}`, { method: 'DELETE' });
-                }
-                const safeAccounts = Object.fromEntries(Object.entries(accounts).map(([username, account]) => {
-                    const safeAccount = { ...account };
-                    delete safeAccount.password;
-                    return [username, safeAccount];
-                }));
-                localStorage.setItem('userAccounts', JSON.stringify(safeAccounts));
+                const desiredAccounts = { ...accounts };
+                deleteUsernames.forEach(username => delete desiredAccounts[username]);
+                const savedAccounts = await window.sharedAccounts.save(desiredAccounts);
+                localStorage.setItem('userAccounts', JSON.stringify(savedAccounts));
                 return;
             }
 
@@ -1422,9 +1412,9 @@
             if (!isLocalAccountsHost()) {
                 if (getCurrentUserRole() !== 'Developer') return;
                 try {
-                    const result = await window.firebaseAuthSession.api('/accounts', { method: 'GET' });
-                    if (!result.accounts) throw new Error('The account service returned an invalid account list.');
-                    localStorage.setItem('userAccounts', JSON.stringify(result.accounts));
+                    if (!window.sharedAccounts) throw new Error('Firebase account storage is unavailable.');
+                    const accounts = await window.sharedAccounts.load();
+                    localStorage.setItem('userAccounts', JSON.stringify(accounts));
                     renderUsersTable();
                 } catch (error) {
                     console.error('Unable to load Firebase accounts.', error);
@@ -1818,11 +1808,11 @@
             accounts[username] = updatedAccount;
             try {
                 if (!isLocalAccountsHost()) {
-                    const result = await window.firebaseAuthSession.api(`/accounts/${encodeURIComponent(originalUsername)}`, {
-                        method: 'POST',
-                        body: JSON.stringify({ account: updatedAccount })
-                    });
-                    accounts[username] = result.account;
+                    if (password) {
+                        throw new Error('On the Firebase free plan, users must change their own password or use password reset.');
+                    }
+                    if (!window.sharedAccounts) throw new Error('Firebase account storage is unavailable.');
+                    accounts[username] = await window.sharedAccounts.saveOne(originalUsername, updatedAccount);
                     localStorage.setItem('userAccounts', JSON.stringify(accounts));
                 } else {
                     await saveAccounts(accounts, originalUsername === username ? [] : [originalUsername]);
