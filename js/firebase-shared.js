@@ -307,6 +307,18 @@
         });
     }
 
+    async function clearInventory(office) {
+        const profile = await assertInventoryOffice(office);
+        if (profile.role !== "Developer") {
+            throw new Error("Only a Developer account can clear inventory.");
+        }
+        await saveInventory(office, {
+            summaryData: {},
+            recordsData: [],
+            updatedAt: new Date().toISOString()
+        });
+    }
+
     async function loadHistory(office) {
         requireSignedIn();
         await assertInventoryOffice(office);
@@ -347,22 +359,6 @@
             });
             await batch.commit();
         }
-    }
-
-    async function loadPresence() {
-        requireSignedIn();
-        const snapshot = await db.collection("onlinePresence").get();
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    }
-
-    async function savePresence(sessionId, data) {
-        const user = requireSignedIn();
-        await db.collection("onlinePresence").doc(`${user.uid}_${sessionId}`).set({ ...data, uid: user.uid });
-    }
-
-    async function removePresence(sessionId) {
-        const user = requireSignedIn();
-        await db.collection("onlinePresence").doc(`${user.uid}_${sessionId}`).delete();
     }
 
     function canSubmitRequests(profile) {
@@ -442,52 +438,6 @@
         await db.collection("workspaceRequests").doc(requestId).delete();
     }
 
-    async function loadChat(chatId) {
-        const profile = await getProfile();
-        if (!profile || profile.disabled) throw new Error("An enabled account is required to load chat.");
-        const messages = db.collection("onlineChats").doc(chatId).collection("messages");
-        const [sent, received] = await Promise.all([
-            messages.where("senderUsername", "==", profile.username).get(),
-            messages.where("recipientUsername", "==", profile.username).get()
-        ]);
-        const unique = new Map();
-        [...sent.docs, ...received.docs].forEach(doc => unique.set(doc.id, { id: doc.id, ...doc.data() }));
-        return [...unique.values()].sort((first, second) => Number(first.createdAt) - Number(second.createdAt));
-    }
-
-    async function watchChat(chatId, onChange, onError) {
-        const profile = await getProfile();
-        if (!profile || profile.disabled) throw new Error("An enabled account is required to load chat.");
-        const messages = db.collection("onlineChats").doc(chatId).collection("messages");
-        let sent = [];
-        let received = [];
-        const emit = () => {
-            const unique = new Map();
-            [...sent, ...received].forEach(doc => unique.set(doc.id, { id: doc.id, ...doc.data() }));
-            onChange([...unique.values()].sort((first, second) => Number(first.createdAt) - Number(second.createdAt)));
-        };
-        const stopSent = messages.where("senderUsername", "==", profile.username).onSnapshot(snapshot => {
-            sent = snapshot.docs;
-            emit();
-        }, onError);
-        const stopReceived = messages.where("recipientUsername", "==", profile.username).onSnapshot(snapshot => {
-            received = snapshot.docs;
-            emit();
-        }, onError);
-        return () => {
-            stopSent();
-            stopReceived();
-        };
-    }
-
-    async function sendChat(chatId, data) {
-        const profile = await getProfile();
-        if (!profile || profile.disabled || data.senderUsername !== profile.username) {
-            throw new Error("The message sender does not match the signed-in account.");
-        }
-        await db.collection("onlineChats").doc(chatId).collection("messages").doc(data.id).set(removeUndefined(data));
-    }
-
     window.firebaseApp = app;
     window.firebaseAuth = auth;
     window.firebaseDb = db;
@@ -500,9 +450,7 @@
         delete: deleteAccount,
         saveTheme
     };
-    window.sharedInventory = { load: loadInventory, watch: watchInventory, save: saveInventory, loadHistory, saveHistory };
-    window.sharedOnlinePresence = { load: loadPresence, save: savePresence, remove: removePresence };
-    window.sharedOnlineChat = { load: loadChat, watch: watchChat, send: sendChat };
+    window.sharedInventory = { load: loadInventory, watch: watchInventory, save: saveInventory, clear: clearInventory, loadHistory, saveHistory };
     window.sharedRequests = {
         storageKey: "workspaceRequests",
         load: loadRequests,

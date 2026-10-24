@@ -33,14 +33,6 @@ service cloud.firestore {
                 && office in currentProfile().inventoryAccess))));
     }
 
-    function canChatInOffice(office) {
-      return enabledUser()
-        && (isAdmin()
-          || (currentProfile().permissions is list
-            && (('chatRizal' in currentProfile().permissions && office == 'Rizal')
-              || ('chatCebu' in currentProfile().permissions && office == 'Cebu'))));
-    }
-
     function canSubmitRequests() {
       return enabledUser()
         && (isAdmin()
@@ -94,35 +86,6 @@ service cloud.firestore {
           && (resource.data.username == currentProfile().username
             || resource.data.user == currentProfile().username);
       }
-    }
-
-    match /onlinePresence/{sessionId} {
-      allow read: if enabledUser();
-      allow create, update: if enabledUser()
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.username == currentProfile().username
-        && request.resource.data.keys().hasOnly([
-          'uid', 'username', 'name', 'role', 'offices', 'chatOffices', 'lastSeen'
-        ]);
-      allow delete: if enabledUser() && resource.data.uid == request.auth.uid;
-    }
-
-    match /onlineChats/{chatId}/messages/{messageId} {
-      allow read: if enabledUser()
-        && (resource.data.senderUsername == currentProfile().username
-          || resource.data.recipientUsername == currentProfile().username);
-      allow create: if enabledUser()
-        && request.resource.data.senderUsername == currentProfile().username
-        && canChatInOffice(request.resource.data.office)
-        && request.resource.data.senderName == currentProfile().name
-        && request.resource.data.text is string
-        && request.resource.data.text.size() > 0
-        && request.resource.data.text.size() <= 1000
-        && request.resource.data.keys().hasOnly([
-          'id', 'senderUsername', 'senderName', 'recipientUsername',
-          'office', 'text', 'createdAt'
-        ]);
-      allow update, delete: if false;
     }
 
     match /workspaceRequests/{requestId} {

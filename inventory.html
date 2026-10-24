@@ -7,7 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js?v=20261024-1"></script>
-    <script src="js/firebase-shared.js?v=20261024-3"></script>
+    <script src="js/firebase-shared.js?v=20261024-4"></script>
     <script src="js/auth-session.js?v=20260921-2"></script>
     <meta name="description" content="Inventory Management">
     <meta name="author" content="">
@@ -1080,7 +1080,7 @@
             <div class="account-form-group"><label for="inventoryNewUserOffice">Office</label><select id="inventoryNewUserOffice"><option value="">Select an office</option><option value="Rizal">Rizal</option><option value="Cebu">Cebu</option><option value="Thermal">Thermal</option><option value="Both">All Offices</option></select></div>
             <div class="account-form-group"><label for="inventoryNewUserRole">Role</label><select id="inventoryNewUserRole"><option value="">Select a role</option><option value="Developer">Developer</option><option value="IT Admin">IT Admin</option><option value="IT Manager">IT Manager</option><option value="IT Supervisor">IT Supervisor</option><option value="IT Support">IT Support</option><option value="Management">Management</option><option value="Station">Station</option></select></div>
             <div class="account-form-group"><label>Inventory Access</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" id="inventoryAccessRizal" value="Rizal"><label for="inventoryAccessRizal">Rizal Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryAccessCebu" value="Cebu"><label for="inventoryAccessCebu">Cebu Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryAccessThermal" value="Thermal"><label for="inventoryAccessThermal">Thermal Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryAccessRequests" value="Requests"><label for="inventoryAccessRequests">Requests</label></div></div></div>
-            <div class="account-form-group"><label>Menu Access Permissions</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" checked id="inventoryPermissionInventory" value="inventory"><label for="inventoryPermissionInventory">Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryPermissionAssignedTasks" value="assignedTasks"><label for="inventoryPermissionAssignedTasks">Assigned Tasks</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryPermissionChatRizal" value="chatRizal"><label for="inventoryPermissionChatRizal">Rizal Chat</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryPermissionChatCebu" value="chatCebu"><label for="inventoryPermissionChatCebu">Cebu Chat</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryPermissionAddAccount" value="addAccount"><label for="inventoryPermissionAddAccount">Add Account</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryPermissionUsers" value="users"><label for="inventoryPermissionUsers">Manage Users</label></div></div></div>
+            <div class="account-form-group"><label>Menu Access Permissions</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" checked id="inventoryPermissionInventory" value="inventory"><label for="inventoryPermissionInventory">Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryPermissionAssignedTasks" value="assignedTasks"><label for="inventoryPermissionAssignedTasks">Assigned Tasks</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryPermissionAddAccount" value="addAccount"><label for="inventoryPermissionAddAccount">Add Account</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryPermissionUsers" value="users"><label for="inventoryPermissionUsers">Manage Users</label></div></div></div>
             <div class="account-modal-buttons"><button type="button" class="btn-submit" id="inventorySubmitUserBtn">Add Account</button><button type="button" class="btn-cancel" id="inventoryCancelUserBtn">Cancel</button></div>
         </div>
     </div>
@@ -1102,7 +1102,7 @@
             <div class="account-form-group" id="inventoryEditAccessControls"><label for="inventoryEditUserOffice">Office</label><select id="inventoryEditUserOffice"><option value="">Select an office</option><option value="Rizal">Rizal</option><option value="Cebu">Cebu</option><option value="Thermal">Thermal</option><option value="Both">All Offices</option></select></div>
             <div class="account-form-group" id="inventoryEditRoleControl"><label for="inventoryEditUserRole">Role</label><select id="inventoryEditUserRole"><option value="">Select a role</option><option value="Developer">Developer</option><option value="IT Admin">IT Admin</option><option value="IT Manager">IT Manager</option><option value="IT Supervisor">IT Supervisor</option><option value="IT Support">IT Support</option><option value="Management">Management</option><option value="Station">Station</option></select></div>
             <div class="account-form-group" id="inventoryEditInventoryAccessControl"><label>Inventory Access</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessRizal" value="Rizal"><label for="inventoryEditAccessRizal">Rizal Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessCebu" value="Cebu"><label for="inventoryEditAccessCebu">Cebu Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessThermal" value="Thermal"><label for="inventoryEditAccessThermal">Thermal Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessRequests" value="Requests"><label for="inventoryEditAccessRequests">Requests</label></div></div></div>
-            <div class="account-form-group" id="inventoryEditPermissionControl"><label>Menu Access Permissions</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionInventory" value="inventory"><label for="inventoryEditPermissionInventory">Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionAssignedTasks" value="assignedTasks"><label for="inventoryEditPermissionAssignedTasks">Assigned Tasks</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionChatRizal" value="chatRizal"><label for="inventoryEditPermissionChatRizal">Rizal Chat</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionChatCebu" value="chatCebu"><label for="inventoryEditPermissionChatCebu">Cebu Chat</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionAddAccount" value="addAccount"><label for="inventoryEditPermissionAddAccount">Add Account</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionUsers" value="users"><label for="inventoryEditPermissionUsers">Manage Users</label></div></div></div>
+            <div class="account-form-group" id="inventoryEditPermissionControl"><label>Menu Access Permissions</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionInventory" value="inventory"><label for="inventoryEditPermissionInventory">Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionAssignedTasks" value="assignedTasks"><label for="inventoryEditPermissionAssignedTasks">Assigned Tasks</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionAddAccount" value="addAccount"><label for="inventoryEditPermissionAddAccount">Add Account</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionUsers" value="users"><label for="inventoryEditPermissionUsers">Manage Users</label></div></div></div>
             <div class="account-modal-buttons"><button type="button" class="btn-submit" id="inventorySaveEditUserBtn">Save Changes</button><button type="button" class="btn btn-danger" id="inventoryDeleteUserBtn" style="display: none;">Delete Account</button><button type="button" class="btn-cancel" id="inventoryCancelEditUserBtn">Cancel</button></div>
         </div>
     </div>
@@ -1935,6 +1935,17 @@
             return sharedInventorySaveQueue;
         }
 
+        function queueSharedInventoryClear(office) {
+            if (!window.sharedInventory) {
+                return Promise.reject(new Error("Shared inventory storage is unavailable."));
+            }
+            const clearOperation = sharedInventorySaveQueue.then(() => window.sharedInventory.clear(office));
+            sharedInventorySaveQueue = clearOperation.catch(error => {
+                console.warn("Shared inventory clear failed.", error);
+            });
+            return clearOperation;
+        }
+
         async function flushPendingSharedInventory() {
             const office = getInventoryStorageKeys().office;
             const pendingKey = `inventoryPendingSync_${office}`;
@@ -2582,7 +2593,7 @@
             toggleClearInventoryCustomRange();
         }
 
-        function applyClearInventorySelection() {
+        async function applyClearInventorySelection() {
             const officeSelect = document.getElementById("clearInventoryOffice");
             const modeSelect = document.getElementById("clearInventoryMode");
             const startInput = document.getElementById("clearInventoryStartDate");
@@ -2608,15 +2619,20 @@
                     return;
                 }
 
-                clearInventoryStorage(normalizedOffice);
-                if (window.sharedInventory) {
-                    window.sharedInventory.clear(normalizedOffice).catch(error => {
-                        console.warn("Shared inventory clear failed.", error);
-                        alert("Inventory was cleared locally, but the shared inventory could not be cleared.");
-                    });
+                const confirmButton = document.getElementById("confirmClearInventoryBtn");
+                if (confirmButton) confirmButton.disabled = true;
+                try {
+                    await queueSharedInventoryClear(normalizedOffice);
+                    clearInventoryStorage(normalizedOffice);
+                    renderEmptyInventoryState();
+                    closeClearInventoryModal();
+                } catch (error) {
+                    console.error("Shared inventory clear failed.", error);
+                    const reason = error instanceof Error ? error.message : String(error);
+                    alert(`Inventory could not be cleared: ${reason}`);
+                } finally {
+                    if (confirmButton) confirmButton.disabled = false;
                 }
-                renderEmptyInventoryState();
-                closeClearInventoryModal();
                 return;
             }
 
@@ -2822,31 +2838,14 @@
             return Boolean(currentAccount && currentAccount.role === "Developer");
         }
 
-        function canGrantOfficeChatAccess(accounts) {
-            const currentUsername = (localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "").toLowerCase();
-            const currentAccount = accounts[currentUsername] || Object.values(accounts).find(account => String(account?.username || "").toLowerCase() === currentUsername);
-            return Boolean(currentAccount && currentAccount.role === "Developer");
-        }
-
         function setAddAccountPermissionAvailability(accounts) {
             const assignedTasksPermission = document.getElementById("inventoryPermissionAssignedTasks");
-            const officeChatPermissions = [
-                document.getElementById("inventoryPermissionChatRizal"),
-                document.getElementById("inventoryPermissionChatCebu")
-            ];
             const canGrantAssignedTasksPermission = canGrantAssignedTasks(accounts);
-            const canGrantOfficeChats = canGrantOfficeChatAccess(accounts);
             if (assignedTasksPermission) {
                 assignedTasksPermission.disabled = !canGrantAssignedTasksPermission;
                 assignedTasksPermission.checked = canGrantAssignedTasksPermission && assignedTasksPermission.checked;
                 assignedTasksPermission.closest(".account-permission-item").style.opacity = canGrantAssignedTasksPermission ? "1" : "0.5";
             }
-            officeChatPermissions.forEach(permission => {
-                if (!permission) return;
-                permission.disabled = !canGrantOfficeChats;
-                permission.checked = canGrantOfficeChats && permission.checked;
-                permission.closest(".account-permission-item").style.opacity = canGrantOfficeChats ? "1" : "0.5";
-            });
         }
 
         function setAccountAccessControlsEnabled(enabled) {
@@ -2919,13 +2918,6 @@
                 assignedTasksPermission.disabled = !canGrantAssignedTasks(currentAccounts);
                 assignedTasksPermission.closest(".account-permission-item").style.opacity = assignedTasksPermission.disabled ? "0.5" : "1";
             }
-            const canGrantOfficeChats = canGrantOfficeChatAccess(currentAccounts);
-            ["inventoryEditPermissionChatRizal", "inventoryEditPermissionChatCebu"].forEach(id => {
-                const permission = document.getElementById(id);
-                if (!permission) return;
-                permission.disabled = !canGrantOfficeChats;
-                permission.closest(".account-permission-item").style.opacity = permission.disabled ? "0.5" : "1";
-            });
             applyInventoryStationRoleAccess(
                 document.getElementById("inventoryEditUserRole"),
                 "inventoryEditUserModal",
@@ -3062,7 +3054,6 @@
 
             const accessManager = canManageAccountAccess(accounts);
             const assignedTasksPermissionManager = canGrantAssignedTasks(accounts);
-            const officeChatPermissionManager = canGrantOfficeChatAccess(accounts);
 
             if (username !== originalUsername && accounts[username]) {
                 alert("Username already exists.");
@@ -3083,8 +3074,7 @@
                 permissions: accessManager
                     ? Array.from(document.querySelectorAll("#inventoryEditUserModal input[id^='inventoryEditPermission']:checked"), input => input.value)
                         .filter(permission =>
-                            (permission !== "assignedTasks" || assignedTasksPermissionManager || (account.permissions || []).includes("assignedTasks")) &&
-                            (!permission.startsWith("chat") || officeChatPermissionManager || (account.permissions || []).includes(permission))
+                            permission !== "assignedTasks" || assignedTasksPermissionManager || (account.permissions || []).includes("assignedTasks")
                         )
                     : account.permissions
             };
@@ -3160,10 +3150,8 @@
                 }
 
                 const canGrantAssignedTasksPermission = canGrantAssignedTasks(accounts);
-                const canGrantOfficeChats = canGrantOfficeChatAccess(accounts);
                 const safePermissions = permissions.filter(permission =>
-                    (permission !== "assignedTasks" || canGrantAssignedTasksPermission) &&
-                    (!permission.startsWith("chat") || canGrantOfficeChats)
+                    permission !== "assignedTasks" || canGrantAssignedTasksPermission
                 );
 
                 accounts[username] = {

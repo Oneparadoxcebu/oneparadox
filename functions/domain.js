@@ -74,12 +74,6 @@ function normalizeManagedAccount(input, username, claims) {
     return account;
 }
 
-function createChatId(firstUsername, secondUsername, office) {
-    const users = [String(firstUsername).toLowerCase(), String(secondUsername).toLowerCase()].sort();
-    const pair = `${String(office).toLowerCase()}|${users.join("|")}`;
-    return crypto.createHash("sha256").update(pair).digest("hex");
-}
-
 function validateRequestInput(input) {
     const station = String(input.station || "").trim();
     const requestee = String(input.requestee || "").trim();
@@ -97,7 +91,6 @@ function validateRequestInput(input) {
 
 module.exports = {
     getClaims,
-    createChatId,
     hashPassword,
     normalizeManagedAccount,
     publicAccount,

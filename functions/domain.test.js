@@ -1,7 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
-    createChatId,
     getClaims,
     hashPassword,
     normalizeManagedAccount,
@@ -78,10 +77,6 @@ test("request validation trims text and rejects invalid quantities and units", (
         notes: "urgent"
     });
 
-    test("chat IDs are normalized across username casing and participant order", () => {
-        assert.equal(createChatId("Mia", "Alex", "Rizal"), createChatId("alex", "mia", "rizal"));
-        assert.notEqual(createChatId("Mia", "Alex", "Rizal"), createChatId("Mia", "Alex", "Cebu"));
-    });
     assert.throws(() => validateRequestInput({
         station: "Cebu",
         requestee: "Alex",

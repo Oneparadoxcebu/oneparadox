@@ -8,7 +8,6 @@ const {
     hashPassword,
     normalizeManagedAccount,
     publicAccount,
-    createChatId,
     validateRequestInput,
     verifyPassword
 } = require("./domain");
@@ -310,57 +309,6 @@ async function handleThemeChange(request, response, claims) {
     return sendJson(response, 200, { ok: true });
 }
 
-function canUseChatOffice(claims, office) {
-    return claims.role === "Developer" || claims.permissions.includes(`chat${office}`);
-}
-
-async function handleChatMessages(request, response, claims, pathSegments) {
-    if (pathSegments.length !== 3 || pathSegments[2] !== "messages") {
-        return sendJson(response, 404, { message: "Chat endpoint not found." });
-    }
-    const chatId = pathSegments[1];
-    const messages = db.collection("onlineChats").doc(chatId).collection("messages");
-    if (request.method === "GET") {
-        const snapshot = await messages.orderBy("createdAt", "desc").limit(500).get();
-        const visibleMessages = snapshot.docs
-            .map(document => ({ id: document.id, ...document.data() }))
-            .filter(message =>
-                (message.senderUsername === claims.username || message.recipientUsername === claims.username) &&
-                canUseChatOffice(claims, message.office)
-            );
-        return sendJson(response, 200, { messages: visibleMessages });
-    }
-    if (request.method === "POST") {
-        const input = request.body || {};
-        const recipientUsername = String(input.recipientUsername || "").trim();
-        const office = String(input.office || "");
-        const text = String(input.text || "").trim();
-        const messageId = String(input.id || "");
-        if (!recipientUsername || recipientUsername.length > 128 || recipientUsername.includes("/") ||
-            !["Rizal", "Cebu"].includes(office) || !canUseChatOffice(claims, office)) {
-            return sendJson(response, 403, { message: "You do not have access to this office chat." });
-        }
-        if (!text || text.length > 1000 || !messageId || messageId.length > 128 || messageId.includes("/")) {
-            return sendJson(response, 400, { message: "Enter a message up to 1000 characters." });
-        }
-        if (createChatId(claims.username, recipientUsername, office) !== chatId) {
-            return sendJson(response, 403, { message: "This chat does not match the selected participants." });
-        }
-        const record = {
-            id: messageId,
-            senderUsername: claims.username,
-            senderName: claims.name || claims.username,
-            recipientUsername,
-            office,
-            text,
-            createdAt: Date.now()
-        };
-        await messages.doc(messageId).create(record);
-        return sendJson(response, 201, { message: record });
-    }
-    return sendJson(response, 405, { message: "Method not allowed." });
-}
-
 exports.api = onRequest({ region: "us-central1", cors: true }, async (request, response) => {
     try {
         const segments = new URL(request.originalUrl, "https://functions.invalid").pathname.split("/").filter(Boolean).map(decodeURIComponent);
@@ -373,7 +321,6 @@ exports.api = onRequest({ region: "us-central1", cors: true }, async (request, r
         if (segments[0] === "accounts") return await handleAccounts(request, response, claims, segments);
         if (segments[0] === "account" && segments[1] === "password") return await handlePasswordChange(request, response, claims);
         if (segments[0] === "account" && segments[1] === "theme") return await handleThemeChange(request, response, claims);
-        if (segments[0] === "chats") return await handleChatMessages(request, response, claims, segments);
         return sendJson(response, 404, { message: "Endpoint not found." });
     } catch (error) {
         const status = Number.isInteger(error.status) ? error.status : 500;
