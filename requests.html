@@ -7,7 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js?v=20261024-1"></script>
-    <script src="js/firebase-shared.js?v=20261025-4"></script>
+    <script src="js/firebase-shared.js?v=20261025-9"></script>
     <script src="js/auth-session.js?v=20260921-2"></script>
     <meta name="description" content="Workspace Requests">
     <title>Requests</title>
@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="css/app-redesign.css?v=20261025-3">
     <script src="js/theme-switch.js?v=20260929-1"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@1.48.0/dist/umd/lucide.min.js" defer></script>
-    <script src="js/lucide-icons.js?v=20261023-1" defer></script>
+    <script src="js/lucide-icons.js?v=20261025-1" defer></script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
@@ -67,7 +67,7 @@
                     <input id="thermalPaperStation" class="form-control" type="text" maxlength="120" required>
                 </div>
                 <div class="col-md-3" id="thermalPaperRequesteeField">
-                    <label for="thermalPaperRequestee" class="form-label">Name of Requestee</label>
+                    <label for="thermalPaperRequestee" class="form-label">Name of Collector</label>
                     <input id="thermalPaperRequestee" class="form-control" type="text" maxlength="120" required>
                 </div>
                 <div class="col-md-2">
@@ -79,10 +79,9 @@
                     <select id="thermalPaperUnit" class="form-select" required>
                         <option value="Boxes">Boxes</option>
                         <option value="Rolls">Rolls</option>
-                        <option value="Pcs">Pcs</option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-12">
                     <label for="thermalPaperNotes" class="form-label">Notes</label>
                     <input id="thermalPaperNotes" class="form-control" type="text" maxlength="500" placeholder="Add details for this request" required>
                 </div>
@@ -241,7 +240,8 @@
         const isStationAccount = account?.role === "Station";
         const isCollectorAccount = account?.role === "Collector";
         if (isCollectorAccount) {
-            document.querySelector(".request-thermal-overview").hidden = true;
+            unitInput.value = "Rolls";
+            document.querySelector("#requestThermalMetrics > .col-md-3:nth-child(2)").hidden = true;
             document.getElementById("thermalPaperStationField").hidden = true;
             stationInput.required = false;
             stationInput.disabled = true;
@@ -249,6 +249,13 @@
             requesteeInput.required = false;
             requesteeInput.disabled = true;
             document.querySelector("#thermalPaperRequesteeField label").textContent = "Name of Collector";
+            document.getElementById("openThermalInventoryLink").hidden = true;
+            document.getElementById("thermalInventoryOverviewHeading").textContent =
+                "Inventory Overview — Collector";
+            document.getElementById("requestThermalTotalBoxesLabel").textContent = "Records assigned to Collector";
+            document.getElementById("requestThermalTotalBoxesSubtitle").textContent =
+                "Thermal records assigned to the Collector category";
+            document.getElementById("requestThermalRecordsTitle").textContent = "Collector Thermal Records";
         }
         if (isStationAccount) {
             document.getElementById("thermalPaperRequesteeField").hidden = true;
@@ -270,6 +277,10 @@
         const thermalRecordCount = document.getElementById("requestThermalRecordCount");
         const thermalInventoryMessage = document.getElementById("requestThermalInventoryMessage");
         let thermalRecords = [];
+        if (isCollectorAccount) {
+            thermalRecordSearch.placeholder = "Search Collector records";
+            thermalRecordSearch.setAttribute("aria-label", "Search Collector Thermal records");
+        }
 
         function renderThermalRecords(records) {
             const query = thermalRecordSearch.value.trim().toLowerCase();
@@ -291,9 +302,11 @@
             if (!filteredRecords.length) {
                 const emptyMessage = query
                     ? "No matching Thermal records."
-                    : isStationAccount
-                        ? `No Thermal records are assigned to ${escapeRequestHtml(account.office || "this station")}.`
-                        : "No Thermal inventory records available.";
+                    : isCollectorAccount
+                        ? "No Thermal records are assigned to the Collector category."
+                        : isStationAccount
+                            ? `No Thermal records are assigned to ${escapeRequestHtml(account.office || "this station")}.`
+                            : "No Thermal inventory records available.";
                 thermalRecordsBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">${emptyMessage}</td></tr>`;
                 return;
             }
@@ -323,18 +336,22 @@
             try {
                 const inventory = isStationAccount
                     ? await window.sharedInventory.loadStationThermal()
-                    : await window.sharedInventory.load("Thermal");
-                if (isStationAccount && !inventory) {
+                    : isCollectorAccount
+                        ? await window.sharedInventory.loadCollectorThermal()
+                        : await window.sharedInventory.load("Thermal");
+                if ((isStationAccount || isCollectorAccount) && !inventory) {
                     thermalRecords = [];
                     renderThermalRecords(thermalRecords);
                     thermalInventoryMessage.textContent =
-                        "Station inventory has not been synced yet. Ask a Thermal Inventory manager to open the Thermal Inventory page to sync existing records.";
+                        isCollectorAccount
+                            ? "Collector inventory has not been synced yet. Ask a Thermal Inventory manager to open the Thermal Inventory page to sync existing records."
+                            : "Station inventory has not been synced yet. Ask a Thermal Inventory manager to open the Thermal Inventory page to sync existing records.";
                     return;
                 }
-                if (isStationAccount) {
-                    const assignedStation = String(account.office || "").trim().toLowerCase();
+                if (isStationAccount || isCollectorAccount) {
+                    const assignedGroup = String(account.office || "").trim().toLowerCase();
                     thermalRecords = (Array.isArray(inventory?.recordsData) ? inventory.recordsData : [])
-                        .filter(record => String(record.rack || "").trim().toLowerCase() === assignedStation);
+                        .filter(record => String(record.rack || "").trim().toLowerCase() === assignedGroup);
                     const sumReleasedForUnit = unit => thermalRecords.reduce((total, record) => {
                         if (String(record.posUnit || "").trim().toUpperCase() !== unit) return total;
                         const quantity = Number(String(record.posNo || "").replace(/,/g, "").trim());
@@ -430,7 +447,7 @@
         }
 
         const requiredRequestFields = [
-            ...(!isStationAccount && !isCollectorAccount ? [{ input: stationInput, label: "Station" }, { input: requesteeInput, label: "Name of Requestee" }] : []),
+            ...(!isStationAccount && !isCollectorAccount ? [{ input: stationInput, label: "Station" }, { input: requesteeInput, label: "Name of Collector" }] : []),
             { input: quantityInput, label: "Quantity" },
             { input: unitInput, label: "Unit" },
             { input: notesInput, label: "Notes" }
@@ -444,7 +461,7 @@
                 const isInvalidQuantity = input === quantityInput &&
                     (!Number.isInteger(Number(value)) || Number(value) < 1);
                 const isInvalidUnit = input === unitInput &&
-                    !["Boxes", "Rolls", "Pcs"].includes(value);
+                    !["Boxes", "Rolls"].includes(value);
                 const message = isEmpty
                     ? `${label} is required.`
                     : isInvalidQuantity
@@ -484,10 +501,12 @@
                 : isCollectorAccount
                     ? "Collector"
                     : stationInput.value.trim();
-            const requestee = isStationAccount || isCollectorAccount
-                ? String(account.name || username).trim()
-                : requesteeInput.value.trim();
-            if (!station || !requestee) {
+            const requestee = isStationAccount
+                ? ""
+                : isCollectorAccount
+                    ? String(account.name || username).trim()
+                    : requesteeInput.value.trim();
+            if (!station || (!isStationAccount && !requestee)) {
                 requestFormMessage.textContent = "Enter the station and name of the requestee.";
                 return;
             }
@@ -500,7 +519,7 @@
                 station,
                 requestee,
                 notes: notesInput.value.trim(),
-                requestedBy: account?.name || username,
+                requestedBy: isCollectorAccount ? "" : account?.name || username,
                 requestedByUsername: username,
                 status: "Pending",
                 createdAt: new Date().toISOString()
@@ -512,7 +531,7 @@
                 await window.sharedRequests.create(request);
                 requestForm.reset();
                 if (isStationAccount) stationInput.value = account.office || "";
-                unitInput.value = "Boxes";
+                unitInput.value = isCollectorAccount ? "Rolls" : "Boxes";
                 requestFormMessage.textContent = "Request submitted successfully and saved to Firebase.";
                 await loadSubmittedRequests();
             } catch (error) {
@@ -525,10 +544,8 @@
         });
 
         loadSubmittedRequests();
-        if (!isCollectorAccount) {
-            loadThermalInventoryOverview();
-            window.setInterval(loadThermalInventoryOverview, 30000);
-        }
+        loadThermalInventoryOverview();
+        window.setInterval(loadThermalInventoryOverview, 30000);
         window.addEventListener("storage", event => {
             if (event.key === window.sharedRequests.storageKey) loadSubmittedRequests();
         });

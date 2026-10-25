@@ -1,6 +1,6 @@
 const crypto = require("node:crypto");
 
-const allowedUnits = new Set(["Boxes", "Rolls", "Pcs"]);
+const allowedUnits = new Set(["Boxes", "Rolls"]);
 
 function hashPassword(password) {
     const iterations = 120000;
@@ -94,7 +94,7 @@ function validateRequestInput(input) {
     if (!station || station.length > 120) throw Object.assign(new Error("Enter a station (up to 120 characters)."), { status: 400 });
     if (!requestee || requestee.length > 120) throw Object.assign(new Error("Enter the requestee name (up to 120 characters)."), { status: 400 });
     if (!Number.isSafeInteger(quantity) || quantity < 1) throw Object.assign(new Error("Quantity must be a positive whole number."), { status: 400 });
-    if (!allowedUnits.has(unit)) throw Object.assign(new Error("Choose Boxes, Rolls, or Pcs."), { status: 400 });
+    if (!allowedUnits.has(unit)) throw Object.assign(new Error("Choose Boxes or Rolls."), { status: 400 });
     if (notes.length > 500) throw Object.assign(new Error("Notes cannot exceed 500 characters."), { status: 400 });
     return { station, requestee, quantity, unit, notes };
 }

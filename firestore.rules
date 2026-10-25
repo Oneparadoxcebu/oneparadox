@@ -63,13 +63,20 @@ service cloud.firestore {
       return station in ['Guadalupe Station', 'Punta Princessa Station', 'Babag Station'];
     }
 
+    function isThermalInventoryGroup(group) {
+      return isThermalStation(group) || group == 'Collector';
+    }
+
     function canReadStationThermal(station) {
       return enabledUser()
-        && currentProfile().role == 'Station'
-        && isThermalStation(station)
-        && currentProfile().office == station
         && currentProfile().inventoryAccess is list
-        && 'Requests' in currentProfile().inventoryAccess;
+        && 'Requests' in currentProfile().inventoryAccess
+        && ((currentProfile().role == 'Station'
+            && isThermalStation(station)
+            && currentProfile().office == station)
+          || (currentProfile().role == 'Collector'
+            && station == 'Collector'
+            && currentProfile().office == 'Collector'));
     }
 
     match /users/{uid} {
@@ -117,21 +124,21 @@ service cloud.firestore {
       allow get: if canReadStationThermal(station) || canAccessOffice('Thermal');
       allow list: if false;
       allow create, update: if canAccessOffice('Thermal')
-        && isThermalStation(station)
+        && isThermalInventoryGroup(station)
         && request.resource.data.keys().hasOnly(['station', 'updatedAt', 'recordCount'])
         && request.resource.data.station == station
         && request.resource.data.updatedAt is string
         && request.resource.data.recordCount is int
         && request.resource.data.recordCount >= 0;
-      allow delete: if canAccessOffice('Thermal') && isThermalStation(station);
+      allow delete: if canAccessOffice('Thermal') && isThermalInventoryGroup(station);
 
       match /chunks/{chunkId} {
         allow get, list: if canReadStationThermal(station) || canAccessOffice('Thermal');
         allow create, update: if canAccessOffice('Thermal')
-          && isThermalStation(station)
+          && isThermalInventoryGroup(station)
           && request.resource.data.keys().hasOnly(['records'])
           && request.resource.data.records is list;
-        allow delete: if canAccessOffice('Thermal') && isThermalStation(station);
+        allow delete: if canAccessOffice('Thermal') && isThermalInventoryGroup(station);
       }
     }
 
@@ -151,19 +158,25 @@ service cloud.firestore {
         && request.resource.data.item == 'Thermal Paper'
         && request.resource.data.quantity is int
         && request.resource.data.quantity > 0
-        && request.resource.data.unit in ['Boxes', 'Rolls', 'Pcs']
+        && request.resource.data.unit in ['Boxes', 'Rolls']
         && request.resource.data.station is string
         && request.resource.data.station.size() > 0
         && request.resource.data.station.size() <= 120
         && request.resource.data.requestee is string
-        && request.resource.data.requestee.size() > 0
         && request.resource.data.requestee.size() <= 120
+        && ((currentProfile().role == 'Station'
+            && request.resource.data.requestee.size() == 0)
+          || (currentProfile().role != 'Station'
+            && request.resource.data.requestee.size() > 0))
         && request.resource.data.notes is string
         && request.resource.data.notes.size() > 0
         && request.resource.data.notes.size() <= 500
-        && request.resource.data.requestedBy == (currentProfile().name == ''
-          ? currentProfile().username
-          : currentProfile().name)
+        && ((currentProfile().role == 'Collector'
+            && request.resource.data.requestedBy == '')
+          || (currentProfile().role != 'Collector'
+            && request.resource.data.requestedBy == (currentProfile().name == ''
+              ? currentProfile().username
+              : currentProfile().name)))
         && request.resource.data.requestedByUsername == currentProfile().username
         && request.resource.data.createdByUid == request.auth.uid
         && request.resource.data.status == 'Pending'

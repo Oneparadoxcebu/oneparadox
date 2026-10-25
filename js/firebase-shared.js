@@ -12,10 +12,16 @@
     const INVENTORY = "inventory";
     const STATION_THERMAL_INVENTORY = "stationThermalInventory";
     const THERMAL_STATIONS = ["Guadalupe Station", "Punta Princessa Station", "Babag Station"];
+    const THERMAL_INVENTORY_GROUPS = [...THERMAL_STATIONS, "Collector"];
 
     function normalizeThermalStation(value) {
         const normalized = String(value || "").trim().toLowerCase();
         return THERMAL_STATIONS.find(station => station.toLowerCase() === normalized) || "";
+    }
+
+    function normalizeThermalInventoryGroup(value) {
+        const normalized = String(value || "").trim().toLowerCase();
+        return THERMAL_INVENTORY_GROUPS.find(group => group.toLowerCase() === normalized) || "";
     }
 
     function profileFromSnapshot(snapshot) {
@@ -322,9 +328,9 @@
         await assertInventoryOffice("Thermal");
         const records = Array.isArray(inventory.recordsData) ? inventory.recordsData : [];
         const updatedAt = inventory.updatedAt || new Date().toISOString();
-        await Promise.all(THERMAL_STATIONS.map(station => {
-            const stationRecords = records.filter(record => normalizeThermalStation(record.rack) === station);
-            return writeStationThermalInventory(station, stationRecords, updatedAt);
+        await Promise.all(THERMAL_INVENTORY_GROUPS.map(group => {
+            const groupRecords = records.filter(record => normalizeThermalInventoryGroup(record.rack) === group);
+            return writeStationThermalInventory(group, groupRecords, updatedAt);
         }));
     }
 
@@ -338,6 +344,26 @@
         }
 
         const inventoryRef = db.collection(STATION_THERMAL_INVENTORY).doc(station);
+        const [metadata, chunks] = await Promise.all([
+            inventoryRef.get(),
+            inventoryRef.collection("chunks").orderBy(firebase.firestore.FieldPath.documentId()).get()
+        ]);
+        if (!metadata.exists) return null;
+        return {
+            ...metadata.data(),
+            recordsData: chunks.docs.flatMap(snapshot => snapshot.data().records || [])
+        };
+    }
+
+    async function loadCollectorThermalInventory() {
+        requireSignedIn();
+        const profile = await getProfile();
+        if (!profile || profile.disabled || profile.role !== "Collector" || profile.office !== "Collector" ||
+            !Array.isArray(profile.inventoryAccess) || !profile.inventoryAccess.includes("Requests")) {
+            throw new Error("An enabled Collector account is required.");
+        }
+
+        const inventoryRef = db.collection(STATION_THERMAL_INVENTORY).doc("Collector");
         const [metadata, chunks] = await Promise.all([
             inventoryRef.get(),
             inventoryRef.collection("chunks").orderBy(firebase.firestore.FieldPath.documentId()).get()
@@ -481,16 +507,20 @@
             : profile.role === "Collector"
                 ? "Collector"
                 : String(input.station || "").trim();
-        const requestee = profile.role === "Station" || profile.role === "Collector"
-            ? String(profile.name || profile.username || "").trim()
-            : String(input.requestee || "").trim();
+        const requestee = profile.role === "Station"
+            ? ""
+            : profile.role === "Collector"
+                ? String(profile.name || profile.username || "").trim()
+                : String(input.requestee || "").trim();
         const quantity = Number(input.quantity);
         const unit = String(input.unit || "");
         const notes = String(input.notes || "").trim();
         if (!station || station.length > 120) throw new Error("Enter a valid station for this request.");
-        if (!requestee || requestee.length > 120) throw new Error("Enter the name of the requestee.");
+        if ((profile.role !== "Station" && !requestee) || requestee.length > 120) {
+            throw new Error("Enter the name of the requestee.");
+        }
         if (!Number.isInteger(quantity) || quantity < 1) throw new Error("Enter a whole-number quantity greater than zero.");
-        if (!["Boxes", "Rolls", "Pcs"].includes(unit)) throw new Error("Select a valid unit.");
+        if (!["Boxes", "Rolls"].includes(unit)) throw new Error("Select a valid unit.");
         if (!notes || notes.length > 500) throw new Error("Enter notes for this request (up to 500 characters).");
 
         const request = {
@@ -501,7 +531,7 @@
             station,
             requestee,
             notes,
-            requestedBy: profile.name || profile.username,
+            requestedBy: profile.role === "Collector" ? "" : profile.name || profile.username,
             requestedByUsername: profile.username,
             createdByUid: user.uid,
             status: "Pending",
@@ -551,6 +581,7 @@
     window.sharedInventory = {
         load: loadInventory,
         loadStationThermal: loadStationThermalInventory,
+        loadCollectorThermal: loadCollectorThermalInventory,
         publishThermalStation: publishThermalStationInventory,
         watch: watchInventory,
         save: saveInventory,

@@ -7,7 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js?v=20261024-1"></script>
-    <script src="js/firebase-shared.js?v=20261025-4"></script>
+    <script src="js/firebase-shared.js?v=20261025-9"></script>
     <script src="js/auth-session.js?v=20260921-2"></script>
     <meta name="description" content="Inventory Management">
     <meta name="author" content="">
@@ -1201,7 +1201,7 @@
             if (rackField && rackField.tagName === "SELECT") {
                 const selectedValue = rackField.value;
                 const options = isThermalInventory
-                    ? ["Guadalupe Station", "Punta Princessa Station", "Babag Station"]
+                    ? ["Guadalupe Station", "Punta Princessa Station", "Babag Station", "Collector"]
                     : systems;
                 const placeholder = isThermalInventory ? "-- Select Station --" : "-- Select System --";
                 rackField.innerHTML = `<option value="">${placeholder}</option>${options.map(option => `<option value="${option}">${option}</option>`).join("")}`;
@@ -1517,8 +1517,8 @@
                     <td>${escapeHtml(request.item || "Thermal Paper")}</td>
                     <td>${escapeHtml(request.quantity)} ${escapeHtml(request.unit)}</td>
                     <td>${escapeHtml(request.station || "-")}</td>
-                    <td>${escapeHtml(request.requestee || "-")}</td>
-                    <td>${escapeHtml(request.requestedBy || "-")}</td>
+                    <td>${escapeHtml(request.requestee || "")}</td>
+                    <td>${escapeHtml(request.requestedBy || "")}</td>
                     <td>${escapeHtml(requestedDate)}</td>
                     <td class="thermal-request-status" data-request-id="${escapeHtml(request.id)}" title="Double-click to edit"><span class="badge ${getThermalRequestStatusBadgeClass(status)}">${escapeHtml(status)}</span></td>
                     <td>${requestNotes}${rejectionNote}</td>
@@ -3835,8 +3835,10 @@
                         <tbody>
                             <tr>
                                 <td style="padding: 12px 10px; vertical-align: top;"><select name="rack" style="width: 100%; min-width: 100px; padding: 8px 10px; border: 1px solid #dfe6ef; border-radius: 6px; color: #1e3a5f; background: white;">
-                                    <option value="">-- Select System --</option>
-                                    ${getSystemOptions().map(rack => `<option value="${rack}" ${String(record.rack || "").toUpperCase() === rack ? "selected" : ""}>${rack}</option>`).join("")}
+                                    <option value="">${getCurrentUserOffice() === "Thermal" ? "-- Select Station/Collector --" : "-- Select System --"}</option>
+                                    ${(getCurrentUserOffice() === "Thermal"
+                                        ? ["Guadalupe Station", "Punta Princessa Station", "Babag Station", "Collector"]
+                                        : getSystemOptions()).map(rack => `<option value="${rack}" ${String(record.rack || "").trim().toLowerCase() === rack.toLowerCase() ? "selected" : ""}>${rack}</option>`).join("")}
                                 </select></td>
                                 <td style="padding: 12px 10px; vertical-align: top;"><input name="posNo" value="${escapeDetailHtml(record.posNo || "")}" style="width: 100%; min-width: 120px; padding: 8px 10px; border: 1px solid #dfe6ef; border-radius: 6px; font-weight: 700; color: #1e3a5f;" /></td>
                                 <td style="padding: 12px 10px; vertical-align: top;"><input name="serialNumber" value="${escapeDetailHtml(record.serialNumber || "")}" style="width: 100%; min-width: 180px; padding: 8px 10px; border: 1px solid #dfe6ef; border-radius: 6px; font-family: 'Courier New', monospace; color: #2d5a8c;" /></td>

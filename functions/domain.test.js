@@ -118,4 +118,10 @@ test("request validation trims text and rejects invalid quantities and units", (
         quantity: 1,
         unit: "Pallet"
     }), { status: 400 });
+    assert.throws(() => validateRequestInput({
+        station: "Cebu",
+        requestee: "Alex",
+        quantity: 1,
+        unit: "Pcs"
+    }), { status: 400 });
 });

@@ -43,6 +43,7 @@
         "bi-plus-lg": "plus",
         "bi-question-circle": "circle-help",
         "bi-router": "router",
+        "bi-send": "send",
         "bi-shield-lock": "shield-check",
         "bi-sun-fill": "sun",
         "bi-trash": "trash-2",
