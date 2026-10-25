@@ -7,7 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js?v=20261024-1"></script>
-    <script src="js/firebase-shared.js?v=20260604-1"></script>
+    <script src="js/firebase-shared.js?v=20261025-4"></script>
     <script src="js/auth-session.js?v=20260921-2"></script>
     <meta name="description" content="Inventory Management">
     <meta name="author" content="">
@@ -728,6 +728,7 @@
                     <div class="card-body">
                         <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                             <input type="text" id="searchInventory" placeholder="Search by Station" style="flex: 1; padding: 8px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
+                            <button class="btn btn-light" id="exportThermalExcelButton" type="button" hidden><i class="bi bi-download me-2"></i>Export Excel</button>
                             <button class="btn btn-primary" id="addProductBtn"><i class="bi bi-plus-circle me-2"></i>Add Record</button>
                         </div>
                         <div class="detailed-records-scroll">
@@ -1250,6 +1251,110 @@
                 : posNo;
         }
 
+        function escapeExcelXml(value) {
+            return String(value ?? "")
+                .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&apos;");
+        }
+
+        function excelCell(value, numeric = false) {
+            if (numeric && value !== "" && value !== null && value !== undefined && Number.isFinite(Number(value))) {
+                return `<Cell><Data ss:Type="Number">${Number(value)}</Data></Cell>`;
+            }
+            const text = escapeExcelXml(value);
+            return `<Cell><Data ss:Type="String"${/^\s|\s$/.test(String(value ?? "")) ? ' xml:space="preserve"' : ""}>${text}</Data></Cell>`;
+        }
+
+        function excelRow(values) {
+            return `<Row>${values.map(value => Array.isArray(value)
+                ? excelCell(value[0], value[1])
+                : excelCell(value)).join("")}</Row>`;
+        }
+
+        function createThermalExcelWorkbook(inventory) {
+            const summary = inventory?.summaryData || {};
+            const records = Array.isArray(inventory?.recordsData) ? inventory.recordsData : [];
+            const summaryRows = [
+                excelRow(["Thermal Inventory Report"]),
+                excelRow(["Generated", new Date().toLocaleString()]),
+                excelRow(["Metric", "Quantity", "Damage / Rolls", "Released / PCS", "Remaining", "Charger"])
+            ];
+            Object.entries(summary).forEach(([model, values]) => {
+                summaryRows.push(excelRow([
+                    model,
+                    [values?.quantity ?? "", true],
+                    [values?.damage ?? "", true],
+                    [values?.released ?? "", true],
+                    [values?.remaining ?? "", true],
+                    [values?.charger ?? "", true]
+                ]));
+            });
+
+            const recordRows = [
+                excelRow(["Thermal Inventory Records"]),
+                excelRow(["Station", "Released", "Unit", "Serial Number", "Full Name", "User ID", "Address", "Status", "LOKALS", "Note / Issue", "Price", "Transfer To", "Column J", "Created By", "Record Date"])
+            ];
+            records.forEach(record => recordRows.push(excelRow([
+                record.rack || "",
+                [record.posNo ?? "", true],
+                record.posUnit || "",
+                record.serialNumber || "",
+                record.fullName || "",
+                record.userId || "",
+                record.address || "",
+                record.status || "",
+                record.lokals || "",
+                record.noteIssue || "",
+                [record.price ?? "", true],
+                record.transferTo || "",
+                record.columnJ || "",
+                record.createdBy || "",
+                record.recordDate || ""
+            ])));
+
+            return `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Worksheet ss:Name="Summary"><Table>${summaryRows.join("")}</Table></Worksheet>
+ <Worksheet ss:Name="Thermal Records"><Table>${recordRows.join("")}</Table></Worksheet>
+</Workbook>`;
+        }
+
+        async function exportThermalInventoryExcel(button) {
+            if (getCurrentUserOffice() !== "Thermal") {
+                throw new Error("Excel export is available only for Thermal Inventory.");
+            }
+            if (!window.sharedInventory) throw new Error("Shared inventory storage is unavailable.");
+
+            button.disabled = true;
+            const originalLabel = button.innerHTML;
+            button.innerHTML = "Preparing Excel…";
+            try {
+                const inventory = await window.sharedInventory.load("Thermal");
+                const workbook = createThermalExcelWorkbook(inventory);
+                const blob = new Blob([workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
+                const objectUrl = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = objectUrl;
+                link.download = `thermal-inventory-report-${new Date().toISOString().slice(0, 10)}.xls`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalLabel;
+            }
+        }
+
         function getCurrentUserRole() {
             const username = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "User";
             const accounts = JSON.parse(localStorage.getItem("userAccounts")) || {};
@@ -1664,6 +1769,16 @@
             }
             if (currentOffice === "Thermal") {
                 document.body.classList.add("thermal-inventory");
+                const exportButton = document.getElementById("exportThermalExcelButton");
+                exportButton.hidden = false;
+                exportButton.addEventListener("click", async () => {
+                    try {
+                        await exportThermalInventoryExcel(exportButton);
+                    } catch (error) {
+                        console.error("Unable to export Thermal inventory report.", error);
+                        alert(`Unable to export Thermal inventory: ${error.message || "check your connection and permissions."}`);
+                    }
+                });
                 loadThermalPaperRequests();
                 window.setInterval(loadThermalPaperRequests, 30000);
                 window.addEventListener("storage", event => {
