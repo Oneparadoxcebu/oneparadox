@@ -29,8 +29,8 @@
       <link href="css/login.css" rel="stylesheet">
 
 
-    <link href="css/sign-in.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/app-redesign.css?v=20260929-11">
+    <link href="css/sign-in.css?v=20261025-2" rel="stylesheet">
+    <link rel="stylesheet" href="css/app-redesign.css?v=20261025-6">
     <script src="https://cdn.jsdelivr.net/npm/lucide@1.48.0/dist/umd/lucide.min.js" defer></script>
     <script src="js/lucide-icons.js?v=20260929-2" defer></script>
 
@@ -67,7 +67,10 @@
 
   <label for="PasswordInput">Password</label>
 
-  <i class="bi bi-eye position-absolute top-50 end-0 translate-middle-y me-3" id="togglePasswordIcon" style="cursor: pointer;"></i>
+  <button type="button" class="password-toggle position-absolute top-50 end-0 translate-middle-y me-2" id="togglePasswordIcon" aria-label="Show password" aria-pressed="false">
+    <i class="bi bi-eye" id="showPasswordIcon" aria-hidden="true"></i>
+    <i class="bi bi-eye-slash" id="hidePasswordIcon" aria-hidden="true" hidden></i>
+  </button>
 </div>
 
     <button id="SignInButton" class="btn btn-primary w-100 py-2" type="submit">Sign in</button>
@@ -79,7 +82,7 @@
       <script src="https://cdn.jsdelivr.net/npm/sql.js@1.11.0/dist/sql-wasm.js"></script>
       <script src="js/password-security.js?v=20260919-1"></script>
       <script src="js/sqlite-login.js?v=20260919-2"></script>
-      <script src="js/login.js?v=20261024-1"></script>
+      <script src="js/login.js?v=20261025-4"></script>
     
 
 </body></html>

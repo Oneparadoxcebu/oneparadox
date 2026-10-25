@@ -36,15 +36,16 @@ function publicAccount(account) {
 
 function getClaims(account) {
     const isStation = account.role === "Station";
+    const isCollector = account.role === "Collector";
     return {
         username: account.username,
         name: account.name || account.username,
         role: account.role || "Management",
-        permissions: isStation ? [] : Array.isArray(account.permissions) ? account.permissions : [],
-        inventoryAccess: isStation
+        permissions: isStation || isCollector ? [] : Array.isArray(account.permissions) ? account.permissions : [],
+        inventoryAccess: isStation || isCollector
             ? ["Requests"]
             : Array.isArray(account.inventoryAccess) ? account.inventoryAccess : [],
-        office: account.office || ""
+        office: isCollector ? "Collector" : account.office || ""
     };
 }
 
@@ -54,6 +55,15 @@ function normalizeManagedAccount(input, username, claims) {
         if (claims.role !== "Developer" && !claims.inventoryAccess.includes("Requests")) {
             throw Object.assign(new Error("You cannot assign Requests access."), { status: 403 });
         }
+        account.inventoryAccess = ["Requests"];
+        account.permissions = [];
+        return account;
+    }
+    if (account.role === "Collector") {
+        if (claims.role !== "Developer" && !claims.inventoryAccess.includes("Requests")) {
+            throw Object.assign(new Error("You cannot assign Requests access."), { status: 403 });
+        }
+        account.office = "Collector";
         account.inventoryAccess = ["Requests"];
         account.permissions = [];
         return account;

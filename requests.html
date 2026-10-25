@@ -7,7 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js?v=20261024-1"></script>
-    <script src="js/firebase-shared.js?v=20261024-4"></script>
+    <script src="js/firebase-shared.js?v=20261025-4"></script>
     <script src="js/auth-session.js?v=20260921-2"></script>
     <meta name="description" content="Workspace Requests">
     <title>Requests</title>
@@ -15,7 +15,7 @@
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/bootstrap-icons.css">
     <link rel="stylesheet" href="css/theme-switch.css?v=20260928-3">
-    <link rel="stylesheet" href="css/app-redesign.css?v=20260929-11">
+    <link rel="stylesheet" href="css/app-redesign.css?v=20261025-3">
     <script src="js/theme-switch.js?v=20260929-1"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@1.48.0/dist/umd/lucide.min.js" defer></script>
     <script src="js/lucide-icons.js?v=20261023-1" defer></script>
@@ -35,7 +35,7 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminMenu">
                             <li><a class="dropdown-item active" data-inventory-access="Requests" href="requests.html" aria-current="page"><i class="bi bi-inbox me-2"></i>Requests</a></li>
-                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Cebu" href="inventory.html?office=Cebu"><i class="bi bi-boxes me-2"></i>Inventory of Cebu</a></li>
+                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Cebu" href="inventory.html?office=Cebu"><i class="bi bi-boxes me-2"></i>POS Inventory</a></li>
                             <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Thermal" href="inventory.html?office=Thermal"><i class="bi bi-boxes me-2"></i>Thermal Inventory</a></li>
                             <li><button class="dropdown-item" id="changePasswordMenuBtn" type="button"><i class="bi bi-key me-2"></i>Change Password</button></li>
                         </ul>
@@ -57,16 +57,16 @@
     <main class="container-fluid inventory-container">
         <section class="welcome-section">
             <h1 class="welcome-title">Requests</h1>
-            <p class="welcome-subtitle mb-0">Submit Thermal Paper requests. Requests are saved locally in this browser for testing.</p>
+            <p class="welcome-subtitle mb-0">Submit Thermal Paper requests. Requests are saved to Firebase.</p>
         </section>
         <section class="card p-4 mb-4" aria-labelledby="thermalPaperRequestTitle">
             <h2 class="h5 mb-3" id="thermalPaperRequestTitle"><i class="bi bi-send me-2"></i>Request Thermal Paper</h2>
             <form id="thermalPaperRequestForm" class="row g-3">
-                <div class="col-md-3">
+                <div class="col-md-3" id="thermalPaperStationField">
                     <label for="thermalPaperStation" class="form-label">Station</label>
                     <input id="thermalPaperStation" class="form-control" type="text" maxlength="120" required>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3" id="thermalPaperRequesteeField">
                     <label for="thermalPaperRequestee" class="form-label">Name of Requestee</label>
                     <input id="thermalPaperRequestee" class="form-control" type="text" maxlength="120" required>
                 </div>
@@ -83,14 +83,76 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label for="thermalPaperNotes" class="form-label">Notes (optional)</label>
-                    <input id="thermalPaperNotes" class="form-control" type="text" maxlength="500" placeholder="Add details for this request">
+                    <label for="thermalPaperNotes" class="form-label">Notes</label>
+                    <input id="thermalPaperNotes" class="form-control" type="text" maxlength="500" placeholder="Add details for this request" required>
                 </div>
                 <div class="col-12 d-flex align-items-center gap-3">
                     <button id="submitThermalPaperRequest" class="btn btn-primary" type="submit"><i class="bi bi-send me-2"></i>Submit Request</button>
-                    <span id="requestFormMessage" class="text-muted" role="status" aria-live="polite"></span>
+                    <span id="requestFormMessage" class="text-muted" role="alert" aria-live="polite"></span>
                 </div>
             </form>
+        </section>
+        <section class="mb-4 request-thermal-overview" aria-labelledby="thermalInventoryOverviewTitle">
+            <h2 class="section-title" id="thermalInventoryOverviewTitle"><i class="bi bi-boxes"></i><span id="thermalInventoryOverviewHeading">Inventory Overview</span></h2>
+            <div class="row mb-4" id="requestThermalMetrics">
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card stat-card">
+                        <div class="icon-box"><i class="bi bi-box"></i></div>
+                        <div class="stat-label" id="requestThermalTotalBoxesLabel">Total Boxes of Thermal</div>
+                        <div class="stat-value" id="requestThermalTotalBoxes">0</div>
+                        <div class="stat-label-subtitle" id="requestThermalTotalBoxesSubtitle">Total boxes of thermal</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card stat-card">
+                        <div class="icon-box"><i class="bi bi-graph-up-arrow"></i></div>
+                        <div class="stat-label">Total Received Boxes</div>
+                        <div class="stat-value" id="requestThermalReleasedBoxes">0</div>
+                        <div class="stat-label-subtitle">Total Received Boxes</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card stat-card">
+                        <div class="icon-box"><i class="bi bi-exclamation-triangle"></i></div>
+                        <div class="stat-label">Total Received Rolls</div>
+                        <div class="stat-value" id="requestThermalReleasedRolls">0</div>
+                        <div class="stat-label-subtitle">Total Received Rolls</div>
+                    </div>
+                </div>
+            </div>
+            <section class="card" aria-labelledby="requestThermalRecordsTitle">
+                <div class="card-header d-flex align-items-center justify-content-between gap-3">
+                    <div><i class="bi bi-list-check me-2"></i><span id="requestThermalRecordsTitle">Detailed Released Thermal Records</span> <span id="requestThermalRecordCount" style="background: #1e3a5f; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-left: 10px; font-weight: 600;">0 records</span></div>
+                    <a id="openThermalInventoryLink" class="btn btn-light btn-sm" href="inventory.html?office=Thermal" style="background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25); color: white; font-weight: 600;">
+                        <i class="bi bi-fullscreen me-1"></i>Open
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="request-thermal-toolbar">
+                        <input id="requestThermalRecordSearch" type="search" placeholder="Search by Station" aria-label="Search Thermal records by station">
+                    </div>
+                    <div class="request-thermal-records-scroll">
+                        <table class="inventory-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Station/Teller</th>
+                                    <th scope="col">Released</th>
+                                    <th scope="col">Full Name</th>
+                                    <th scope="col">User ID</th>
+                                    <th scope="col">Address</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Note</th>
+                                    <th scope="col">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requestThermalRecordsBody">
+                                <tr><td colspan="8" class="text-center text-muted py-4">Loading Thermal inventory…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p id="requestThermalInventoryMessage" class="small text-muted mt-3 mb-0" role="status" aria-live="polite"></p>
+                </div>
+            </section>
         </section>
         <section class="card p-4" aria-labelledby="submittedThermalPaperRequestsTitle">
             <h2 class="h5 mb-3" id="submittedThermalPaperRequestsTitle"><i class="bi bi-inbox me-2"></i>Submitted Thermal Paper Requests</h2>
@@ -101,14 +163,13 @@
                             <th scope="col">Item</th>
                             <th scope="col">Quantity</th>
                             <th scope="col">Station</th>
-                            <th scope="col">Name of Requestee</th>
                             <th scope="col">Date</th>
                             <th scope="col">Status</th>
                             <th scope="col">Notes</th>
                         </tr>
                     </thead>
                     <tbody id="submittedThermalPaperRequestsBody">
-                        <tr><td colspan="7" class="text-center text-muted py-4">Loading requests…</td></tr>
+                        <tr><td colspan="6" class="text-center text-muted py-4">Loading requests…</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -133,7 +194,7 @@
         if (window.authSession && !window.authSession.get()) return;
         const username = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "User";
         const accounts = JSON.parse(localStorage.getItem("userAccounts") || "{}");
-        const account = accounts[username];
+        const account = window.authSession?.get() || accounts[username];
         const userDisplay = document.getElementById("userDisplay");
         userDisplay.querySelector(".user-display-name").textContent = account?.name || username;
         userDisplay.querySelector(".user-display-username").textContent = `@${username}`;
@@ -172,6 +233,150 @@
         const requestSubmitButton = document.getElementById("submitThermalPaperRequest");
         const requestFormMessage = document.getElementById("requestFormMessage");
         const submittedRequestsBody = document.getElementById("submittedThermalPaperRequestsBody");
+        const requesteeInput = document.getElementById("thermalPaperRequestee");
+        const stationInput = document.getElementById("thermalPaperStation");
+        const quantityInput = document.getElementById("thermalPaperQuantity");
+        const unitInput = document.getElementById("thermalPaperUnit");
+        const notesInput = document.getElementById("thermalPaperNotes");
+        const isStationAccount = account?.role === "Station";
+        const isCollectorAccount = account?.role === "Collector";
+        if (isCollectorAccount) {
+            document.querySelector(".request-thermal-overview").hidden = true;
+            document.getElementById("thermalPaperStationField").hidden = true;
+            stationInput.required = false;
+            stationInput.disabled = true;
+            requesteeInput.value = account.name || username;
+            requesteeInput.required = false;
+            requesteeInput.disabled = true;
+            document.querySelector("#thermalPaperRequesteeField label").textContent = "Name of Collector";
+        }
+        if (isStationAccount) {
+            document.getElementById("thermalPaperRequesteeField").hidden = true;
+            requesteeInput.required = false;
+            requesteeInput.value = account.name || username;
+            stationInput.value = account.office || "";
+            stationInput.readOnly = true;
+            document.getElementById("openThermalInventoryLink").hidden = true;
+            document.getElementById("thermalInventoryOverviewHeading").textContent =
+                `Inventory Overview — ${account.office || "Station"}`;
+            document.getElementById("requestThermalTotalBoxesLabel").textContent = `Records at ${account.office || "Station"}`;
+            document.getElementById("requestThermalTotalBoxesSubtitle").textContent =
+                `Thermal records assigned to ${account.office || "this station"}`;
+            document.getElementById("requestThermalRecordsTitle").textContent =
+                `${account.office || "Station"} Thermal Records`;
+        }
+        const thermalRecordsBody = document.getElementById("requestThermalRecordsBody");
+        const thermalRecordSearch = document.getElementById("requestThermalRecordSearch");
+        const thermalRecordCount = document.getElementById("requestThermalRecordCount");
+        const thermalInventoryMessage = document.getElementById("requestThermalInventoryMessage");
+        let thermalRecords = [];
+
+        function renderThermalRecords(records) {
+            const query = thermalRecordSearch.value.trim().toLowerCase();
+            const filteredRecords = records.filter(record =>
+                Object.values(record).some(value => String(value ?? "").toLowerCase().includes(query))
+            );
+            const statusClass = status => {
+                switch (String(status || "").trim().toUpperCase()) {
+                    case "ACTIVE": return "text-bg-success";
+                    case "DAMAGE":
+                    case "LOST":
+                    case "DISABLED": return "text-bg-danger";
+                    case "NOT ACTIVE":
+                    case "TEST UNIT": return "text-bg-warning";
+                    default: return "text-bg-secondary";
+                }
+            };
+            thermalRecordCount.textContent = `${filteredRecords.length} record${filteredRecords.length === 1 ? "" : "s"}`;
+            if (!filteredRecords.length) {
+                const emptyMessage = query
+                    ? "No matching Thermal records."
+                    : isStationAccount
+                        ? `No Thermal records are assigned to ${escapeRequestHtml(account.office || "this station")}.`
+                        : "No Thermal inventory records available.";
+                thermalRecordsBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">${emptyMessage}</td></tr>`;
+                return;
+            }
+
+            thermalRecordsBody.innerHTML = filteredRecords.map(record => {
+                const status = String(record.status || "-");
+                const released = record.posNo
+                    ? `${record.posNo}${["BOX", "ROLLS", "PCS"].includes(record.posUnit) ? ` ${record.posUnit}` : ""}`
+                    : "-";
+                const values = [
+                    record.rack || "-",
+                    released,
+                    String(record.fullName || "").trim() || "N/A",
+                    record.userId || "-",
+                    record.address || "-",
+                    status,
+                    record.noteIssue && record.noteIssue !== "-" ? record.noteIssue : "-",
+                    record.price ?? "-"
+                ];
+                return `<tr>${values.map((value, index) => `<td>${index === 6
+                    ? `<span class="badge ${statusClass(status)}">${escapeRequestHtml(value)}</span>`
+                    : escapeRequestHtml(value)}</td>`).join("")}</tr>`;
+            }).join("");
+        }
+
+        async function loadThermalInventoryOverview() {
+            try {
+                const inventory = isStationAccount
+                    ? await window.sharedInventory.loadStationThermal()
+                    : await window.sharedInventory.load("Thermal");
+                if (isStationAccount && !inventory) {
+                    thermalRecords = [];
+                    renderThermalRecords(thermalRecords);
+                    thermalInventoryMessage.textContent =
+                        "Station inventory has not been synced yet. Ask a Thermal Inventory manager to open the Thermal Inventory page to sync existing records.";
+                    return;
+                }
+                if (isStationAccount) {
+                    const assignedStation = String(account.office || "").trim().toLowerCase();
+                    thermalRecords = (Array.isArray(inventory?.recordsData) ? inventory.recordsData : [])
+                        .filter(record => String(record.rack || "").trim().toLowerCase() === assignedStation);
+                    const sumReleasedForUnit = unit => thermalRecords.reduce((total, record) => {
+                        if (String(record.posUnit || "").trim().toUpperCase() !== unit) return total;
+                        const quantity = Number(String(record.posNo || "").replace(/,/g, "").trim());
+                        return total + (Number.isFinite(quantity) && quantity > 0 ? quantity : 0);
+                    }, 0);
+                    document.getElementById("requestThermalTotalBoxes").textContent = thermalRecords.length;
+                    document.getElementById("requestThermalReleasedBoxes").textContent = sumReleasedForUnit("BOX");
+                    document.getElementById("requestThermalReleasedRolls").textContent = sumReleasedForUnit("ROLLS");
+                    renderThermalRecords(thermalRecords);
+                    thermalInventoryMessage.textContent = "";
+                    return;
+                }
+                const summary = inventory?.summaryData || {};
+                const totals = summary.TOTAL || {};
+                let totalBoxes = 0;
+                let releasedBoxes = Number.parseInt(totals.quantity, 10) || 0;
+                let releasedRolls = Number.parseInt(totals.damage, 10) || 0;
+                for (const [model, values] of Object.entries(summary)) {
+                    if (model === "TOTAL") continue;
+                    const count = Number(model);
+                    if (Number.isFinite(count)) totalBoxes += count;
+                    releasedBoxes += Number.parseInt(values.quantity, 10) || 0;
+                    releasedRolls += Number.parseInt(values.damage, 10) || 0;
+                }
+                document.getElementById("requestThermalTotalBoxes").textContent = totalBoxes;
+                document.getElementById("requestThermalReleasedBoxes").textContent = releasedBoxes;
+                document.getElementById("requestThermalReleasedRolls").textContent = releasedRolls;
+                thermalRecords = Array.isArray(inventory?.recordsData) ? inventory.recordsData : [];
+                renderThermalRecords(thermalRecords);
+                thermalInventoryMessage.textContent = "";
+            } catch (error) {
+                console.error("Unable to load Thermal inventory overview.", error);
+                ["requestThermalTotalBoxes", "requestThermalReleasedBoxes", "requestThermalReleasedRolls"]
+                    .forEach(id => { document.getElementById(id).textContent = "Unavailable"; });
+                thermalRecordCount.textContent = "Unavailable";
+                thermalRecordsBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Unable to load Thermal inventory.</td></tr>';
+                const reason = error instanceof Error ? error.message : String(error);
+                thermalInventoryMessage.textContent = `Thermal inventory could not be loaded: ${reason} Existing account permissions were not changed.`;
+            }
+        }
+
+        thermalRecordSearch.addEventListener("input", () => renderThermalRecords(thermalRecords));
 
         function escapeRequestHtml(value) {
             return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
@@ -192,7 +397,7 @@
         function renderSubmittedRequests(requests) {
             const sortedRequests = [...requests].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
             if (!sortedRequests.length) {
-                submittedRequestsBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No Thermal Paper requests submitted yet.</td></tr>';
+                submittedRequestsBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No Thermal Paper requests submitted yet.</td></tr>';
                 return;
             }
 
@@ -207,7 +412,6 @@
                     <td>${escapeRequestHtml(request.item || "Thermal Paper")}</td>
                     <td>${escapeRequestHtml(request.quantity)} ${escapeRequestHtml(request.unit)}</td>
                     <td>${escapeRequestHtml(request.station || "-")}</td>
-                    <td>${escapeRequestHtml(request.requestee || "-")}</td>
                     <td>${escapeRequestHtml(requestedDate)}</td>
                     <td><span class="badge ${getRequestStatusBadgeClass(status)}">${escapeRequestHtml(status)}</span></td>
                     <td>${notes}${rejectionNote}</td>
@@ -221,22 +425,68 @@
             } catch (error) {
                 console.error("Unable to load submitted Thermal Paper requests.", error);
                 const reason = error instanceof Error ? error.message : String(error);
-                submittedRequestsBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Unable to load requests: ${escapeRequestHtml(reason)}</td></tr>`;
+                submittedRequestsBody.innerHTML = `<tr>                <td colspan="6" class="text-center text-danger py-4">Unable to load requests: ${escapeRequestHtml(reason)}</td></tr>`;
             }
         }
 
+        const requiredRequestFields = [
+            ...(!isStationAccount && !isCollectorAccount ? [{ input: stationInput, label: "Station" }, { input: requesteeInput, label: "Name of Requestee" }] : []),
+            { input: quantityInput, label: "Quantity" },
+            { input: unitInput, label: "Unit" },
+            { input: notesInput, label: "Notes" }
+        ];
+
+        function validateRequestForm() {
+            const missing = [];
+            requiredRequestFields.forEach(({ input, label }) => {
+                const value = String(input.value || "").trim();
+                const isEmpty = !value;
+                const isInvalidQuantity = input === quantityInput &&
+                    (!Number.isInteger(Number(value)) || Number(value) < 1);
+                const isInvalidUnit = input === unitInput &&
+                    !["Boxes", "Rolls", "Pcs"].includes(value);
+                const message = isEmpty
+                    ? `${label} is required.`
+                    : isInvalidQuantity
+                        ? "Enter a whole-number quantity greater than zero."
+                        : isInvalidUnit
+                            ? "Select a valid unit."
+                            : "";
+                input.setCustomValidity(message);
+                if (message) missing.push(label);
+            });
+
+            if (missing.length) {
+                requestFormMessage.textContent =
+                    `Complete the required field${missing.length === 1 ? "" : "s"} before submitting: ${missing.join(", ")}.`;
+                requestForm.reportValidity();
+                return false;
+            }
+            requestFormMessage.textContent = "";
+            return requestForm.reportValidity();
+        }
+
+        requestForm.addEventListener("input", event => {
+            if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) {
+                event.target.setCustomValidity("");
+                requestFormMessage.textContent = "";
+            }
+        });
+
         requestForm.addEventListener("submit", async event => {
             event.preventDefault();
-            if (!requestForm.reportValidity()) return;
+            if (!validateRequestForm()) return;
 
-            const quantity = Number(document.getElementById("thermalPaperQuantity").value);
-            if (!Number.isInteger(quantity) || quantity < 1) {
-                requestFormMessage.textContent = "Enter a whole-number quantity greater than zero.";
-                return;
-            }
+            const quantity = Number(quantityInput.value);
 
-            const station = document.getElementById("thermalPaperStation").value.trim();
-            const requestee = document.getElementById("thermalPaperRequestee").value.trim();
+            const station = isStationAccount
+                ? String(account.office || "").trim()
+                : isCollectorAccount
+                    ? "Collector"
+                    : stationInput.value.trim();
+            const requestee = isStationAccount || isCollectorAccount
+                ? String(account.name || username).trim()
+                : requesteeInput.value.trim();
             if (!station || !requestee) {
                 requestFormMessage.textContent = "Enter the station and name of the requestee.";
                 return;
@@ -246,10 +496,10 @@
                 id: `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
                 item: "Thermal Paper",
                 quantity,
-                unit: document.getElementById("thermalPaperUnit").value,
+                unit: unitInput.value,
                 station,
                 requestee,
-                notes: document.getElementById("thermalPaperNotes").value.trim(),
+                notes: notesInput.value.trim(),
                 requestedBy: account?.name || username,
                 requestedByUsername: username,
                 status: "Pending",
@@ -261,7 +511,8 @@
             try {
                 await window.sharedRequests.create(request);
                 requestForm.reset();
-                document.getElementById("thermalPaperUnit").value = "Boxes";
+                if (isStationAccount) stationInput.value = account.office || "";
+                unitInput.value = "Boxes";
                 requestFormMessage.textContent = "Request submitted successfully and saved to Firebase.";
                 await loadSubmittedRequests();
             } catch (error) {
@@ -274,6 +525,10 @@
         });
 
         loadSubmittedRequests();
+        if (!isCollectorAccount) {
+            loadThermalInventoryOverview();
+            window.setInterval(loadThermalInventoryOverview, 30000);
+        }
         window.addEventListener("storage", event => {
             if (event.key === window.sharedRequests.storageKey) loadSubmittedRequests();
         });

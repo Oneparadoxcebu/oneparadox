@@ -49,16 +49,41 @@ service cloud.firestore {
             && 'Thermal' in currentProfile().inventoryAccess));
     }
 
+    function validCollectorProfile(profile) {
+      return profile.role != 'Collector'
+        || (profile.office == 'Collector'
+          && profile.permissions is list
+          && profile.permissions.size() == 0
+          && profile.inventoryAccess is list
+          && profile.inventoryAccess.size() == 1
+          && 'Requests' in profile.inventoryAccess);
+    }
+
+    function isThermalStation(station) {
+      return station in ['Guadalupe Station', 'Punta Princessa Station', 'Babag Station'];
+    }
+
+    function canReadStationThermal(station) {
+      return enabledUser()
+        && currentProfile().role == 'Station'
+        && isThermalStation(station)
+        && currentProfile().office == station
+        && currentProfile().inventoryAccess is list
+        && 'Requests' in currentProfile().inventoryAccess;
+    }
+
     match /users/{uid} {
       allow get: if (signedIn() && request.auth.uid == uid)
         || (enabledUser() && isAdmin());
       allow list: if isAdmin();
       allow create: if isAdmin()
+        && validCollectorProfile(request.resource.data)
         && request.resource.data.keys().hasOnly([
           'uid', 'username', 'name', 'email', 'role', 'permissions',
           'office', 'inventoryAccess', 'disabled', 'theme'
         ]);
       allow update: if isAdmin()
+          && validCollectorProfile(request.resource.data)
           && request.resource.data.keys().hasOnly([
             'uid', 'username', 'name', 'email', 'role', 'permissions',
             'office', 'inventoryAccess', 'disabled', 'theme'
@@ -88,6 +113,28 @@ service cloud.firestore {
       }
     }
 
+    match /stationThermalInventory/{station} {
+      allow get: if canReadStationThermal(station) || canAccessOffice('Thermal');
+      allow list: if false;
+      allow create, update: if canAccessOffice('Thermal')
+        && isThermalStation(station)
+        && request.resource.data.keys().hasOnly(['station', 'updatedAt', 'recordCount'])
+        && request.resource.data.station == station
+        && request.resource.data.updatedAt is string
+        && request.resource.data.recordCount is int
+        && request.resource.data.recordCount >= 0;
+      allow delete: if canAccessOffice('Thermal') && isThermalStation(station);
+
+      match /chunks/{chunkId} {
+        allow get, list: if canReadStationThermal(station) || canAccessOffice('Thermal');
+        allow create, update: if canAccessOffice('Thermal')
+          && isThermalStation(station)
+          && request.resource.data.keys().hasOnly(['records'])
+          && request.resource.data.records is list;
+        allow delete: if canAccessOffice('Thermal') && isThermalStation(station);
+      }
+    }
+
     match /workspaceRequests/{requestId} {
       allow get, list: if canManageRequests()
         || (canSubmitRequests() && resource.data.createdByUid == request.auth.uid);
@@ -112,6 +159,7 @@ service cloud.firestore {
         && request.resource.data.requestee.size() > 0
         && request.resource.data.requestee.size() <= 120
         && request.resource.data.notes is string
+        && request.resource.data.notes.size() > 0
         && request.resource.data.notes.size() <= 500
         && request.resource.data.requestedBy == (currentProfile().name == ''
           ? currentProfile().username
@@ -119,7 +167,12 @@ service cloud.firestore {
         && request.resource.data.requestedByUsername == currentProfile().username
         && request.resource.data.createdByUid == request.auth.uid
         && request.resource.data.status == 'Pending'
-        && request.resource.data.createdAt is string;
+        && request.resource.data.createdAt is string
+        && (currentProfile().role != 'Station'
+          || (isThermalStation(currentProfile().office)
+            && request.resource.data.station == currentProfile().office))
+        && (currentProfile().role != 'Collector'
+          || request.resource.data.station == 'Collector');
       allow update: if canManageRequests()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'rejectionNote'])
         && request.resource.data.status in ['Pending', 'Approved', 'Rejected']

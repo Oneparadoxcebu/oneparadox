@@ -106,6 +106,32 @@ body::after {
   box-shadow: 0 0 0 0.2rem rgba(34, 211, 238, 0.14), 0 8px 20px rgba(2, 132, 199, 0.12);
 }
 
+.form-signin .login-brand-logo {
+  transform: translateY(56px);
+}
+
+.form-signin .password-toggle {
+  z-index: 3;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.form-signin .password-toggle:focus-visible {
+  outline: 2px solid #67e8f9;
+  outline-offset: 1px;
+}
+
+.form-signin .password-toggle [hidden] { display: none !important; }
+
 .form-signin .btn-primary {
   border: 0;
   border-radius: 10px;
@@ -174,6 +200,10 @@ body::after {
   border-color: #bfd1da;
   background-color: rgba(255, 255, 255, 0.92);
   color: #18344a;
+}
+
+:root[data-bs-theme="dark"] .form-signin .login-brand-logo {
+  content: url("../images/one-paradox-logo-dark.png?v=20261025-1");
 }
 
 :root[data-bs-theme="light"] .form-signin .form-control::placeholder,

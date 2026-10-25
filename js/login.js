@@ -6,6 +6,8 @@
     const passwordInput = document.getElementById("PasswordInput");
     const message = document.getElementById("divMessage");
     const passwordToggle = document.getElementById("togglePasswordIcon");
+    const showPasswordIcon = document.getElementById("showPasswordIcon");
+    const hidePasswordIcon = document.getElementById("hidePasswordIcon");
     const signInButton = document.getElementById("SignInButton");
 
     function showError(text) {
@@ -33,11 +35,21 @@
             await window.firebaseAuth.signInWithEmailAndPassword(login.toLowerCase(), password);
         } catch (error) {
             console.error("Sign-in failed.", error);
+            const errorCode = String(error?.code || "").toLowerCase();
+            const errorMessage = String(error?.message || "").toLowerCase();
+            const invalidCredentials =
+                ["auth/invalid-credential", "auth/invalid-login-credentials", "auth/user-not-found", "auth/wrong-password"]
+                    .includes(errorCode) ||
+                /invalid[ _-]?(login[ _-]?)?credentials|invalid[ _-]?password|wrong[ _-]?password|email[ _-]?not[ _-]?found/.test(errorMessage);
             const messageByCode = {
                 "auth/invalid-credential": "Email or password is incorrect.",
+                "auth/invalid-login-credentials": "Email or password is incorrect.",
                 "auth/user-not-found": "Email or password is incorrect.",
                 "auth/wrong-password": "Email or password is incorrect.",
                 "auth/invalid-email": "Enter a valid email address.",
+                "auth/unauthorized-domain": "This website is not authorized to sign in with Firebase. Add oneparadoxcebu.github.io in Firebase Console under Authentication > Settings > Authorized domains.",
+                "auth/operation-not-allowed": "Email/password sign-in is disabled. Enable the Email/Password provider in Firebase Console under Authentication > Sign-in method.",
+                "auth/configuration-not-found": "Firebase Authentication is not configured for this project. Check the Authentication setup in Firebase Console.",
                 "functions/unauthenticated": "Username or password is incorrect.",
                 "functions/not-found": "Username sign-in is not configured. Sign in with your email or contact your administrator.",
                 "functions/unavailable": "The sign-in service is temporarily unavailable. Try again later.",
@@ -45,15 +57,21 @@
                 "auth/too-many-requests": "Too many sign-in attempts. Try again later.",
                 "auth/network-request-failed": "Could not connect to Firebase. Check your connection."
             };
-            showError(messageByCode[error.code] || "Sign-in failed. Check your credentials and Firebase setup.");
+            showError(invalidCredentials
+                ? "Email or password is incorrect."
+                : messageByCode[errorCode] || "Sign-in failed. Check your credentials and Firebase setup.");
             signInButton.disabled = false;
         }
     });
 
-    passwordToggle?.addEventListener("click", () => {
+    passwordToggle?.addEventListener("click", event => {
+        event.preventDefault();
         const reveal = passwordInput.type === "password";
         passwordInput.type = reveal ? "text" : "password";
-        window.setLucideIcon?.(passwordToggle, reveal ? "eye-off" : "eye");
+        passwordToggle.setAttribute("aria-label", reveal ? "Hide password" : "Show password");
+        passwordToggle.setAttribute("aria-pressed", String(reveal));
+        showPasswordIcon.hidden = reveal;
+        hidePasswordIcon.hidden = !reveal;
     });
 
     const params = new URLSearchParams(window.location.search);

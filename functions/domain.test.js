@@ -36,12 +36,41 @@ test("Station claims are restricted to Requests and no menu permissions", () => 
     });
 });
 
+test("Collector claims are restricted to Requests and the Collector office", () => {
+    assert.deepEqual(getClaims({
+        username: "collector",
+        role: "Collector",
+        office: "Cebu",
+        permissions: ["inventory", "users"],
+        inventoryAccess: ["Cebu", "Thermal"]
+    }), {
+        username: "collector",
+        name: "collector",
+        role: "Collector",
+        permissions: [],
+        inventoryAccess: ["Requests"],
+        office: "Collector"
+    });
+});
+
 test("Station accounts are normalized and non-Developer managers cannot elevate access", () => {
     const manager = { role: "Management", permissions: ["users"], inventoryAccess: ["Requests"] };
     assert.deepEqual(normalizeManagedAccount({ role: "Station", permissions: ["users"] }, "station", manager), {
         role: "Station",
         permissions: [],
         username: "station",
+        inventoryAccess: ["Requests"]
+    });
+    assert.deepEqual(normalizeManagedAccount({
+        role: "Collector",
+        office: "Thermal",
+        permissions: ["inventory"],
+        inventoryAccess: ["Thermal"]
+    }, "collector", manager), {
+        role: "Collector",
+        office: "Collector",
+        permissions: [],
+        username: "collector",
         inventoryAccess: ["Requests"]
     });
     assert.throws(

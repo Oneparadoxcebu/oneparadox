@@ -793,7 +793,7 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminMenu">
                             <li><a class="dropdown-item" data-inventory-access="Requests" href="requests.html"><i class="bi bi-inbox me-2"></i>Requests</a></li>
-                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Cebu" href="inventory.html?office=Cebu"><i class="bi bi-boxes me-2"></i>Inventory of Cebu</a></li>
+                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Cebu" href="inventory.html?office=Cebu"><i class="bi bi-boxes me-2"></i>POS Inventory</a></li>
                             <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Thermal" href="inventory.html?office=Thermal"><i class="bi bi-boxes me-2"></i>Thermal Inventory</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" data-permission="settings" href="dashboard.html#settings"><i class="bi bi-gear me-2"></i>Settings</a></li>
@@ -1079,6 +1079,10 @@
         document.addEventListener("DOMContentLoaded", async function () {
             if (window.authSession) await window.authSession.ready;
             if (window.authSession && !window.authSession.get()) return;
+            if (window.authSession?.get()?.role === "Collector") {
+                window.location.replace("requests.html");
+                return;
+            }
             const username = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "User";
             const accounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
             const account = accounts[username];

@@ -7,7 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js?v=20261024-1"></script>
-    <script src="js/firebase-shared.js?v=20261024-4"></script>
+    <script src="js/firebase-shared.js?v=20260604-1"></script>
     <script src="js/auth-session.js?v=20260921-2"></script>
     <meta name="description" content="Inventory Management">
     <meta name="author" content="">
@@ -499,7 +499,7 @@
     <script>
         const inventoryUsername = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser");
         const inventoryAccount = JSON.parse(localStorage.getItem("userAccounts") || "{}")[inventoryUsername];
-        if (inventoryAccount?.role === "Station") {
+        if (inventoryAccount?.role === "Station" || inventoryAccount?.role === "Collector") {
             const changePasswordQuery = new URLSearchParams(window.location.search).get("changePassword") === "1" || window.location.hash === "#change-password";
             window.location.replace(changePasswordQuery ? "requests.html?changePassword=1" : "requests.html");
         }
@@ -525,7 +525,7 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminMenu">
                             <li><a class="dropdown-item" data-inventory-access="Requests" href="requests.html"><i class="bi bi-inbox me-2"></i>Requests</a></li>
-                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Cebu" href="inventory.html?office=Cebu"><i class="bi bi-boxes me-2"></i>Inventory of Cebu</a></li>
+                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Cebu" href="inventory.html?office=Cebu"><i class="bi bi-boxes me-2"></i>POS Inventory</a></li>
                             <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Thermal" href="inventory.html?office=Thermal"><i class="bi bi-boxes me-2"></i>Thermal Inventory</a></li>
                             <li><a class="dropdown-item" data-permission="inventory" href="#" id="clearInventoryMenuBtn"><i class="bi bi-trash me-2"></i>Clear Inventory</a></li>
                             <li><hr class="dropdown-divider"></li>
@@ -802,7 +802,7 @@
                             <th scope="col">Item</th>
                             <th scope="col">Quantity</th>
                             <th scope="col">Station</th>
-                            <th scope="col">Name of Requestee</th>
+                            <th scope="col">Name of Collector</th>
                             <th scope="col">Requested By</th>
                             <th scope="col">Date</th>
                             <th scope="col">Status</th>
@@ -1077,8 +1077,8 @@
             <div class="account-form-group"><label for="inventoryNewUserUsername">Username</label><input id="inventoryNewUserUsername" placeholder="Enter username"></div>
             <div class="account-form-group"><label for="inventoryNewUserEmail">Email</label><input id="inventoryNewUserEmail" type="email" placeholder="Enter email"></div>
             <div class="account-form-group"><label for="inventoryNewUserPassword">Password</label><input id="inventoryNewUserPassword" type="password" placeholder="Enter password"></div>
-            <div class="account-form-group"><label for="inventoryNewUserOffice">Office</label><select id="inventoryNewUserOffice"><option value="">Select an office</option><option value="Rizal">Rizal</option><option value="Cebu">Cebu</option><option value="Thermal">Thermal</option><option value="Both">All Offices</option></select></div>
-            <div class="account-form-group"><label for="inventoryNewUserRole">Role</label><select id="inventoryNewUserRole"><option value="">Select a role</option><option value="Developer">Developer</option><option value="IT Admin">IT Admin</option><option value="IT Manager">IT Manager</option><option value="IT Supervisor">IT Supervisor</option><option value="IT Support">IT Support</option><option value="Management">Management</option><option value="Station">Station</option></select></div>
+            <div class="account-form-group"><label for="inventoryNewUserOffice">Office</label><select id="inventoryNewUserOffice"><option value="">Select an office</option><option value="Rizal">Rizal</option><option value="Cebu">Cebu</option><option value="Thermal">Thermal</option><option value="Both">All Offices</option><option value="Guadalupe Station">Guadalupe Station</option><option value="Punta Princessa Station">Punta Princessa Station</option><option value="Babag Station">Babag Station</option><option value="Collector">Collector</option></select></div>
+            <div class="account-form-group"><label for="inventoryNewUserRole">Role</label><select id="inventoryNewUserRole"><option value="">Select a role</option><option value="Developer">Developer</option><option value="IT Admin">IT Admin</option><option value="IT Manager">IT Manager</option><option value="IT Supervisor">IT Supervisor</option><option value="IT Support">IT Support</option><option value="Management">Management</option><option value="Station">Station</option><option value="Collector">Collector</option></select></div>
             <div class="account-form-group"><label>Inventory Access</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" id="inventoryAccessRizal" value="Rizal"><label for="inventoryAccessRizal">Rizal Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryAccessCebu" value="Cebu"><label for="inventoryAccessCebu">Cebu Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryAccessThermal" value="Thermal"><label for="inventoryAccessThermal">Thermal Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryAccessRequests" value="Requests"><label for="inventoryAccessRequests">Requests</label></div></div></div>
             <div class="account-form-group"><label>Menu Access Permissions</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" checked id="inventoryPermissionInventory" value="inventory"><label for="inventoryPermissionInventory">Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryPermissionAssignedTasks" value="assignedTasks"><label for="inventoryPermissionAssignedTasks">Assigned Tasks</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryPermissionAddAccount" value="addAccount"><label for="inventoryPermissionAddAccount">Add Account</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryPermissionUsers" value="users"><label for="inventoryPermissionUsers">Manage Users</label></div></div></div>
             <div class="account-modal-buttons"><button type="button" class="btn-submit" id="inventorySubmitUserBtn">Add Account</button><button type="button" class="btn-cancel" id="inventoryCancelUserBtn">Cancel</button></div>
@@ -1099,8 +1099,8 @@
             <div class="account-form-group"><label for="inventoryEditUserUsername">Username</label><input id="inventoryEditUserUsername" placeholder="Enter username"></div>
             <div class="account-form-group"><label for="inventoryEditUserEmail">Email</label><input id="inventoryEditUserEmail" type="email" placeholder="Enter email"></div>
             <div class="account-form-group"><label for="inventoryEditUserPassword">Password</label><input id="inventoryEditUserPassword" type="password" placeholder="Enter password"></div>
-            <div class="account-form-group" id="inventoryEditAccessControls"><label for="inventoryEditUserOffice">Office</label><select id="inventoryEditUserOffice"><option value="">Select an office</option><option value="Rizal">Rizal</option><option value="Cebu">Cebu</option><option value="Thermal">Thermal</option><option value="Both">All Offices</option></select></div>
-            <div class="account-form-group" id="inventoryEditRoleControl"><label for="inventoryEditUserRole">Role</label><select id="inventoryEditUserRole"><option value="">Select a role</option><option value="Developer">Developer</option><option value="IT Admin">IT Admin</option><option value="IT Manager">IT Manager</option><option value="IT Supervisor">IT Supervisor</option><option value="IT Support">IT Support</option><option value="Management">Management</option><option value="Station">Station</option></select></div>
+            <div class="account-form-group" id="inventoryEditAccessControls"><label for="inventoryEditUserOffice">Office</label><select id="inventoryEditUserOffice"><option value="">Select an office</option><option value="Rizal">Rizal</option><option value="Cebu">Cebu</option><option value="Thermal">Thermal</option><option value="Both">All Offices</option><option value="Guadalupe Station">Guadalupe Station</option><option value="Punta Princessa Station">Punta Princessa Station</option><option value="Babag Station">Babag Station</option><option value="Collector">Collector</option></select></div>
+            <div class="account-form-group" id="inventoryEditRoleControl"><label for="inventoryEditUserRole">Role</label><select id="inventoryEditUserRole"><option value="">Select a role</option><option value="Developer">Developer</option><option value="IT Admin">IT Admin</option><option value="IT Manager">IT Manager</option><option value="IT Supervisor">IT Supervisor</option><option value="IT Support">IT Support</option><option value="Management">Management</option><option value="Station">Station</option><option value="Collector">Collector</option></select></div>
             <div class="account-form-group" id="inventoryEditInventoryAccessControl"><label>Inventory Access</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessRizal" value="Rizal"><label for="inventoryEditAccessRizal">Rizal Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessCebu" value="Cebu"><label for="inventoryEditAccessCebu">Cebu Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessThermal" value="Thermal"><label for="inventoryEditAccessThermal">Thermal Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessRequests" value="Requests"><label for="inventoryEditAccessRequests">Requests</label></div></div></div>
             <div class="account-form-group" id="inventoryEditPermissionControl"><label>Menu Access Permissions</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionInventory" value="inventory"><label for="inventoryEditPermissionInventory">Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionAssignedTasks" value="assignedTasks"><label for="inventoryEditPermissionAssignedTasks">Assigned Tasks</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionAddAccount" value="addAccount"><label for="inventoryEditPermissionAddAccount">Add Account</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionUsers" value="users"><label for="inventoryEditPermissionUsers">Manage Users</label></div></div></div>
             <div class="account-modal-buttons"><button type="button" class="btn-submit" id="inventorySaveEditUserBtn">Save Changes</button><button type="button" class="btn btn-danger" id="inventoryDeleteUserBtn" style="display: none;">Delete Account</button><button type="button" class="btn-cancel" id="inventoryCancelEditUserBtn">Cancel</button></div>
@@ -1189,16 +1189,7 @@
             });
 
             let rackField = document.getElementById("formRack");
-            if (rackField && isThermalInventory && rackField.tagName !== "INPUT") {
-                const stationInput = document.createElement("input");
-                stationInput.type = "text";
-                stationInput.id = "formRack";
-                stationInput.placeholder = "Enter Station or Teller Name";
-                stationInput.style.cssText = rackField.style.cssText;
-                stationInput.value = rackField.value;
-                rackField.replaceWith(stationInput);
-                rackField = stationInput;
-            } else if (rackField && !isThermalInventory && rackField.tagName !== "SELECT") {
+            if (rackField && rackField.tagName !== "SELECT") {
                 const systemSelect = document.createElement("select");
                 systemSelect.id = "formRack";
                 systemSelect.style.cssText = rackField.style.cssText;
@@ -1208,11 +1199,15 @@
             }
             if (rackField && rackField.tagName === "SELECT") {
                 const selectedValue = rackField.value;
-                rackField.innerHTML = `<option value="">-- Select System --</option>${systems.map(system => `<option value="${system}">${system}</option>`).join("")}`;
-                rackField.value = systems.includes(selectedValue) ? selectedValue : "";
+                const options = isThermalInventory
+                    ? ["Guadalupe Station", "Punta Princessa Station", "Babag Station"]
+                    : systems;
+                const placeholder = isThermalInventory ? "-- Select Station --" : "-- Select System --";
+                rackField.innerHTML = `<option value="">${placeholder}</option>${options.map(option => `<option value="${option}">${option}</option>`).join("")}`;
+                rackField.value = options.includes(selectedValue) ? selectedValue : "";
             }
             if (isThermalInventory) {
-                document.getElementById("systemSelectLabel").textContent = "STATION/TELLER";
+                document.getElementById("systemSelectLabel").textContent = "Station";
                 document.getElementById("inventoryStationColumnLabel").textContent = "Station/Teller";
                 document.getElementById("fullInventoryStationColumnLabel").textContent = "Station/Teller";
                 document.getElementById("inventoryPosNoColumnLabel").textContent = "Released";
@@ -1649,6 +1644,10 @@
         document.addEventListener("DOMContentLoaded", async function () {
             if (window.authSession) await window.authSession.ready;
             if (window.authSession && !window.authSession.get()) return;
+            if (window.authSession?.get()?.role === "Collector") {
+                window.location.replace("requests.html");
+                return;
+            }
             const loggedIn = getLoggedInDisplayName();
             if (!loggedIn) return;
 
@@ -2051,6 +2050,13 @@
                     saveInventoryData(sharedSummary, sharedRecords, false);
                     updateSummaryDisplay(sharedSummary);
                     populateInventoryTable(sharedRecords);
+                    if (storageKeys.office === "Thermal") {
+                        try {
+                            await window.sharedInventory.publishThermalStation(sharedInventory);
+                        } catch (error) {
+                            console.error("Unable to sync station-specific Thermal inventory.", error);
+                        }
+                    }
                 } else if (!isCleared && (savedSummary || savedRecords)) {
                     saveInventoryData(savedSummary || {}, savedRecords || []);
                 }
@@ -2862,24 +2868,38 @@
         }
 
         function applyInventoryStationRoleAccess(roleSelect, modalId, accessPrefix, permissionPrefix, requestsCheckboxId) {
-            const isStation = roleSelect.value === "Station";
+            const isRestrictedRole = ["Station", "Collector"].includes(roleSelect.value);
             const accessCheckboxes = Array.from(document.querySelectorAll(`#${modalId} input[id^='${accessPrefix}']`));
             const requestsCheckbox = document.getElementById(requestsCheckboxId);
             const checkboxes = [...accessCheckboxes, ...document.querySelectorAll(`#${modalId} input[id^='${permissionPrefix}']`)];
             checkboxes.forEach(checkbox => {
-                if (isStation) {
-                    if (!checkbox.hasAttribute("data-station-disabled")) {
-                        checkbox.dataset.stationDisabled = String(checkbox.disabled);
+                if (isRestrictedRole) {
+                    if (!checkbox.hasAttribute("data-restricted-role-disabled")) {
+                        checkbox.dataset.restrictedRoleDisabled = String(checkbox.disabled);
                     }
                     checkbox.disabled = true;
                     checkbox.checked = checkbox === requestsCheckbox;
                     return;
                 }
-                if (checkbox.hasAttribute("data-station-disabled")) {
-                    checkbox.disabled = checkbox.dataset.stationDisabled === "true";
-                    delete checkbox.dataset.stationDisabled;
+                if (checkbox.hasAttribute("data-restricted-role-disabled")) {
+                    checkbox.disabled = checkbox.dataset.restrictedRoleDisabled === "true";
+                    delete checkbox.dataset.restrictedRoleDisabled;
                 }
             });
+
+            const officeSelect = document.getElementById(modalId === "inventoryAddUserModal"
+                ? "inventoryNewUserOffice"
+                : "inventoryEditUserOffice");
+            if (roleSelect.value === "Collector") {
+                if (!officeSelect.hasAttribute("data-collector-disabled")) {
+                    officeSelect.dataset.collectorDisabled = String(officeSelect.disabled);
+                }
+                officeSelect.value = "Collector";
+                officeSelect.disabled = true;
+            } else if (officeSelect.hasAttribute("data-collector-disabled")) {
+                officeSelect.disabled = officeSelect.dataset.collectorDisabled === "true";
+                delete officeSelect.dataset.collectorDisabled;
+            }
         }
 
         function openInventoryEditUser(username) {
@@ -3082,6 +3102,11 @@
                 updatedAccount.inventoryAccess = ["Requests"];
                 updatedAccount.permissions = [];
             }
+            if (updatedAccount.role === "Collector") {
+                updatedAccount.office = "Collector";
+                updatedAccount.inventoryAccess = ["Requests"];
+                updatedAccount.permissions = [];
+            }
 
             try {
                 const passwordInput = document.getElementById("inventoryEditUserPassword").value.trim();
@@ -3132,7 +3157,7 @@
             const role = document.getElementById("inventoryNewUserRole").value;
             const inventoryAccess = Array.from(document.querySelectorAll("#inventoryAddUserModal input[id^='inventoryAccess']:checked"), input => input.value);
             const permissions = Array.from(document.querySelectorAll("#inventoryAddUserModal input[id^='inventoryPermission']:checked"), input => input.value);
-            if (role === "Station") {
+            if (role === "Station" || role === "Collector") {
                 inventoryAccess.splice(0, inventoryAccess.length, "Requests");
                 permissions.length = 0;
             }
@@ -3155,8 +3180,10 @@
                 );
 
                 accounts[username] = {
-                    name, username, email, password, office, role,
-                    inventoryAccess: role === "Station" ? ["Requests"] : office === "Both" ? ["Rizal", "Cebu", "Thermal"] : inventoryAccess,
+                    name, username, email, password,
+                    office: role === "Collector" ? "Collector" : office,
+                    role,
+                    inventoryAccess: ["Station", "Collector"].includes(role) ? ["Requests"] : office === "Both" ? ["Rizal", "Cebu", "Thermal"] : inventoryAccess,
                     permissions: safePermissions,
                     disabled: false
                 };

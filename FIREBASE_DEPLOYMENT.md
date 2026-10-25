@@ -19,4 +19,6 @@ The login form accepts email addresses. Username-based login and administrative 
 
 Requests are stored in the Firestore `workspaceRequests` collection. Submitters can read their own requests; Developer accounts and users with Thermal inventory access can review and manage all requests. Firestore rules enforce these permissions.
 
+Thermal records are also synchronized into `stationThermalInventory/{station}` documents and their `chunks` subcollections. Station accounts can read only the projection matching their assigned `office`; they cannot read the shared Thermal inventory. After deploying the updated rules, a Thermal Inventory manager should open the Thermal Inventory page once while online to backfill the existing records. New Thermal inventory saves update the station projections automatically. If a station Requests page reports that its inventory has not been synced, have a Thermal Inventory manager open that page and verify the sync succeeds.
+
 Firebase Spark has usage limits. Review Firebase's current quota and pricing information before storing production data or enabling additional services.

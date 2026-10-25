@@ -10,6 +10,13 @@
     const db = app.firestore();
     const USERS = "users";
     const INVENTORY = "inventory";
+    const STATION_THERMAL_INVENTORY = "stationThermalInventory";
+    const THERMAL_STATIONS = ["Guadalupe Station", "Punta Princessa Station", "Babag Station"];
+
+    function normalizeThermalStation(value) {
+        const normalized = String(value || "").trim().toLowerCase();
+        return THERMAL_STATIONS.find(station => station.toLowerCase() === normalized) || "";
+    }
 
     function profileFromSnapshot(snapshot) {
         return snapshot.exists ? { uid: snapshot.id, ...snapshot.data() } : null;
@@ -39,15 +46,16 @@
             disabled,
             theme
         } = profile;
+        const isCollector = role === "Collector";
         return {
             ...(uid ? { uid } : {}),
             username: String(username || "").trim(),
             name: String(name || "").trim(),
             email: String(email || "").trim().toLowerCase(),
             role: String(role || "Management"),
-            permissions: Array.isArray(permissions) ? permissions : [],
-            office: String(office || ""),
-            inventoryAccess: Array.isArray(inventoryAccess) ? inventoryAccess : [],
+            permissions: isCollector ? [] : Array.isArray(permissions) ? permissions : [],
+            office: isCollector ? "Collector" : String(office || ""),
+            inventoryAccess: isCollector ? ["Requests"] : Array.isArray(inventoryAccess) ? inventoryAccess : [],
             disabled: Boolean(disabled),
             ...(theme === "light" || theme === "dark" ? { theme } : {})
         };
@@ -272,6 +280,75 @@
         return chunks;
     }
 
+    async function writeStationThermalInventory(station, records, updatedAt) {
+        const inventoryRef = db.collection(STATION_THERMAL_INVENTORY).doc(station);
+        const chunksRef = inventoryRef.collection("chunks");
+        const existing = await chunksRef.get();
+        const chunks = splitRecords(records);
+        const writes = [];
+        chunks.forEach((chunk, index) => {
+            const id = String(index).padStart(5, "0");
+            const payload = { records: removeUndefined(chunk) };
+            const old = existing.docs.find(snapshot => snapshot.id === id);
+            if (!old || stableSerialize(old.data()) !== stableSerialize(payload)) {
+                writes.push({ type: "set", ref: chunksRef.doc(id), payload });
+            }
+        });
+        existing.docs.forEach(snapshot => {
+            if (Number(snapshot.id) >= chunks.length) writes.push({ type: "delete", ref: snapshot.ref });
+        });
+        for (let offset = 0; offset < writes.length; offset += 450) {
+            const batch = db.batch();
+            writes.slice(offset, offset + 450).forEach(write => {
+                if (write.type === "delete") batch.delete(write.ref);
+                else batch.set(write.ref, write.payload);
+            });
+            await batch.commit();
+        }
+
+        const metadata = {
+            station,
+            updatedAt,
+            recordCount: records.length
+        };
+        const existingMetadata = await inventoryRef.get();
+        if (!existingMetadata.exists || stableSerialize(existingMetadata.data()) !== stableSerialize(metadata)) {
+            await inventoryRef.set(metadata);
+        }
+    }
+
+    async function publishThermalStationInventory(inventory) {
+        requireSignedIn();
+        await assertInventoryOffice("Thermal");
+        const records = Array.isArray(inventory.recordsData) ? inventory.recordsData : [];
+        const updatedAt = inventory.updatedAt || new Date().toISOString();
+        await Promise.all(THERMAL_STATIONS.map(station => {
+            const stationRecords = records.filter(record => normalizeThermalStation(record.rack) === station);
+            return writeStationThermalInventory(station, stationRecords, updatedAt);
+        }));
+    }
+
+    async function loadStationThermalInventory() {
+        requireSignedIn();
+        const profile = await getProfile();
+        const station = normalizeThermalStation(profile?.office);
+        if (!profile || profile.disabled || profile.role !== "Station" || !station ||
+            !Array.isArray(profile.inventoryAccess) || !profile.inventoryAccess.includes("Requests")) {
+            throw new Error("An enabled Station account with an assigned station is required.");
+        }
+
+        const inventoryRef = db.collection(STATION_THERMAL_INVENTORY).doc(station);
+        const [metadata, chunks] = await Promise.all([
+            inventoryRef.get(),
+            inventoryRef.collection("chunks").orderBy(firebase.firestore.FieldPath.documentId()).get()
+        ]);
+        if (!metadata.exists) return null;
+        return {
+            ...metadata.data(),
+            recordsData: chunks.docs.flatMap(snapshot => snapshot.data().records || [])
+        };
+    }
+
     async function saveInventory(office, inventory) {
         requireSignedIn();
         await assertInventoryOffice(office);
@@ -300,11 +377,15 @@
             });
             await batch.commit();
         }
+        const updatedAt = inventory.updatedAt || new Date().toISOString();
         await inventoryRef.set({
             summaryData: removeUndefined(inventory.summaryData || {}),
-            updatedAt: inventory.updatedAt || new Date().toISOString(),
+            updatedAt,
             recordCount: records.length
         });
+        if (office === "Thermal") {
+            await publishThermalStationInventory({ ...inventory, recordsData: records, updatedAt });
+        }
     }
 
     async function clearInventory(office) {
@@ -395,14 +476,31 @@
         }
 
         const reference = db.collection("workspaceRequests").doc();
+        const station = profile.role === "Station"
+            ? normalizeThermalStation(profile.office)
+            : profile.role === "Collector"
+                ? "Collector"
+                : String(input.station || "").trim();
+        const requestee = profile.role === "Station" || profile.role === "Collector"
+            ? String(profile.name || profile.username || "").trim()
+            : String(input.requestee || "").trim();
+        const quantity = Number(input.quantity);
+        const unit = String(input.unit || "");
+        const notes = String(input.notes || "").trim();
+        if (!station || station.length > 120) throw new Error("Enter a valid station for this request.");
+        if (!requestee || requestee.length > 120) throw new Error("Enter the name of the requestee.");
+        if (!Number.isInteger(quantity) || quantity < 1) throw new Error("Enter a whole-number quantity greater than zero.");
+        if (!["Boxes", "Rolls", "Pcs"].includes(unit)) throw new Error("Select a valid unit.");
+        if (!notes || notes.length > 500) throw new Error("Enter notes for this request (up to 500 characters).");
+
         const request = {
             id: reference.id,
             item: "Thermal Paper",
-            quantity: Number(input.quantity),
-            unit: String(input.unit || ""),
-            station: String(input.station || "").trim(),
-            requestee: String(input.requestee || "").trim(),
-            notes: String(input.notes || "").trim(),
+            quantity,
+            unit,
+            station,
+            requestee,
+            notes,
             requestedBy: profile.name || profile.username,
             requestedByUsername: profile.username,
             createdByUid: user.uid,
@@ -450,7 +548,16 @@
         delete: deleteAccount,
         saveTheme
     };
-    window.sharedInventory = { load: loadInventory, watch: watchInventory, save: saveInventory, clear: clearInventory, loadHistory, saveHistory };
+    window.sharedInventory = {
+        load: loadInventory,
+        loadStationThermal: loadStationThermalInventory,
+        publishThermalStation: publishThermalStationInventory,
+        watch: watchInventory,
+        save: saveInventory,
+        clear: clearInventory,
+        loadHistory,
+        saveHistory
+    };
     window.sharedRequests = {
         storageKey: "workspaceRequests",
         load: loadRequests,
