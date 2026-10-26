@@ -7,8 +7,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js?v=20261024-1"></script>
-    <script src="js/firebase-shared.js?v=20261025-9"></script>
-    <script src="js/auth-session.js?v=20260921-2"></script>
+    <script src="js/firebase-shared.js?v=20261026-7"></script>
+    <script src="js/auth-session.js?v=20261026-2"></script>
     <meta name="description" content="Workspace Requests">
     <title>Requests</title>
     <link rel="icon" type="image/x-icon" href="images/icon256.ico">
@@ -36,7 +36,7 @@
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminMenu">
                             <li><a class="dropdown-item active" data-inventory-access="Requests" href="requests.html" aria-current="page"><i class="bi bi-inbox me-2"></i>Requests</a></li>
                             <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Cebu" href="inventory.html?office=Cebu"><i class="bi bi-boxes me-2"></i>POS Inventory</a></li>
-                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Thermal" href="inventory.html?office=Thermal"><i class="bi bi-boxes me-2"></i>Thermal Inventory</a></li>
+                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Thermal" href="inventory.html?office=Thermal"><i class="bi bi-boxes me-2"></i>Thermal Paper</a></li>
                             <li><button class="dropdown-item" id="changePasswordMenuBtn" type="button"><i class="bi bi-key me-2"></i>Change Password</button></li>
                         </ul>
                     </li>
@@ -105,26 +105,29 @@
                 <div class="col-md-3 col-sm-6 mb-3">
                     <div class="card stat-card">
                         <div class="icon-box"><i class="bi bi-graph-up-arrow"></i></div>
-                        <div class="stat-label">Total Received Boxes</div>
+                        <div class="stat-label" id="requestThermalReleasedBoxesLabel">Total Received Boxes</div>
                         <div class="stat-value" id="requestThermalReleasedBoxes">0</div>
-                        <div class="stat-label-subtitle">Total Received Boxes</div>
+                        <div class="stat-label-subtitle" id="requestThermalReleasedBoxesSubtitle">Total Received Boxes</div>
                     </div>
                 </div>
                 <div class="col-md-3 col-sm-6 mb-3">
                     <div class="card stat-card">
                         <div class="icon-box"><i class="bi bi-exclamation-triangle"></i></div>
-                        <div class="stat-label">Total Received Rolls</div>
+                        <div class="stat-label" id="requestThermalReleasedRollsLabel">Total Received Rolls</div>
                         <div class="stat-value" id="requestThermalReleasedRolls">0</div>
-                        <div class="stat-label-subtitle">Total Received Rolls</div>
+                        <div class="stat-label-subtitle" id="requestThermalReleasedRollsSubtitle">Total Received Rolls</div>
                     </div>
                 </div>
             </div>
             <section class="card" aria-labelledby="requestThermalRecordsTitle">
                 <div class="card-header d-flex align-items-center justify-content-between gap-3">
                     <div><i class="bi bi-list-check me-2"></i><span id="requestThermalRecordsTitle">Detailed Released Thermal Records</span> <span id="requestThermalRecordCount" style="background: #1e3a5f; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-left: 10px; font-weight: 600;">0 records</span></div>
-                    <a id="openThermalInventoryLink" class="btn btn-light btn-sm" href="inventory.html?office=Thermal" style="background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25); color: white; font-weight: 600;">
-                        <i class="bi bi-fullscreen me-1"></i>Open
-                    </a>
+                    <div class="d-flex gap-2">
+                        <button id="stationAddThermalRecordBtn" class="btn btn-primary btn-sm" type="button" hidden><i class="bi bi-plus-circle me-1"></i>Add Record</button>
+                        <a id="openThermalInventoryLink" class="btn btn-light btn-sm" href="inventory.html?office=Thermal" style="background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25); color: white; font-weight: 600;">
+                            <i class="bi bi-fullscreen me-1"></i>Open
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="request-thermal-toolbar">
@@ -153,6 +156,66 @@
                 </div>
             </section>
         </section>
+        <div id="stationThermalRecordModal" class="modal" tabindex="-1" aria-labelledby="stationThermalRecordTitle" aria-hidden="true" style="display: none; background: rgba(10, 17, 29, 0.62);">
+            <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title fs-5" id="stationThermalRecordTitle"><i class="bi bi-plus-circle me-2"></i>Add New Thermal Record</h2>
+                        <button type="button" class="btn-close" id="stationThermalRecordClose" aria-label="Close"></button>
+                    </div>
+                    <form id="stationThermalRecordForm">
+                        <div class="modal-body">
+                            <p class="text-muted">This record will be added to <strong id="stationThermalRecordAssignedStation"></strong> only.</p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="stationThermalRecordReleased" class="form-label">Released *</label>
+                                    <div class="input-group">
+                                        <input id="stationThermalRecordReleased" class="form-control" type="number" min="0" step="any" maxlength="120" required>
+                                        <select id="stationThermalRecordUnit" class="form-select" aria-label="Released unit" required>
+                                            <option value="BOX">BOX</option>
+                                            <option value="ROLLS">ROLLS</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="stationThermalRecordStatus" class="form-label">Status *</label>
+                                    <select id="stationThermalRecordStatus" class="form-select" required>
+                                        <option value="">-- Select Status --</option>
+                                        <option value="Paid">Paid</option>
+                                        <option value="Not Paid">Not Paid</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="stationThermalRecordFullName" class="form-label">Full Name</label>
+                                    <input id="stationThermalRecordFullName" class="form-control" type="text" maxlength="1000">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="stationThermalRecordUserId" class="form-label">User ID</label>
+                                    <input id="stationThermalRecordUserId" class="form-control" type="text" maxlength="1000">
+                                </div>
+                                <div class="col-12">
+                                    <label for="stationThermalRecordAddress" class="form-label">Address</label>
+                                    <textarea id="stationThermalRecordAddress" class="form-control" rows="2" maxlength="1000"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="stationThermalRecordNote" class="form-label">Notes</label>
+                                    <textarea id="stationThermalRecordNote" class="form-control" rows="2" maxlength="1000"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="stationThermalRecordPrice" class="form-label">Price</label>
+                                    <input id="stationThermalRecordPrice" class="form-control" type="number" min="0" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <span id="stationThermalRecordMessage" class="text-muted me-auto" role="status" aria-live="polite"></span>
+                            <button id="stationThermalRecordSubmit" class="btn btn-primary" type="submit"><i class="bi bi-check-circle me-1"></i>Add Record</button>
+                            <button id="stationThermalRecordCancel" class="btn btn-secondary" type="button">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         <section class="card p-4" aria-labelledby="submittedThermalPaperRequestsTitle">
             <h2 class="h5 mb-3" id="submittedThermalPaperRequestsTitle"><i class="bi bi-inbox me-2"></i>Submitted Thermal Paper Requests</h2>
             <div class="table-responsive">
@@ -205,14 +268,14 @@
         );
         const inventoryAccess = new Set(
             username === "admin" || account?.role === "Developer"
-                ? ["Rizal", "Cebu", "Thermal", "Requests"]
+                ? ["Cebu", "Thermal", "Requests"]
                 : account?.role === "Station"
                     ? ["Requests"]
                 : account?.office === "Both"
-                    ? ["Rizal", "Cebu", "Thermal", ...(Array.isArray(account?.inventoryAccess) && account.inventoryAccess.includes("Requests") ? ["Requests"] : [])]
+                    ? ["Cebu", "Thermal", ...(Array.isArray(account?.inventoryAccess) && account.inventoryAccess.includes("Requests") ? ["Requests"] : [])]
                     : Array.isArray(account?.inventoryAccess)
-                        ? account.inventoryAccess
-                        : account?.office ? [account.office] : []
+                        ? account.inventoryAccess.filter(office => ["Cebu", "Thermal", "Requests"].includes(office))
+                        : ["Cebu", "Thermal"].includes(account?.office) ? [account.office] : []
         );
         document.querySelectorAll("#adminMenu + .dropdown-menu [data-permission]").forEach(item => {
             const allowed = permissions.has(item.dataset.permission) && inventoryAccess.has(item.dataset.inventoryOffice);
@@ -261,6 +324,10 @@
             document.getElementById("thermalPaperRequesteeField").hidden = true;
             requesteeInput.required = false;
             requesteeInput.value = account.name || username;
+            document.getElementById("requestThermalReleasedBoxesLabel").textContent = "Total Boxes";
+            document.getElementById("requestThermalReleasedBoxesSubtitle").textContent = "Total Boxes";
+            document.getElementById("requestThermalReleasedRollsLabel").textContent = "Total Released Rolls";
+            document.getElementById("requestThermalReleasedRollsSubtitle").textContent = "Total Released Rolls";
             stationInput.value = account.office || "";
             stationInput.readOnly = true;
             document.getElementById("openThermalInventoryLink").hidden = true;
@@ -271,6 +338,8 @@
                 `Thermal records assigned to ${account.office || "this station"}`;
             document.getElementById("requestThermalRecordsTitle").textContent =
                 `${account.office || "Station"} Thermal Records`;
+            document.getElementById("stationAddThermalRecordBtn").hidden = false;
+            document.getElementById("stationThermalRecordAssignedStation").textContent = account.office || "your assigned station";
         }
         const thermalRecordsBody = document.getElementById("requestThermalRecordsBody");
         const thermalRecordSearch = document.getElementById("requestThermalRecordSearch");
@@ -392,6 +461,59 @@
                 thermalInventoryMessage.textContent = `Thermal inventory could not be loaded: ${reason} Existing account permissions were not changed.`;
             }
         }
+
+        const stationRecordModal = document.getElementById("stationThermalRecordModal");
+        const stationRecordForm = document.getElementById("stationThermalRecordForm");
+        const stationRecordMessage = document.getElementById("stationThermalRecordMessage");
+        const stationRecordSubmit = document.getElementById("stationThermalRecordSubmit");
+        const closeStationRecordModal = () => {
+            stationRecordModal.style.display = "none";
+            stationRecordModal.classList.remove("show");
+            stationRecordModal.setAttribute("aria-hidden", "true");
+        };
+        document.getElementById("stationAddThermalRecordBtn").addEventListener("click", () => {
+            if (!isStationAccount) return;
+            stationRecordForm.reset();
+            stationRecordMessage.textContent = "";
+            stationRecordModal.style.display = "block";
+            stationRecordModal.classList.add("show");
+            stationRecordModal.setAttribute("aria-hidden", "false");
+            document.getElementById("stationThermalRecordReleased").focus();
+        });
+        document.getElementById("stationThermalRecordClose").addEventListener("click", closeStationRecordModal);
+        document.getElementById("stationThermalRecordCancel").addEventListener("click", closeStationRecordModal);
+        stationRecordModal.addEventListener("click", event => {
+            if (event.target === stationRecordModal) closeStationRecordModal();
+        });
+        stationRecordForm.addEventListener("submit", async event => {
+            event.preventDefault();
+            if (!isStationAccount) return;
+            stationRecordMessage.textContent = "";
+            stationRecordSubmit.disabled = true;
+            try {
+                await window.sharedInventory.createStationThermalRecord({
+                    posNo: document.getElementById("stationThermalRecordReleased").value,
+                    posUnit: document.getElementById("stationThermalRecordUnit").value,
+                    fullName: document.getElementById("stationThermalRecordFullName").value,
+                    userId: document.getElementById("stationThermalRecordUserId").value,
+                    address: document.getElementById("stationThermalRecordAddress").value,
+                    status: document.getElementById("stationThermalRecordStatus").value,
+                    noteIssue: document.getElementById("stationThermalRecordNote").value,
+                    price: document.getElementById("stationThermalRecordPrice").value
+                });
+                closeStationRecordModal();
+                stationRecordForm.reset();
+                await loadThermalInventoryOverview();
+                thermalInventoryMessage.textContent = `Record added to ${account.office} Thermal Inventory.`;
+            } catch (error) {
+                console.error("Unable to add Station Thermal record.", error);
+                stationRecordMessage.textContent = error instanceof Error
+                    ? `Unable to add record: ${error.message}`
+                    : "Unable to add record. Please try again.";
+            } finally {
+                stationRecordSubmit.disabled = false;
+            }
+        });
 
         thermalRecordSearch.addEventListener("input", () => renderThermalRecords(thermalRecords));
 

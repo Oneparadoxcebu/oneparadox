@@ -35,7 +35,7 @@ const DEFAULT_ACCOUNTS = {
     role: 'Developer',
     permissions: ['inventory'],
     office: '',
-    inventoryAccess: ['Rizal', 'Cebu', 'Thermal'],
+    inventoryAccess: ['Cebu', 'Thermal'],
     disabled: false
   },
 };

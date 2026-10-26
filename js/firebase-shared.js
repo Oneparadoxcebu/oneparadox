@@ -11,6 +11,7 @@
     const USERS = "users";
     const INVENTORY = "inventory";
     const STATION_THERMAL_INVENTORY = "stationThermalInventory";
+    const STATION_THERMAL_RECORDS = "stationThermalRecords";
     const THERMAL_STATIONS = ["Guadalupe Station", "Punta Princessa Station", "Babag Station"];
     const THERMAL_INVENTORY_GROUPS = [...THERMAL_STATIONS, "Collector"];
 
@@ -53,15 +54,35 @@
             theme
         } = profile;
         const isCollector = role === "Collector";
+        const roleAccess = {
+            "IT Admin": {
+                office: "Both",
+                inventoryAccess: ["Cebu", "Thermal", "Requests"],
+                permissions: ["dashboard", "analytics", "reports", "inventory", "settings", "addAccount", "users", "assignedTasks", "administrator"]
+            },
+            "IT Manager": {
+                office: "Both",
+                inventoryAccess: ["Cebu", "Thermal"],
+                permissions: ["inventory", "addAccount", "users"]
+            },
+            "IT Support": {
+                office: "Cebu",
+                inventoryAccess: ["Cebu"],
+                permissions: ["inventory", "addAccount", "users"]
+            },
+            Management: { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory"] },
+            Accounting: { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory"] },
+            HR: { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory"] }
+        }[role];
         return {
             ...(uid ? { uid } : {}),
             username: String(username || "").trim(),
             name: String(name || "").trim(),
             email: String(email || "").trim().toLowerCase(),
             role: String(role || "Management"),
-            permissions: isCollector ? [] : Array.isArray(permissions) ? permissions : [],
-            office: isCollector ? "Collector" : String(office || ""),
-            inventoryAccess: isCollector ? ["Requests"] : Array.isArray(inventoryAccess) ? inventoryAccess : [],
+            permissions: isCollector ? [] : roleAccess?.permissions || (Array.isArray(permissions) ? permissions : []),
+            office: isCollector ? "Collector" : roleAccess?.office || String(office || ""),
+            inventoryAccess: isCollector ? ["Requests"] : roleAccess?.inventoryAccess || (Array.isArray(inventoryAccess) ? inventoryAccess : []),
             disabled: Boolean(disabled),
             ...(theme === "light" || theme === "dark" ? { theme } : {})
         };
@@ -150,9 +171,13 @@
     async function loadAccounts() {
         const current = await getProfile();
         if (!current || current.disabled) throw new Error("Sign in with an enabled account to load user profiles.");
-        if (current.role !== "Developer") return accountMap([current]);
+        if (!canManageAccounts(current)) return accountMap([current]);
         const result = await db.collection(USERS).get();
         return accountMap(result.docs.map(profileFromSnapshot));
+    }
+
+    function canManageAccounts(profile) {
+        return ["Developer", "IT Admin", "IT Manager", "IT Support"].includes(profile?.role);
     }
 
     async function saveAccounts(accounts) {
@@ -190,29 +215,68 @@
     }
 
     function assertInventoryOffice(office) {
-        if (!["Rizal", "Cebu", "Thermal"].includes(office)) throw new Error("Unknown inventory office.");
+        if (!["Cebu", "Thermal"].includes(office)) throw new Error("Unknown inventory office.");
         return getProfile().then(profile => {
+            const roleOffices = {
+                "IT Admin": ["Cebu", "Thermal"],
+                "IT Manager": ["Cebu", "Thermal"],
+                "IT Support": ["Cebu"],
+                Management: ["Cebu", "Thermal"],
+                Accounting: ["Cebu", "Thermal"],
+                HR: ["Cebu", "Thermal"]
+            };
+            const allowedOffices = roleOffices[profile?.role] ||
+                (profile?.role === "Developer"
+                    ? ["Cebu", "Thermal"]
+                    : profile?.office === "Both"
+                        ? ["Cebu", "Thermal"]
+                        : profile?.inventoryAccess || []);
+            const hasRoleAccess = profile?.role === "Developer" || Object.prototype.hasOwnProperty.call(roleOffices, profile?.role);
             if (!profile || profile.disabled ||
-                (profile.role !== "Developer" && profile.office !== "Both" &&
-                    (!Array.isArray(profile.inventoryAccess) || !profile.inventoryAccess.includes(office)))) {
+                (!hasRoleAccess && (!Array.isArray(profile.permissions) || !profile.permissions.includes("inventory"))) ||
+                !allowedOffices.includes(office)) {
                 throw new Error("Your account does not have access to this inventory office.");
             }
             return profile;
         });
     }
 
+    function canManageInventory(profile, office) {
+        if (["Developer", "IT Admin", "IT Manager"].includes(profile?.role)) return ["Cebu", "Thermal"].includes(office);
+        if (profile?.role === "IT Support") return office === "Cebu";
+        return false;
+    }
+
     async function loadInventory(office) {
         requireSignedIn();
         await assertInventoryOffice(office);
         const inventoryRef = db.collection(INVENTORY).doc(office);
-        const [metadata, chunks] = await Promise.all([
+        const reads = [
             inventoryRef.get(),
             inventoryRef.collection("chunks").orderBy(firebase.firestore.FieldPath.documentId()).get()
-        ]);
-        if (!metadata.exists) return null;
+        ];
+        if (office === "Thermal") {
+            THERMAL_STATIONS.forEach(station => {
+                reads.push(db.collection(STATION_THERMAL_RECORDS).doc(station).collection("records").get());
+            });
+        }
+        const [metadata, chunks, ...stationRecordSnapshots] = await Promise.all(reads);
+        const recordsData = chunks.docs.flatMap(snapshot => snapshot.data().records || []);
+        if (office === "Thermal") {
+            const knownRecordIds = new Set(recordsData.map(record => record.stationRecordId).filter(Boolean));
+            stationRecordSnapshots.forEach(snapshot => {
+                snapshot.docs.forEach(document => {
+                    if (!knownRecordIds.has(document.id)) {
+                        recordsData.push({ ...document.data(), stationRecordId: document.id });
+                        knownRecordIds.add(document.id);
+                    }
+                });
+            });
+        }
+        if (!metadata.exists && !recordsData.length) return null;
         return {
-            ...metadata.data(),
-            recordsData: chunks.docs.flatMap(snapshot => snapshot.data().records || [])
+            ...(metadata.exists ? metadata.data() : { summaryData: {}, updatedAt: "" }),
+            recordsData
         };
     }
 
@@ -344,15 +408,74 @@
         }
 
         const inventoryRef = db.collection(STATION_THERMAL_INVENTORY).doc(station);
-        const [metadata, chunks] = await Promise.all([
+        const stationRecordsRef = db.collection(STATION_THERMAL_RECORDS).doc(station).collection("records");
+        const [metadata, chunks, stationRecords] = await Promise.all([
             inventoryRef.get(),
-            inventoryRef.collection("chunks").orderBy(firebase.firestore.FieldPath.documentId()).get()
+            inventoryRef.collection("chunks").orderBy(firebase.firestore.FieldPath.documentId()).get(),
+            stationRecordsRef.get()
         ]);
-        if (!metadata.exists) return null;
+        const recordsData = chunks.docs.flatMap(snapshot => snapshot.data().records || []);
+        const knownRecordIds = new Set(recordsData.map(record => record.stationRecordId).filter(Boolean));
+        stationRecords.docs.forEach(document => {
+            if (!knownRecordIds.has(document.id)) {
+                recordsData.push({ ...document.data(), stationRecordId: document.id });
+                knownRecordIds.add(document.id);
+            }
+        });
+        if (!metadata.exists && !recordsData.length) return null;
         return {
-            ...metadata.data(),
-            recordsData: chunks.docs.flatMap(snapshot => snapshot.data().records || [])
+            ...(metadata.exists ? metadata.data() : { station, updatedAt: "" }),
+            recordsData
         };
+    }
+
+    async function createStationThermalRecord(input) {
+        const profile = await getProfile();
+        requireSignedIn();
+        const station = normalizeThermalStation(profile?.office);
+        if (!profile || profile.disabled || profile.role !== "Station" || !station ||
+            !Array.isArray(profile.inventoryAccess) || !profile.inventoryAccess.includes("Requests")) {
+            throw new Error("An enabled Station account with an assigned station is required.");
+        }
+        const posNo = String(input.posNo || "").trim();
+        const quantity = Number(posNo);
+        const posUnit = String(input.posUnit || "").trim().toUpperCase();
+        const status = String(input.status || "").trim();
+        if (!posNo || posNo.length > 120 || !Number.isFinite(quantity) || quantity < 0) {
+            throw new Error("Enter a valid Released quantity.");
+        }
+        if (!["BOX", "ROLLS"].includes(posUnit)) throw new Error("Select a valid Released unit.");
+        if (!["Paid", "Not Paid"].includes(status)) {
+            throw new Error("Select a valid record status.");
+        }
+
+        const reference = db.collection(STATION_THERMAL_RECORDS).doc(station).collection("records").doc();
+        const record = {
+            stationRecordId: reference.id,
+            rack: station,
+            posNo,
+            posUnit,
+            serialNumber: "",
+            fullName: String(input.fullName || "").trim(),
+            userId: String(input.userId || "").trim(),
+            address: String(input.address || "").trim(),
+            status,
+            lokals: "",
+            noteIssue: String(input.noteIssue || "").trim(),
+            price: input.price === "" || input.price === null || input.price === undefined ? "" : Number(input.price),
+            transferTo: "",
+            columnJ: "",
+            createdBy: profile.username,
+            recordDate: new Date().toISOString()
+        };
+        if ((!Number.isFinite(record.price) && record.price !== "") || (record.price !== "" && record.price < 0)) {
+            throw new Error("Enter a valid price.");
+        }
+        ["fullName", "userId", "address", "noteIssue"].forEach(field => {
+            if (record[field].length > 1000) throw new Error(`${field} cannot exceed 1000 characters.`);
+        });
+        await reference.set(record);
+        return record;
     }
 
     async function loadCollectorThermalInventory() {
@@ -377,7 +500,10 @@
 
     async function saveInventory(office, inventory) {
         requireSignedIn();
-        await assertInventoryOffice(office);
+        const profile = await assertInventoryOffice(office);
+        if (!canManageInventory(profile, office)) {
+            throw new Error("Your account has view-only access to this inventory.");
+        }
         const inventoryRef = db.collection(INVENTORY).doc(office);
         const chunksRef = inventoryRef.collection("chunks");
         const existing = await chunksRef.get();
@@ -410,14 +536,46 @@
             recordCount: records.length
         });
         if (office === "Thermal") {
+            await synchronizeStationThermalRecords(records);
             await publishThermalStationInventory({ ...inventory, recordsData: records, updatedAt });
+        }
+    }
+
+    async function synchronizeStationThermalRecords(records) {
+        const snapshots = await Promise.all(THERMAL_STATIONS.map(station =>
+            db.collection(STATION_THERMAL_RECORDS).doc(station).collection("records").get()
+        ));
+        const savedRecords = new Map(records
+            .filter(record => record.stationRecordId)
+            .map(record => [record.stationRecordId, record]));
+        const writes = [];
+        snapshots.forEach(snapshot => {
+            snapshot.docs.forEach(document => {
+                const record = savedRecords.get(document.id);
+                if (!record) {
+                    writes.push({ type: "delete", ref: document.ref });
+                    return;
+                }
+                const payload = removeUndefined({ ...record, stationRecordId: document.id });
+                if (stableSerialize(document.data()) !== stableSerialize(payload)) {
+                    writes.push({ type: "set", ref: document.ref, payload });
+                }
+            });
+        });
+        for (let offset = 0; offset < writes.length; offset += 450) {
+            const batch = db.batch();
+            writes.slice(offset, offset + 450).forEach(write => {
+                if (write.type === "delete") batch.delete(write.ref);
+                else batch.set(write.ref, write.payload);
+            });
+            await batch.commit();
         }
     }
 
     async function clearInventory(office) {
         const profile = await assertInventoryOffice(office);
-        if (profile.role !== "Developer") {
-            throw new Error("Only a Developer account can clear inventory.");
+        if (!["Developer", "IT Admin"].includes(profile.role)) {
+            throw new Error("Only an IT Admin or Developer account can clear inventory.");
         }
         await saveInventory(office, {
             summaryData: {},
@@ -469,12 +627,13 @@
     }
 
     function canSubmitRequests(profile) {
-        return profile.role === "Developer" ||
+        return ["Developer", "IT Admin"].includes(profile.role) ||
             (Array.isArray(profile.inventoryAccess) && profile.inventoryAccess.includes("Requests"));
     }
 
     function canManageRequests(profile) {
-        return profile.role === "Developer" ||
+        return ["Developer", "IT Admin", "IT Manager", "Management"].includes(profile.role) ||
+            !["IT Support", "Accounting", "HR"].includes(profile.role) &&
             (Array.isArray(profile.permissions) && profile.permissions.includes("inventory") &&
                 Array.isArray(profile.inventoryAccess) && profile.inventoryAccess.includes("Thermal"));
     }
@@ -543,8 +702,8 @@
 
     async function saveRequest(request) {
         const profile = await getProfile();
-        if (!profile || profile.disabled || !canManageRequests(profile)) {
-            throw new Error("Thermal Inventory access is required to manage Requests.");
+        if (!profile || profile.disabled || !["IT Admin", "IT Manager", "Management"].includes(profile.role)) {
+            throw new Error("Only IT Admin, IT Manager, and Management accounts can change Request status.");
         }
         if (!request?.id || !["Pending", "Approved", "Rejected"].includes(request.status)) {
             throw new Error("A valid request ID and status are required.");
@@ -559,8 +718,8 @@
 
     async function deleteRequest(requestId) {
         const profile = await getProfile();
-        if (!profile || profile.disabled || !canManageRequests(profile)) {
-            throw new Error("Thermal Inventory access is required to manage Requests.");
+        if (!profile || profile.disabled || !["Developer", "IT Admin"].includes(profile.role)) {
+            throw new Error("Only IT Admin or Developer accounts can delete Requests.");
         }
         if (!requestId) throw new Error("A request ID is required to delete a request.");
         await db.collection("workspaceRequests").doc(requestId).delete();
@@ -581,6 +740,7 @@
     window.sharedInventory = {
         load: loadInventory,
         loadStationThermal: loadStationThermalInventory,
+        createStationThermalRecord,
         loadCollectorThermal: loadCollectorThermalInventory,
         publishThermalStation: publishThermalStationInventory,
         watch: watchInventory,

@@ -7,8 +7,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js?v=20261024-1"></script>
-    <script src="js/firebase-shared.js?v=20261024-4"></script>
-    <script src="js/auth-session.js?v=20260921-2"></script>
+    <script src="js/firebase-shared.js?v=20261026-7"></script>
+    <script src="js/auth-session.js?v=20261026-2"></script>
     <meta name="description" content="Professional Business Dashboard">
     <meta name="author" content="">
     <meta name="generator" content="">
@@ -794,7 +794,7 @@
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminMenu">
                             <li><a class="dropdown-item" data-inventory-access="Requests" href="requests.html"><i class="bi bi-inbox me-2"></i>Requests</a></li>
                             <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Cebu" href="inventory.html?office=Cebu"><i class="bi bi-boxes me-2"></i>POS Inventory</a></li>
-                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Thermal" href="inventory.html?office=Thermal"><i class="bi bi-boxes me-2"></i>Thermal Inventory</a></li>
+                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Thermal" href="inventory.html?office=Thermal"><i class="bi bi-boxes me-2"></i>Thermal Paper</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" data-permission="settings" href="dashboard.html#settings"><i class="bi bi-gear me-2"></i>Settings</a></li>
                             <li id="addAccountMenuItemDivider" style="display: none;"><hr class="dropdown-divider"></li>
@@ -877,9 +877,8 @@
                 <label for="newAccountOffice">Office</label>
                 <select id="newAccountOffice">
                     <option value="">Select an office</option>
-                    <option value="Rizal">Rizal</option>
                     <option value="Cebu">Cebu</option>
-                    <option value="Thermal">Thermal</option>
+                    <option value="Thermal" hidden>Thermal</option>
                     <option value="Both">All Offices</option>
                 </select>
             </div>
@@ -891,9 +890,10 @@
                     <option value="Developer">Developer</option>
                     <option value="IT Admin">IT Admin</option>
                     <option value="IT Manager">IT Manager</option>
-                    <option value="IT Supervisor">IT Supervisor</option>
                     <option value="IT Support">IT Support</option>
                     <option value="Management">Management</option>
+                    <option value="Accounting">Accounting</option>
+                    <option value="HR">HR</option>
                     <option value="Station">Station</option>
                 </select>
             </div>
@@ -901,10 +901,6 @@
             <div class="form-group">
                 <label>Inventory Access</label>
                 <div class="permissions-grid">
-                    <div class="permission-item">
-                        <input type="checkbox" id="permInventoryRizal" value="Rizal" />
-                        <label for="permInventoryRizal">Rizal Inventory</label>
-                    </div>
                     <div class="permission-item">
                         <input type="checkbox" id="permInventoryCebu" value="Cebu" />
                         <label for="permInventoryCebu">Cebu Inventory</label>
@@ -996,9 +992,8 @@
                 <label for="editAccountOffice">Office</label>
                 <select id="editAccountOffice">
                     <option value="">Select an office</option>
-                    <option value="Rizal">Rizal</option>
                     <option value="Cebu">Cebu</option>
-                    <option value="Thermal">Thermal</option>
+                    <option value="Thermal" hidden>Thermal</option>
                     <option value="Both">All Offices</option>
                 </select>
             </div>
@@ -1010,9 +1005,10 @@
                     <option value="Developer">Developer</option>
                     <option value="IT Admin">IT Admin</option>
                     <option value="IT Manager">IT Manager</option>
-                    <option value="IT Supervisor">IT Supervisor</option>
                     <option value="IT Support">IT Support</option>
                     <option value="Management">Management</option>
+                    <option value="Accounting">Accounting</option>
+                    <option value="HR">HR</option>
                     <option value="Station">Station</option>
                 </select>
             </div>
@@ -1020,10 +1016,6 @@
             <div class="form-group">
                 <label>Inventory Access</label>
                 <div class="permissions-grid">
-                    <div class="permission-item">
-                        <input type="checkbox" id="editPermInventoryRizal" value="Rizal" />
-                        <label for="editPermInventoryRizal">Rizal Inventory</label>
-                    </div>
                     <div class="permission-item">
                         <input type="checkbox" id="editPermInventoryCebu" value="Cebu" />
                         <label for="editPermInventoryCebu">Cebu Inventory</label>
@@ -1230,10 +1222,22 @@
             Developer: 'Developer',
             ITAdmin: 'IT Admin',
             ITManager: 'IT Manager',
-            ITSupervisor: 'IT Supervisor',
             ITSupport: 'IT Support',
-            Management: 'Management'
+            Management: 'Management',
+            Accounting: 'Accounting',
+            HR: 'HR'
         };
+
+        function roleProfilePolicy(role) {
+            return {
+                'IT Admin': { office: 'Both', inventoryAccess: ['Cebu', 'Thermal', 'Requests'], permissions: ['dashboard', 'analytics', 'reports', 'inventory', 'settings', 'addAccount', 'users', 'assignedTasks', 'administrator'] },
+                'IT Manager': { office: 'Both', inventoryAccess: ['Cebu', 'Thermal'], permissions: ['inventory', 'addAccount', 'users'] },
+                'IT Support': { office: 'Cebu', inventoryAccess: ['Cebu'], permissions: ['inventory', 'addAccount', 'users'] },
+                Management: { office: 'Both', inventoryAccess: ['Cebu', 'Thermal'], permissions: ['inventory'] },
+                Accounting: { office: 'Both', inventoryAccess: ['Cebu', 'Thermal'], permissions: ['inventory'] },
+                HR: { office: 'Both', inventoryAccess: ['Cebu', 'Thermal'], permissions: ['inventory'] }
+            }[role];
+        }
 
         // Initialize accounts storage
         function initializeAccounts() {
@@ -1255,20 +1259,22 @@
 
             Object.keys(accounts).forEach(username => {
                 if (typeof accounts[username] === 'object' && accounts[username] !== null) {
+                    const rolePolicy = roleProfilePolicy(accounts[username].role);
+                    if (rolePolicy) Object.assign(accounts[username], rolePolicy);
                     accounts[username].name = accounts[username].name || username;
                     accounts[username].username = accounts[username].username || username;
                     accounts[username].office = accounts[username].office || '';
 
                     const inventoryAccess = Array.isArray(accounts[username].inventoryAccess)
-                        ? accounts[username].inventoryAccess.filter(value => ['Rizal', 'Cebu', 'Thermal', 'Requests'].includes(value))
+                        ? accounts[username].inventoryAccess.filter(value => ['Cebu', 'Thermal', 'Requests'].includes(value))
                         : [];
 
                     if (accounts[username].office === 'Both') {
-                        accounts[username].inventoryAccess = ['Rizal', 'Cebu', 'Thermal', ...(inventoryAccess.includes('Requests') ? ['Requests'] : [])];
+                        accounts[username].inventoryAccess = ['Cebu', 'Thermal', ...(inventoryAccess.includes('Requests') ? ['Requests'] : [])];
                     } else if (inventoryAccess.length > 0) {
                         accounts[username].inventoryAccess = inventoryAccess;
                     } else if (accounts[username].role === 'Developer') {
-                        accounts[username].inventoryAccess = ['Rizal', 'Cebu', 'Thermal'];
+                        accounts[username].inventoryAccess = ['Cebu', 'Thermal'];
                     } else {
                         accounts[username].inventoryAccess = [];
                     }
@@ -1312,7 +1318,11 @@
             }
             
             const userAccount = accounts[username];
-            return userAccount ? userAccount.permissions : ['dashboard'];
+            const policy = userAccount && roleProfilePolicy(userAccount.role);
+            if (userAccount && ['Developer', 'IT Admin'].includes(userAccount.role)) {
+                return roleProfilePolicy('IT Admin').permissions;
+            }
+            return policy ? policy.permissions : userAccount ? userAccount.permissions : ['dashboard'];
         }
 
         function getCurrentUserInventoryAccess() {
@@ -1320,23 +1330,25 @@
             const accounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
             const userAccount = accounts[username];
 
-            if (username === 'admin' || (userAccount && userAccount.role === 'Developer')) {
-                return ['Rizal', 'Cebu', 'Thermal', 'Requests'];
+            if (username === 'admin' || (userAccount && ['Developer', 'IT Admin'].includes(userAccount.role))) {
+                return ['Cebu', 'Thermal', 'Requests'];
             }
 
             if (!userAccount) {
                 return [];
             }
 
+            const policy = roleProfilePolicy(userAccount.role);
+            if (policy) return policy.inventoryAccess;
             if (userAccount.office === 'Both') {
-                return ['Rizal', 'Cebu', 'Thermal', ...(Array.isArray(userAccount.inventoryAccess) && userAccount.inventoryAccess.includes('Requests') ? ['Requests'] : [])];
+                return ['Cebu', 'Thermal', ...(Array.isArray(userAccount.inventoryAccess) && userAccount.inventoryAccess.includes('Requests') ? ['Requests'] : [])];
             }
 
             if (Array.isArray(userAccount.inventoryAccess) && userAccount.inventoryAccess.length > 0) {
-                return userAccount.inventoryAccess.filter(value => ['Rizal', 'Cebu', 'Thermal', 'Requests'].includes(value));
+                return userAccount.inventoryAccess.filter(value => ['Cebu', 'Thermal', 'Requests'].includes(value));
             }
 
-            return userAccount.office ? [userAccount.office] : [];
+            return ['Cebu', 'Thermal'].includes(userAccount.office) ? [userAccount.office] : [];
         }
 
         // Show/hide developer-only account management actions based on role
@@ -1347,7 +1359,8 @@
             const usersMenuContainer = document.getElementById('usersMenuItemContainer');
             const usersMenuDivider = document.getElementById('usersMenuItemDivider');
             
-            if (currentRole === 'Developer') {
+            const permissions = new Set(getCurrentUserPermissions());
+            if (['Developer', 'IT Admin'].includes(currentRole) || permissions.has('addAccount') || permissions.has('users')) {
                 addAccountMenuContainer.style.display = 'block';
                 addAccountMenuDivider.style.display = 'block';
                 usersMenuContainer.style.display = 'block';
@@ -1380,8 +1393,8 @@
         async function saveAccounts(accounts, deleteUsernames = []) {
             if (!isLocalAccountsHost()) {
                 if (!window.sharedAccounts) throw new Error('Firebase account storage is unavailable.');
-                if (getCurrentUserRole() !== 'Developer') {
-                    throw new Error('Only a Developer account can manage user profiles.');
+                if (!['Developer', 'IT Admin', 'IT Manager', 'IT Support'].includes(getCurrentUserRole())) {
+                    throw new Error('Your role cannot manage user profiles.');
                 }
                 const desiredAccounts = { ...accounts };
                 deleteUsernames.forEach(username => delete desiredAccounts[username]);
@@ -1476,19 +1489,28 @@
                 const account = accounts[username];
                 const status = getAccountStatus(account);
                 const office = account && account.office ? account.office : 'N/A';
+                const actorRole = getCurrentUserRole();
+                const actorUsername = localStorage.getItem('loggedInUser') || sessionStorage.getItem('loggedInUser');
+                const manageableRoles = actorRole === 'IT Manager'
+                    ? ['IT Support', 'Management', 'Accounting', 'HR', 'Station']
+                    : actorRole === 'IT Support'
+                        ? ['Management', 'Accounting', 'HR', 'Station']
+                        : null;
+                const canManageTarget = ['Developer', 'IT Admin'].includes(actorRole) ||
+                    (manageableRoles !== null && manageableRoles.includes(account.role) && actorUsername !== username);
                 const detailButton = `
                     <button class="user-action-btn view" data-action="view" data-username="${escapeHtml(username)}">View</button>
                 `;
-                const editButton = `
+                const editButton = canManageTarget ? `
                     <button class="user-action-btn toggle" data-action="edit" data-username="${escapeHtml(username)}">Edit</button>
-                `;
+                ` : '';
                 const toggleButtonText = account && account.disabled ? 'Enable' : 'Disable';
-                const toggleButton = `
+                const toggleButton = canManageTarget ? `
                     <button class="user-action-btn toggle" data-action="toggle" data-username="${escapeHtml(username)}">${toggleButtonText}</button>
-                `;
-                const deleteButton = `
+                ` : '';
+                const deleteButton = ['Developer', 'IT Admin'].includes(actorRole) && actorUsername !== username ? `
                     <button class="user-action-btn delete" data-action="delete" data-username="${escapeHtml(username)}">Delete</button>
-                `;
+                ` : '';
 
                 return `
                     <tr>
@@ -1607,7 +1629,6 @@
             document.getElementById('editAccountPassword').value = account.password || '';
             document.getElementById('editAccountOffice').value = account.office || '';
             document.getElementById('editAccountRole').value = account.role || '';
-            document.getElementById('editPermInventoryRizal').checked = Array.isArray(account.inventoryAccess) && account.inventoryAccess.includes('Rizal');
             document.getElementById('editPermInventoryCebu').checked = Array.isArray(account.inventoryAccess) && account.inventoryAccess.includes('Cebu');
             document.getElementById('editPermInventoryThermal').checked = Array.isArray(account.inventoryAccess) && account.inventoryAccess.includes('Thermal');
             document.getElementById('editPermInventoryRequests').checked = Array.isArray(account.inventoryAccess) && account.inventoryAccess.includes('Requests');
@@ -1626,7 +1647,6 @@
             document.getElementById('editAccountEmail').value = '';
             document.getElementById('editAccountPassword').value = '';
             document.getElementById('editAccountOffice').value = '';
-            document.getElementById('editPermInventoryRizal').checked = false;
             document.getElementById('editPermInventoryCebu').checked = false;
             document.getElementById('editPermInventoryThermal').checked = false;
             document.getElementById('editPermInventoryRequests').checked = false;
@@ -1755,7 +1775,8 @@
             const email = document.getElementById('editAccountEmail').value.trim();
             const password = document.getElementById('editAccountPassword').value.trim();
             const office = document.getElementById('editAccountOffice').value;
-            const role = document.getElementById('editAccountRole').value;
+            const accounts = getAccounts();
+            const role = document.getElementById('editAccountRole').value || accounts[originalUsername]?.role || '';
             const inventoryAccess = [];
 
             document.querySelectorAll('#editAccountModal input[id^="editPermInventory"]:checked').forEach(checkbox => {
@@ -1765,7 +1786,7 @@
             const normalizedInventoryAccess = role === 'Station'
                 ? ['Requests']
                 : office === 'Both'
-                ? ['Rizal', 'Cebu', 'Thermal', ...(inventoryAccess.includes('Requests') ? ['Requests'] : [])]
+                ? ['Cebu', 'Thermal', ...(inventoryAccess.includes('Requests') ? ['Requests'] : [])]
                 : inventoryAccess;
 
             if (!name || !username || !email || (isLocalAccountsHost() && !password) || !office || !role) {
@@ -1784,7 +1805,6 @@
                 return;
             }
 
-            let accounts = getAccounts();
             if (!accounts[originalUsername]) {
                 alert('Account not found.');
                 return;
@@ -1872,7 +1892,7 @@
             const normalizedInventoryAccess = role === 'Station'
                 ? ['Requests']
                 : office === 'Both'
-                ? ['Rizal', 'Cebu', 'Thermal', ...(inventoryAccess.includes('Requests') ? ['Requests'] : [])]
+                ? ['Cebu', 'Thermal', ...(inventoryAccess.includes('Requests') ? ['Requests'] : [])]
                 : inventoryAccess;
 
             if (!name || !username || !email || !password || !office || !role) {
@@ -1932,7 +1952,6 @@
             document.getElementById('newAccountEmail').value = '';
             document.getElementById('newAccountPassword').value = '';
             document.getElementById('newAccountOffice').value = '';
-            document.getElementById('permInventoryRizal').checked = false;
             document.getElementById('permInventoryCebu').checked = false;
             document.getElementById('permInventoryThermal').checked = false;
             document.getElementById('permInventoryRequests').checked = false;
@@ -1945,15 +1964,46 @@
 
         function applyStationRoleAccess(roleSelect, inventoryCheckboxes, requestsCheckbox, menuCheckboxes) {
             const isStation = roleSelect.value === 'Station';
+            const policy = roleProfilePolicy(roleSelect.value);
+            const actorRole = getCurrentUserRole();
+            const assignableRoles = actorRole === 'IT Manager'
+                ? ['IT Support', 'Management', 'Accounting', 'HR', 'Station']
+                : actorRole === 'IT Support'
+                    ? ['Management', 'Accounting', 'HR', 'Station']
+                    : actorRole === 'Developer'
+                        ? null
+                        : ['IT Admin', 'IT Manager', 'IT Support', 'Management', 'Accounting', 'HR', 'Station'];
+            roleSelect.querySelectorAll('option[value]').forEach(option => {
+                if (option.value === 'Developer') {
+                    option.hidden = actorRole !== 'Developer';
+                    option.disabled = actorRole !== 'Developer';
+                } else if (option.value) {
+                    option.hidden = false;
+                    option.disabled = assignableRoles !== null && !assignableRoles.includes(option.value);
+                }
+            });
+            [...inventoryCheckboxes, ...menuCheckboxes].forEach(checkbox => {
+                if (checkbox.dataset.policyInitialDisabled === undefined) {
+                    checkbox.dataset.policyInitialDisabled = String(checkbox.disabled);
+                }
+            });
             inventoryCheckboxes.forEach(checkbox => {
                 const isRequests = checkbox === requestsCheckbox;
-                checkbox.disabled = isStation;
-                if (isStation) checkbox.checked = isRequests;
+                checkbox.disabled = isStation || Boolean(policy) || checkbox.dataset.policyInitialDisabled === 'true';
+                if (policy) checkbox.checked = policy.inventoryAccess.includes(checkbox.value);
+                else if (isStation) checkbox.checked = isRequests;
             });
             menuCheckboxes.forEach(checkbox => {
-                checkbox.disabled = isStation;
-                if (isStation) checkbox.checked = false;
+                checkbox.disabled = isStation || Boolean(policy) || checkbox.dataset.policyInitialDisabled === 'true';
+                if (policy) checkbox.checked = policy.permissions.includes(checkbox.value);
+                else if (isStation) checkbox.checked = false;
             });
+            const officeSelect = document.getElementById(roleSelect.id === 'newAccountRole' ? 'newAccountOffice' : 'editAccountOffice');
+            if (officeSelect.dataset.policyInitialDisabled === undefined) {
+                officeSelect.dataset.policyInitialDisabled = String(officeSelect.disabled);
+            }
+            if (policy) officeSelect.value = policy.office;
+            officeSelect.disabled = Boolean(policy) || officeSelect.dataset.policyInitialDisabled === 'true';
         }
 
         const addRoleSelect = document.getElementById('newAccountRole');
@@ -2005,7 +2055,7 @@
                     currentRole,
                     permissions: Array.from(permissions),
                     allowedInventoryOffices: Array.from(allowedInventoryOffices),
-                    developerOnlyMenuVisible: currentRole === 'Developer'
+                    developerOnlyMenuVisible: ['Developer', 'IT Admin'].includes(currentRole)
                 }));
             } catch (error) {
                 console.warn('Unable to save dashboard menu state.', error);

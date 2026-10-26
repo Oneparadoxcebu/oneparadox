@@ -2,7 +2,7 @@
     "use strict";
 
     const form = document.getElementById("form1");
-    const usernameInput = document.getElementById("UsernameInput");
+    const emailInput = document.getElementById("UsernameInput");
     const passwordInput = document.getElementById("PasswordInput");
     const message = document.getElementById("divMessage");
     const passwordToggle = document.getElementById("togglePasswordIcon");
@@ -17,22 +17,18 @@
 
     form.addEventListener("submit", async event => {
         event.preventDefault();
-        const login = usernameInput.value.trim();
+        const email = emailInput.value.trim();
         const password = passwordInput.value;
 
-        if (!login || !password) {
+        if (!email || !password) {
             showError("Enter your email address and password.");
-            return;
-        }
-        if (!login.includes("@")) {
-            showError("Sign in with your email address. Username sign-in requires Firebase Functions and is unavailable on the free plan.");
             return;
         }
 
         signInButton.disabled = true;
         message.textContent = "";
         try {
-            await window.firebaseAuth.signInWithEmailAndPassword(login.toLowerCase(), password);
+            await window.firebaseAuth.signInWithEmailAndPassword(email.toLowerCase(), password);
         } catch (error) {
             console.error("Sign-in failed.", error);
             const errorCode = String(error?.code || "").toLowerCase();
@@ -50,9 +46,6 @@
                 "auth/unauthorized-domain": "This website is not authorized to sign in with Firebase. Add oneparadoxcebu.github.io in Firebase Console under Authentication > Settings > Authorized domains.",
                 "auth/operation-not-allowed": "Email/password sign-in is disabled. Enable the Email/Password provider in Firebase Console under Authentication > Sign-in method.",
                 "auth/configuration-not-found": "Firebase Authentication is not configured for this project. Check the Authentication setup in Firebase Console.",
-                "functions/unauthenticated": "Username or password is incorrect.",
-                "functions/not-found": "Username sign-in is not configured. Sign in with your email or contact your administrator.",
-                "functions/unavailable": "The sign-in service is temporarily unavailable. Try again later.",
                 "auth/user-disabled": "This account has been disabled. Contact your administrator.",
                 "auth/too-many-requests": "Too many sign-in attempts. Try again later.",
                 "auth/network-request-failed": "Could not connect to Firebase. Check your connection."

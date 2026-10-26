@@ -42,7 +42,9 @@
     }
 
     function getLandingPage(profile) {
-        if (profile.role === "Developer") return "inventory.html?office=Rizal";
+        if (["Developer", "IT Admin", "IT Manager", "IT Support", "Management", "Accounting", "HR"].includes(profile.role)) {
+            return "inventory.html?office=Cebu";
+        }
         const inventoryAccess = Array.isArray(profile.inventoryAccess) ? profile.inventoryAccess : [];
         if (Array.isArray(profile.permissions) && profile.permissions.includes("inventory") && inventoryAccess.length) {
             return `inventory.html?office=${encodeURIComponent(inventoryAccess[0])}`;

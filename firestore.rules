@@ -20,17 +20,88 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return enabledUser() && currentProfile().role == 'Developer';
+      return enabledUser() && currentProfile().role in ['Developer', 'IT Admin'];
     }
 
     function canAccessOffice(office) {
       return enabledUser()
+        && office in ['Cebu', 'Thermal']
         && (isAdmin()
+          || (currentProfile().role == 'IT Manager'
+            && office in ['Cebu', 'Thermal'])
+          || (currentProfile().role == 'IT Support'
+            && office == 'Cebu')
+          || (currentProfile().role in ['Management', 'Accounting', 'HR']
+            && office in ['Cebu', 'Thermal'])
           || (currentProfile().permissions is list
             && 'inventory' in currentProfile().permissions
             && (currentProfile().office == 'Both'
               || (currentProfile().inventoryAccess is list
                 && office in currentProfile().inventoryAccess))));
+    }
+
+    function canManageOffice(office) {
+      return canAccessOffice(office)
+        && currentProfile().role in ['Developer', 'IT Admin', 'IT Manager', 'IT Support'];
+    }
+
+    function canManageUsers() {
+      return enabledUser()
+        && currentProfile().role in ['Developer', 'IT Admin', 'IT Manager', 'IT Support'];
+    }
+
+    function canManageTargetRole(role) {
+      return currentProfile().role == 'Developer'
+        || (currentProfile().role == 'IT Admin' && role != 'Developer')
+        || (currentProfile().role == 'IT Manager'
+        && role in ['IT Support', 'Management', 'Accounting', 'HR', 'Station'])
+        || (currentProfile().role == 'IT Support'
+        && role in ['Management', 'Accounting', 'HR', 'Station']);
+    }
+
+    function validRoleProfile(profile) {
+      return !(profile.role in ['IT Admin', 'IT Manager', 'IT Support', 'Management', 'Accounting', 'HR', 'Station'])
+        || (profile.role == 'IT Admin'
+          && profile.office == 'Both'
+          && profile.inventoryAccess is list
+          && profile.inventoryAccess.size() == 3
+          && profile.inventoryAccess.hasAll(['Cebu', 'Thermal', 'Requests'])
+          && profile.permissions is list
+          && profile.permissions.size() == 9
+          && profile.permissions.hasAll(['dashboard', 'analytics', 'reports', 'inventory', 'settings', 'addAccount', 'users', 'assignedTasks', 'administrator']))
+        || (profile.role == 'IT Manager'
+          && profile.office == 'Both'
+          && profile.inventoryAccess is list
+          && profile.inventoryAccess.size() == 2
+          && 'Cebu' in profile.inventoryAccess
+          && 'Thermal' in profile.inventoryAccess
+          && profile.permissions is list
+          && profile.permissions.size() == 3
+          && profile.permissions.hasAll(['inventory', 'addAccount', 'users']))
+        || (profile.role == 'IT Support'
+          && profile.office == 'Cebu'
+          && profile.inventoryAccess is list
+          && profile.inventoryAccess.size() == 1
+          && 'Cebu' in profile.inventoryAccess
+          && profile.permissions is list
+          && profile.permissions.size() == 3
+          && profile.permissions.hasAll(['inventory', 'addAccount', 'users']))
+        || (profile.role in ['Management', 'Accounting', 'HR']
+          && profile.office == 'Both'
+          && profile.inventoryAccess is list
+          && profile.inventoryAccess.size() == 2
+          && 'Cebu' in profile.inventoryAccess
+          && 'Thermal' in profile.inventoryAccess
+          && profile.permissions is list
+          && profile.permissions.size() == 1
+          && 'inventory' in profile.permissions)
+        || (profile.role == 'Station'
+          && profile.office in ['Guadalupe Station', 'Punta Princessa Station', 'Babag Station']
+          && profile.inventoryAccess is list
+          && profile.inventoryAccess.size() == 1
+          && 'Requests' in profile.inventoryAccess
+          && profile.permissions is list
+          && profile.permissions.size() == 0);
     }
 
     function canSubmitRequests() {
@@ -43,10 +114,18 @@ service cloud.firestore {
     function canManageRequests() {
       return enabledUser()
         && (isAdmin()
+          || currentProfile().role == 'IT Manager'
+          || currentProfile().role == 'Management'
           || (currentProfile().permissions is list
             && 'inventory' in currentProfile().permissions
             && currentProfile().inventoryAccess is list
-            && 'Thermal' in currentProfile().inventoryAccess));
+            && 'Thermal' in currentProfile().inventoryAccess
+            && !(currentProfile().role in ['Management', 'Accounting', 'HR', 'IT Support'])));
+    }
+
+    function canChangeRequestStatus() {
+      return enabledUser()
+        && currentProfile().role in ['IT Admin', 'IT Manager', 'Management'];
     }
 
     function validCollectorProfile(profile) {
@@ -81,20 +160,35 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow get: if (signedIn() && request.auth.uid == uid)
-        || (enabledUser() && isAdmin());
-      allow list: if isAdmin();
-      allow create: if isAdmin()
+        || canManageUsers();
+      allow list: if canManageUsers();
+      allow create: if canManageUsers()
+        && canManageTargetRole(request.resource.data.role)
         && validCollectorProfile(request.resource.data)
+        && validRoleProfile(request.resource.data)
+        && request.resource.data.uid == uid
         && request.resource.data.keys().hasOnly([
           'uid', 'username', 'name', 'email', 'role', 'permissions',
           'office', 'inventoryAccess', 'disabled', 'theme'
         ]);
-      allow update: if isAdmin()
+      allow update: if (isAdmin()
           && validCollectorProfile(request.resource.data)
+          && validRoleProfile(request.resource.data)
+          && request.resource.data.uid == uid
           && request.resource.data.keys().hasOnly([
             'uid', 'username', 'name', 'email', 'role', 'permissions',
             'office', 'inventoryAccess', 'disabled', 'theme'
-          ])
+          ]))
+        || (canManageUsers()
+          && canManageTargetRole(resource.data.role)
+          && canManageTargetRole(request.resource.data.role)
+          && validCollectorProfile(request.resource.data)
+          && validRoleProfile(request.resource.data)
+          && request.resource.data.uid == uid
+          && request.resource.data.keys().hasOnly([
+            'uid', 'username', 'name', 'email', 'role', 'permissions',
+            'office', 'inventoryAccess', 'disabled', 'theme'
+          ]))
         || enabledUser()
           && request.auth.uid == uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['theme'])
@@ -103,18 +197,20 @@ service cloud.firestore {
     }
 
     match /inventory/{office} {
-      allow read, write: if canAccessOffice(office);
+      allow read: if canAccessOffice(office);
+      allow write: if canManageOffice(office);
 
       match /chunks/{chunkId} {
-        allow read, write: if canAccessOffice(office);
+        allow read: if canAccessOffice(office);
+        allow write: if canManageOffice(office);
       }
 
       match /history/{entryId} {
         allow read: if canAccessOffice(office);
-        allow create, update: if canAccessOffice(office)
+        allow create, update: if canManageOffice(office)
           && (request.resource.data.username == currentProfile().username
             || request.resource.data.user == currentProfile().username);
-        allow delete: if canAccessOffice(office)
+        allow delete: if canManageOffice(office)
           && (resource.data.username == currentProfile().username
             || resource.data.user == currentProfile().username);
       }
@@ -123,23 +219,54 @@ service cloud.firestore {
     match /stationThermalInventory/{station} {
       allow get: if canReadStationThermal(station) || canAccessOffice('Thermal');
       allow list: if false;
-      allow create, update: if canAccessOffice('Thermal')
+      allow create, update: if canManageOffice('Thermal')
         && isThermalInventoryGroup(station)
         && request.resource.data.keys().hasOnly(['station', 'updatedAt', 'recordCount'])
         && request.resource.data.station == station
         && request.resource.data.updatedAt is string
         && request.resource.data.recordCount is int
         && request.resource.data.recordCount >= 0;
-      allow delete: if canAccessOffice('Thermal') && isThermalInventoryGroup(station);
+      allow delete: if canManageOffice('Thermal') && isThermalInventoryGroup(station);
 
       match /chunks/{chunkId} {
         allow get, list: if canReadStationThermal(station) || canAccessOffice('Thermal');
-        allow create, update: if canAccessOffice('Thermal')
+        allow create, update: if canManageOffice('Thermal')
           && isThermalInventoryGroup(station)
           && request.resource.data.keys().hasOnly(['records'])
           && request.resource.data.records is list;
-        allow delete: if canAccessOffice('Thermal') && isThermalInventoryGroup(station);
+        allow delete: if canManageOffice('Thermal') && isThermalInventoryGroup(station);
       }
+    }
+
+    match /stationThermalRecords/{station}/records/{recordId} {
+      allow get, list: if (canReadStationThermal(station) && currentProfile().role == 'Station')
+        || canAccessOffice('Thermal');
+      allow create: if canReadStationThermal(station)
+        && currentProfile().role == 'Station'
+        && request.resource.data.keys().hasOnly([
+          'stationRecordId', 'rack', 'posNo', 'posUnit', 'serialNumber',
+          'fullName', 'userId', 'address', 'status', 'lokals', 'noteIssue',
+          'price', 'transferTo', 'columnJ', 'createdBy', 'recordDate'
+        ])
+        && request.resource.data.stationRecordId == recordId
+        && request.resource.data.rack == station
+        && request.resource.data.posNo is string
+        && request.resource.data.posNo.size() > 0
+        && request.resource.data.posNo.size() <= 120
+        && request.resource.data.posUnit in ['BOX', 'ROLLS']
+        && request.resource.data.serialNumber == ''
+        && request.resource.data.fullName is string
+        && request.resource.data.userId is string
+        && request.resource.data.address is string
+        && request.resource.data.status in ['Paid', 'Not Paid']
+        && request.resource.data.lokals == ''
+        && request.resource.data.noteIssue is string
+        && (request.resource.data.price is number || request.resource.data.price == '')
+        && request.resource.data.transferTo == ''
+        && request.resource.data.columnJ == ''
+        && request.resource.data.createdBy == currentProfile().username
+        && request.resource.data.recordDate is string;
+      allow update, delete: if canManageOffice('Thermal');
     }
 
     match /workspaceRequests/{requestId} {
@@ -186,12 +313,12 @@ service cloud.firestore {
             && request.resource.data.station == currentProfile().office))
         && (currentProfile().role != 'Collector'
           || request.resource.data.station == 'Collector');
-      allow update: if canManageRequests()
+      allow update: if canChangeRequestStatus()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'rejectionNote'])
         && request.resource.data.status in ['Pending', 'Approved', 'Rejected']
         && request.resource.data.rejectionNote is string
         && request.resource.data.rejectionNote.size() <= 500;
-      allow delete: if canManageRequests();
+      allow delete: if isAdmin();
     }
   }
 }

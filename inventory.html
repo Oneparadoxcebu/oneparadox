@@ -7,8 +7,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js?v=20261024-1"></script>
-    <script src="js/firebase-shared.js?v=20261025-9"></script>
-    <script src="js/auth-session.js?v=20260921-2"></script>
+    <script src="js/firebase-shared.js?v=20261026-7"></script>
+    <script src="js/auth-session.js?v=20261026-2"></script>
     <meta name="description" content="Inventory Management">
     <meta name="author" content="">
     <meta name="generator" content="">
@@ -526,7 +526,7 @@
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminMenu">
                             <li><a class="dropdown-item" data-inventory-access="Requests" href="requests.html"><i class="bi bi-inbox me-2"></i>Requests</a></li>
                             <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Cebu" href="inventory.html?office=Cebu"><i class="bi bi-boxes me-2"></i>POS Inventory</a></li>
-                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Thermal" href="inventory.html?office=Thermal"><i class="bi bi-boxes me-2"></i>Thermal Inventory</a></li>
+                            <li><a class="dropdown-item" data-permission="inventory" data-inventory-office="Thermal" href="inventory.html?office=Thermal"><i class="bi bi-boxes me-2"></i>Thermal Paper</a></li>
                             <li><a class="dropdown-item" data-permission="inventory" href="#" id="clearInventoryMenuBtn"><i class="bi bi-trash me-2"></i>Clear Inventory</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li id="addAccountMenuItemDivider" style="display: none;"><hr class="dropdown-divider"></li>
@@ -1077,9 +1077,9 @@
             <div class="account-form-group"><label for="inventoryNewUserUsername">Username</label><input id="inventoryNewUserUsername" placeholder="Enter username"></div>
             <div class="account-form-group"><label for="inventoryNewUserEmail">Email</label><input id="inventoryNewUserEmail" type="email" placeholder="Enter email"></div>
             <div class="account-form-group"><label for="inventoryNewUserPassword">Password</label><input id="inventoryNewUserPassword" type="password" placeholder="Enter password"></div>
-            <div class="account-form-group"><label for="inventoryNewUserOffice">Office</label><select id="inventoryNewUserOffice"><option value="">Select an office</option><option value="Rizal">Rizal</option><option value="Cebu">Cebu</option><option value="Thermal">Thermal</option><option value="Both">All Offices</option><option value="Guadalupe Station">Guadalupe Station</option><option value="Punta Princessa Station">Punta Princessa Station</option><option value="Babag Station">Babag Station</option><option value="Collector">Collector</option></select></div>
-            <div class="account-form-group"><label for="inventoryNewUserRole">Role</label><select id="inventoryNewUserRole"><option value="">Select a role</option><option value="Developer">Developer</option><option value="IT Admin">IT Admin</option><option value="IT Manager">IT Manager</option><option value="IT Supervisor">IT Supervisor</option><option value="IT Support">IT Support</option><option value="Management">Management</option><option value="Station">Station</option><option value="Collector">Collector</option></select></div>
-            <div class="account-form-group"><label>Inventory Access</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" id="inventoryAccessRizal" value="Rizal"><label for="inventoryAccessRizal">Rizal Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryAccessCebu" value="Cebu"><label for="inventoryAccessCebu">Cebu Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryAccessThermal" value="Thermal"><label for="inventoryAccessThermal">Thermal Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryAccessRequests" value="Requests"><label for="inventoryAccessRequests">Requests</label></div></div></div>
+            <div class="account-form-group"><label for="inventoryNewUserOffice">Office</label><select id="inventoryNewUserOffice"><option value="">Select an office</option><option value="Cebu">Cebu</option><option value="Thermal" hidden>Thermal</option><option value="Both">All Offices</option><option value="Guadalupe Station">Guadalupe Station</option><option value="Punta Princessa Station">Punta Princessa Station</option><option value="Babag Station">Babag Station</option></select></div>
+            <div class="account-form-group"><label for="inventoryNewUserRole">Role</label><select id="inventoryNewUserRole"><option value="">Select a role</option><option value="Developer">Developer</option><option value="IT Admin">IT Admin</option><option value="IT Manager">IT Manager</option><option value="IT Support">IT Support</option><option value="Management">Management</option><option value="Accounting">Accounting</option><option value="HR">HR</option><option value="Station">Station</option></select></div>
+            <div class="account-form-group"><label>Inventory Access</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" id="inventoryAccessCebu" value="Cebu"><label for="inventoryAccessCebu">Cebu Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryAccessThermal" value="Thermal"><label for="inventoryAccessThermal">Thermal Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryAccessRequests" value="Requests"><label for="inventoryAccessRequests">Requests</label></div></div></div>
             <div class="account-form-group"><label>Menu Access Permissions</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" checked id="inventoryPermissionInventory" value="inventory"><label for="inventoryPermissionInventory">Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryPermissionAssignedTasks" value="assignedTasks"><label for="inventoryPermissionAssignedTasks">Assigned Tasks</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryPermissionAddAccount" value="addAccount"><label for="inventoryPermissionAddAccount">Add Account</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryPermissionUsers" value="users"><label for="inventoryPermissionUsers">Manage Users</label></div></div></div>
             <div class="account-modal-buttons"><button type="button" class="btn-submit" id="inventorySubmitUserBtn">Add Account</button><button type="button" class="btn-cancel" id="inventoryCancelUserBtn">Cancel</button></div>
         </div>
@@ -1099,9 +1099,9 @@
             <div class="account-form-group"><label for="inventoryEditUserUsername">Username</label><input id="inventoryEditUserUsername" placeholder="Enter username"></div>
             <div class="account-form-group"><label for="inventoryEditUserEmail">Email</label><input id="inventoryEditUserEmail" type="email" placeholder="Enter email"></div>
             <div class="account-form-group"><label for="inventoryEditUserPassword">Password</label><input id="inventoryEditUserPassword" type="password" placeholder="Enter password"></div>
-            <div class="account-form-group" id="inventoryEditAccessControls"><label for="inventoryEditUserOffice">Office</label><select id="inventoryEditUserOffice"><option value="">Select an office</option><option value="Rizal">Rizal</option><option value="Cebu">Cebu</option><option value="Thermal">Thermal</option><option value="Both">All Offices</option><option value="Guadalupe Station">Guadalupe Station</option><option value="Punta Princessa Station">Punta Princessa Station</option><option value="Babag Station">Babag Station</option><option value="Collector">Collector</option></select></div>
-            <div class="account-form-group" id="inventoryEditRoleControl"><label for="inventoryEditUserRole">Role</label><select id="inventoryEditUserRole"><option value="">Select a role</option><option value="Developer">Developer</option><option value="IT Admin">IT Admin</option><option value="IT Manager">IT Manager</option><option value="IT Supervisor">IT Supervisor</option><option value="IT Support">IT Support</option><option value="Management">Management</option><option value="Station">Station</option><option value="Collector">Collector</option></select></div>
-            <div class="account-form-group" id="inventoryEditInventoryAccessControl"><label>Inventory Access</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessRizal" value="Rizal"><label for="inventoryEditAccessRizal">Rizal Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessCebu" value="Cebu"><label for="inventoryEditAccessCebu">Cebu Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessThermal" value="Thermal"><label for="inventoryEditAccessThermal">Thermal Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessRequests" value="Requests"><label for="inventoryEditAccessRequests">Requests</label></div></div></div>
+            <div class="account-form-group" id="inventoryEditAccessControls"><label for="inventoryEditUserOffice">Office</label><select id="inventoryEditUserOffice"><option value="">Select an office</option><option value="Cebu">Cebu</option><option value="Thermal" hidden>Thermal</option><option value="Both">All Offices</option><option value="Guadalupe Station">Guadalupe Station</option><option value="Punta Princessa Station">Punta Princessa Station</option><option value="Babag Station">Babag Station</option></select></div>
+            <div class="account-form-group" id="inventoryEditRoleControl"><label for="inventoryEditUserRole">Role</label><select id="inventoryEditUserRole"><option value="">Select a role</option><option value="Developer">Developer</option><option value="IT Admin">IT Admin</option><option value="IT Manager">IT Manager</option><option value="IT Support">IT Support</option><option value="Management">Management</option><option value="Accounting">Accounting</option><option value="HR">HR</option><option value="Station">Station</option></select></div>
+            <div class="account-form-group" id="inventoryEditInventoryAccessControl"><label>Inventory Access</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessCebu" value="Cebu"><label for="inventoryEditAccessCebu">Cebu Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessThermal" value="Thermal"><label for="inventoryEditAccessThermal">Thermal Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditAccessRequests" value="Requests"><label for="inventoryEditAccessRequests">Requests</label></div></div></div>
             <div class="account-form-group" id="inventoryEditPermissionControl"><label>Menu Access Permissions</label><div class="account-permissions-grid"><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionInventory" value="inventory"><label for="inventoryEditPermissionInventory">Inventory</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionAssignedTasks" value="assignedTasks"><label for="inventoryEditPermissionAssignedTasks">Assigned Tasks</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionAddAccount" value="addAccount"><label for="inventoryEditPermissionAddAccount">Add Account</label></div><div class="account-permission-item"><input type="checkbox" id="inventoryEditPermissionUsers" value="users"><label for="inventoryEditPermissionUsers">Manage Users</label></div></div></div>
             <div class="account-modal-buttons"><button type="button" class="btn-submit" id="inventorySaveEditUserBtn">Save Changes</button><button type="button" class="btn btn-danger" id="inventoryDeleteUserBtn" style="display: none;">Delete Account</button><button type="button" class="btn-cancel" id="inventoryCancelEditUserBtn">Cancel</button></div>
         </div>
@@ -1159,7 +1159,7 @@
 
         function getCurrentUserOffice() {
             const urlOffice = new URLSearchParams(window.location.search).get("office");
-            if (urlOffice && ["Rizal", "Cebu", "Thermal"].includes(urlOffice.trim())) {
+            if (urlOffice && ["Cebu", "Thermal"].includes(urlOffice.trim())) {
                 return urlOffice.trim();
             }
 
@@ -1171,7 +1171,7 @@
         }
 
         function getSystemOptions() {
-            return getCurrentUserOffice() === "Cebu" ? ["CEB1", "CEB2", "CEB3"] : ["R1", "R2", "R3"];
+            return ["CEB1", "CEB2", "CEB3"];
         }
 
         function getLokalsOptions() {
@@ -1229,7 +1229,7 @@
         }
 
         function getInventoryStorageKeys(officeOverride = getCurrentUserOffice()) {
-            const office = officeOverride && ["Rizal", "Cebu", "Thermal"].includes(officeOverride.trim()) ? officeOverride.trim() : "";
+            const office = officeOverride && ["Cebu", "Thermal"].includes(officeOverride.trim()) ? officeOverride.trim() : "";
             const suffix = office ? `_${office}` : "";
 
             return {
@@ -1366,6 +1366,17 @@
             return account && account.role ? account.role : "User";
         }
 
+        function roleProfilePolicy(role) {
+            return {
+                "IT Admin": { office: "Both", inventoryAccess: ["Cebu", "Thermal", "Requests"], permissions: ["dashboard", "analytics", "reports", "inventory", "settings", "addAccount", "users", "assignedTasks", "administrator"] },
+                "IT Manager": { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory", "addAccount", "users"] },
+                "IT Support": { office: "Cebu", inventoryAccess: ["Cebu"], permissions: ["inventory", "addAccount", "users"] },
+                Management: { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory"] },
+                Accounting: { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory"] },
+                HR: { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory"] }
+            }[role];
+        }
+
         function getCurrentUserPermissions() {
             const username = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "User";
             const accounts = JSON.parse(localStorage.getItem("userAccounts")) || {};
@@ -1375,7 +1386,12 @@
                 return ["inventory"];
             }
 
-            return account && Array.isArray(account.permissions)
+            if (account && ["Developer", "IT Admin"].includes(account.role)) {
+                return roleProfilePolicy("IT Admin").permissions.filter(permission =>
+                    !["dashboard", "analytics", "reports", "attendance", "attendanceReport", "settings"].includes(permission));
+            }
+            const rolePolicy = account && roleProfilePolicy(account.role);
+            return rolePolicy ? rolePolicy.permissions : account && Array.isArray(account.permissions)
                 ? account.permissions.filter(permission => permission !== "dashboard" && permission !== "analytics" && permission !== "reports" && permission !== "attendance" && permission !== "attendanceReport" && permission !== "settings")
                 : ["inventory"];
         }
@@ -1383,11 +1399,10 @@
         function validateRequestedOfficeAccess() {
             const requestedOffice = new URLSearchParams(window.location.search).get("office");
 
-            if (!requestedOffice) {
+            const normalizedOffice = requestedOffice?.trim() || getCurrentUserOffice();
+            if (!normalizedOffice) {
                 return true;
             }
-
-            const normalizedOffice = requestedOffice.trim();
 
             if (!['Rizal', 'Cebu', 'Thermal'].includes(normalizedOffice)) {
                 return true;
@@ -1399,13 +1414,15 @@
                 return true;
             }
 
-            const fallbackOffice = allowedOffices[0] || getCurrentUserOffice();
+            const fallbackOffice = allowedOffices.find(office => office === "Cebu" || office === "Thermal");
             alert(`You do not have access to ${normalizedOffice} inventory.`);
 
             if (fallbackOffice) {
-                window.location.href = `inventory.html?office=${encodeURIComponent(fallbackOffice)}`;
+                window.location.replace(`inventory.html?office=${encodeURIComponent(fallbackOffice)}`);
+            } else if (allowedOffices.includes("Requests")) {
+                window.location.replace("requests.html");
             } else {
-                window.location.href = 'index.html';
+                window.location.replace("dashboard.html");
             }
 
             return false;
@@ -1416,23 +1433,29 @@
             const accounts = JSON.parse(localStorage.getItem("userAccounts")) || {};
             const account = accounts[username];
 
-            if (username === "admin" || (account && account.role === "Developer")) {
-                return ["Rizal", "Cebu", "Thermal", "Requests"];
+            if (username === "admin" || (account && ["Developer", "IT Admin"].includes(account.role))) {
+                return ["Cebu", "Thermal", "Requests"];
             }
 
             if (!account) {
                 return [];
             }
 
+            const rolePolicy = roleProfilePolicy(account.role);
+            if (rolePolicy) return rolePolicy.inventoryAccess;
             if (account.office === "Both") {
-                return ["Rizal", "Cebu", "Thermal", ...(Array.isArray(account.inventoryAccess) && account.inventoryAccess.includes("Requests") ? ["Requests"] : [])];
+                return ["Cebu", "Thermal", ...(Array.isArray(account.inventoryAccess) && account.inventoryAccess.includes("Requests") ? ["Requests"] : [])];
             }
 
             if (Array.isArray(account.inventoryAccess)) {
-                return account.inventoryAccess.filter(value => ["Rizal", "Cebu", "Thermal", "Requests"].includes(value));
+                return account.inventoryAccess.filter(value => ["Cebu", "Thermal", "Requests"].includes(value));
             }
 
-            return account.office ? [account.office] : [];
+            return ["Cebu", "Thermal"].includes(account.office) ? [account.office] : [];
+        }
+
+        function isInventoryReadOnly() {
+            return ["Management", "Accounting", "HR"].includes(getCurrentUserRole());
         }
 
         function updateMenuVisibility() {
@@ -1443,11 +1466,16 @@
             const addAccountMenuDivider = document.getElementById('addAccountMenuItemDivider');
             const usersMenuContainer = document.getElementById('usersMenuItemContainer');
             const administratorMenuItem = document.getElementById('administratorMenuItem');
+            const readOnly = ["Management", "Accounting", "HR"].includes(currentRole);
+            ["addSummaryRecordBtn", "addProductBtn"].forEach(id => {
+                const control = document.getElementById(id);
+                if (control) control.style.display = readOnly ? "none" : "";
+            });
 
-            const canAddAccount = currentRole === 'Developer' || permissions.has('addAccount');
-            const canManageUsers = currentRole === 'Developer' || permissions.has('users');
+            const canAddAccount = ['Developer', 'IT Admin'].includes(currentRole) || permissions.has('addAccount');
+            const canManageUsers = ['Developer', 'IT Admin'].includes(currentRole) || permissions.has('users');
 
-            if (currentRole === 'Developer' || permissions.has('administrator')) {
+            if (['Developer', 'IT Admin'].includes(currentRole) || permissions.has('administrator')) {
                 if (administratorMenuItem) administratorMenuItem.style.display = '';
             } else {
                 if (administratorMenuItem) administratorMenuItem.style.display = 'none';
@@ -1461,11 +1489,11 @@
                 if (!menuEntry) return;
 
                 if (item.id === 'clearInventoryMenuBtn') {
-                    menuEntry.style.display = currentRole === 'Developer' ? '' : 'none';
+                    menuEntry.style.display = ['Developer', 'IT Admin'].includes(currentRole) ? '' : 'none';
                     return;
                 }
 
-                if (["localPosReport", "addAccount", "users", "todoList"].includes(item.dataset.permission) && currentRole === 'Developer') {
+                if (["localPosReport", "addAccount", "users", "todoList"].includes(item.dataset.permission) && ['Developer', 'IT Admin'].includes(currentRole)) {
                     menuEntry.style.display = '';
                     return;
                 }
@@ -1499,6 +1527,8 @@
             const requestBody = document.getElementById("thermalPaperRequestsBody");
             if (!requestBody) return;
 
+            const canManageRequests = ["IT Admin", "IT Manager", "Management"].includes(getCurrentUserRole());
+            const canDeleteRequests = ["Developer", "IT Admin"].includes(getCurrentUserRole());
             const sortedRequests = [...requests].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
             if (!sortedRequests.length) {
                 requestBody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No Request yet.</td></tr>';
@@ -1519,9 +1549,12 @@
                     <td>${escapeHtml(request.requestee || "")}</td>
                     <td>${escapeHtml(request.requestedBy || "")}</td>
                     <td>${escapeHtml(requestedDate)}</td>
-                    <td class="thermal-request-status" data-request-id="${escapeHtml(request.id)}" title="Double-click to edit"><span class="badge ${getThermalRequestStatusBadgeClass(status)}">${escapeHtml(status)}</span></td>
+                    <td class="thermal-request-status"><span class="badge ${getThermalRequestStatusBadgeClass(status)}">${escapeHtml(status)}</span></td>
                     <td>${requestNotes}${rejectionNote}</td>
-                    <td><button type="button" class="btn btn-sm btn-outline-danger thermal-request-delete" data-request-id="${escapeHtml(request.id)}" aria-label="Delete request from ${escapeHtml(request.station || "station")}" title="Delete request"><i class="bi bi-trash3" aria-hidden="true"></i></button></td>
+                    <td><div class="d-flex align-items-center gap-2">
+                        ${canManageRequests ? `<select class="form-select form-select-sm thermal-request-status-select" data-request-id="${escapeHtml(request.id)}" aria-label="Change status for request from ${escapeHtml(request.station || "station")}">${["Pending", "Approved", "Rejected"].map(option => `<option value="${option}" ${option === status ? "selected" : ""}>${option}</option>`).join("")}</select>` : ""}
+                        ${canDeleteRequests ? `<button type="button" class="btn btn-sm btn-outline-danger thermal-request-delete" data-request-id="${escapeHtml(request.id)}" aria-label="Delete request from ${escapeHtml(request.station || "station")}" title="Delete request"><i class="bi bi-trash3" aria-hidden="true"></i></button>` : ""}
+                    </div></td>
                 </tr>`;
             }).join("");
         }
@@ -1576,90 +1609,37 @@
             const requestBody = document.getElementById("thermalPaperRequestsBody");
             if (!requestBody) return;
 
-            requestBody.addEventListener("dblclick", event => {
-                const cell = event.target.closest(".thermal-request-status");
-                if (!cell || cell.querySelector("select")) return;
+            requestBody.addEventListener("change", async event => {
+                const statusSelect = event.target.closest(".thermal-request-status-select");
+                if (!statusSelect) return;
 
-                const originalStatus = cell.textContent.trim() || "Pending";
-                const requestId = cell.dataset.requestId;
-                const statusSelect = document.createElement("select");
-                statusSelect.className = "form-select form-select-sm";
-                statusSelect.setAttribute("aria-label", "Thermal Paper request status");
-                ["Pending", "Approved", "Rejected"].forEach(status => {
-                    const option = document.createElement("option");
-                    option.value = status;
-                    option.textContent = status;
-                    statusSelect.appendChild(option);
-                });
-                statusSelect.value = ["Pending", "Approved", "Rejected"].includes(originalStatus) ? originalStatus : "Pending";
-                cell.replaceChildren(statusSelect);
-                statusSelect.focus();
+                const requestId = statusSelect.dataset.requestId;
+                const selectedStatus = statusSelect.value;
+                statusSelect.disabled = true;
+                try {
+                    const requests = await window.sharedRequests.load();
+                    const request = requests.find(item => item.id === requestId);
+                    if (!request) throw new Error("The selected Thermal Paper request could not be found.");
+                    if (selectedStatus === request.status) return;
 
-                let editFinished = false;
-                let rejectionPromptOpen = false;
-                const finishEdit = async (save, rejectionNote) => {
-                    if (editFinished) return;
-
-                    if (!save) {
-                        editFinished = true;
-                        cell.innerHTML = `<span class="badge ${getThermalRequestStatusBadgeClass(originalStatus)}">${escapeHtml(originalStatus)}</span>`;
-                        return;
-                    }
-
-                    editFinished = true;
-                    try {
-                        const requests = await window.sharedRequests.load();
-                        const request = requests.find(item => item.id === requestId);
-                        if (!request) throw new Error("The selected Thermal Paper request could not be found.");
-                        if (statusSelect.value === originalStatus && rejectionNote === undefined) {
-                            cell.innerHTML = `<span class="badge ${getThermalRequestStatusBadgeClass(originalStatus)}">${escapeHtml(originalStatus)}</span>`;
-                            return;
-                        }
-                        const updatedRequest = { ...request, status: statusSelect.value };
-                        if (rejectionNote !== undefined) updatedRequest.rejectionNote = rejectionNote;
-                        await window.sharedRequests.save(updatedRequest);
-                        await loadThermalPaperRequests();
-                    } catch (error) {
-                        console.error("Unable to update Thermal Paper request status.", error);
-                        cell.innerHTML = `<span class="badge ${getThermalRequestStatusBadgeClass(originalStatus)}">${escapeHtml(originalStatus)}</span>`;
-                        alert("Unable to update request status. Please try again.");
-                    }
-                };
-
-                statusSelect.addEventListener("change", async () => {
-                    if (statusSelect.value !== "Rejected") {
-                        finishEdit(true);
-                        return;
-                    }
-
-                    rejectionPromptOpen = true;
-                    try {
-                        const requests = await window.sharedRequests.load();
-                        const request = requests.find(item => item.id === requestId);
-                        if (!request) throw new Error("The selected Thermal Paper request could not be found.");
+                    const updatedRequest = { ...request, status: selectedStatus };
+                    if (selectedStatus === "Rejected") {
                         const rejectionNote = await promptForThermalRequestRejectionNote(request.rejectionNote || "");
-                        rejectionPromptOpen = false;
                         if (rejectionNote === null) {
-                            finishEdit(false);
+                            statusSelect.value = request.status || "Pending";
                             return;
                         }
-                        finishEdit(true, rejectionNote);
-                    } catch (error) {
-                        rejectionPromptOpen = false;
-                        console.error("Unable to collect the Thermal Paper rejection note.", error);
-                        finishEdit(false);
-                        alert("Unable to reject this request. Please try again.");
+                        updatedRequest.rejectionNote = rejectionNote;
                     }
-                });
-                statusSelect.addEventListener("keydown", keyEvent => {
-                    if (keyEvent.key === "Escape") {
-                        keyEvent.preventDefault();
-                        finishEdit(false);
-                    }
-                });
-                statusSelect.addEventListener("blur", () => {
-                    if (!rejectionPromptOpen) finishEdit(true);
-                }, { once: true });
+                    await window.sharedRequests.save(updatedRequest);
+                    await loadThermalPaperRequests();
+                } catch (error) {
+                    console.error("Unable to update Thermal Paper request status.", error);
+                    alert("Unable to update request status. Please try again.");
+                    await loadThermalPaperRequests();
+                } finally {
+                    statusSelect.disabled = false;
+                }
             });
         }
 
@@ -1847,7 +1827,7 @@
         function recordInventoryEdit(fieldName, oldValue, newValue, record, action = "change") {
             if (String(oldValue ?? '') === String(newValue ?? '')) return;
 
-            const office = getCurrentUserOffice() || 'Rizal';
+            const office = getCurrentUserOffice() || 'Cebu';
             const historyKey = `inventoryEditHistory_${office}`;
             const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
             const loggedIn = getLoggedInDisplayName();
@@ -1868,7 +1848,7 @@
         }
 
         function recordNewInventoryRecord(record) {
-            const office = getCurrentUserOffice() || 'Rizal';
+            const office = getCurrentUserOffice() || 'Cebu';
             const historyKey = `inventoryEditHistory_${office}`;
             const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
             const loggedIn = getLoggedInDisplayName();
@@ -1918,7 +1898,7 @@
         }
 
         function recordDeletedInventoryRecord(record) {
-            const office = getCurrentUserOffice() || 'Rizal';
+            const office = getCurrentUserOffice() || 'Cebu';
             const historyKey = `inventoryEditHistory_${office}`;
             const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
             const loggedIn = getLoggedInDisplayName();
@@ -1955,7 +1935,7 @@
 
         async function syncInventoryHistoryFromFirestore() {
             if (!window.sharedInventory?.loadHistory) return;
-            const office = getCurrentUserOffice() || 'Rizal';
+            const office = getCurrentUserOffice() || 'Cebu';
             try {
                 const remoteHistory = await window.sharedInventory.loadHistory(office);
                 const localHistory = JSON.parse(localStorage.getItem(`inventoryEditHistory_${office}`) || '[]');
@@ -2012,9 +1992,9 @@
                 ["lowStockItems", "0"],
                 ["inventoryValue", "0"],
                 ["lostItems", "0"],
-                ["rackR1Items", "0"],
-                ["rackR2Items", "0"],
-                ["rackR3Items", "0"]
+                ["rackCEB1Items", "0"],
+                ["rackCEB2Items", "0"],
+                ["rackCEB3Items", "0"]
             ].forEach(([id, value]) => {
                 const element = document.getElementById(id);
                 if (element) element.textContent = value;
@@ -2088,15 +2068,6 @@
                 recordsData: persistedRecords,
                 updatedAt: new Date().toISOString()
             }));
-            if (storageKeys.office === "Rizal") {
-                const lokals = getLokalsOptions();
-                const localPosCounters = lokals.reduce((result, lokal) => {
-                    result[lokal] = persistedRecords.filter(record => String(record.lokals || "").trim().toLowerCase() === lokal.toLowerCase()).length;
-                    return result;
-                }, {});
-                localStorage.setItem("localPosCounters", JSON.stringify(localPosCounters));
-            }
-
             const models = Object.keys(persistedSummary).filter(key => key !== 'TOTAL');
             const quantities = models.map(model => {
                 const value = persistedSummary[model];
@@ -2401,7 +2372,7 @@
         function updateRackMetrics(recordsData) {
             getSystemOptions().forEach((rack, index) => {
                 const count = (recordsData || []).filter(record => String(record.rack || "").trim().toUpperCase() === rack).length;
-                const element = document.getElementById(`rack${["R1", "R2", "R3"][index]}Items`);
+                const element = document.getElementById(`rack${rack}Items`);
                 if (element) element.textContent = count;
             });
         }
@@ -2411,6 +2382,7 @@
             if (!tbody) return;
 
             tbody.addEventListener("dblclick", function (event) {
+                if (isInventoryReadOnly()) return;
                 const cell = event.target.closest("td");
                 const row = cell && cell.closest("tr[data-summary-model]");
                 if (!cell || !row || cell.querySelector("input")) return;
@@ -2494,6 +2466,7 @@
             if (!tbody) return;
 
             tbody.addEventListener("dblclick", function (event) {
+                if (isInventoryReadOnly()) return;
                 const cell = event.target.closest("td");
                 const row = cell && cell.closest("tr[data-record-index]");
                 if (!cell || !row || cell.querySelector("input, select")) return;
@@ -2703,7 +2676,7 @@
             const currentOffice = getCurrentUserOffice();
 
             if (officeSelect) {
-                officeSelect.value = currentOffice || "Rizal";
+                officeSelect.value = currentOffice === "Thermal" ? "Thermal" : "Cebu";
             }
 
             if (modal) {
@@ -2724,8 +2697,8 @@
             }
 
             const normalizedOffice = officeSelect.value;
-            if (!["Rizal", "Cebu", "Thermal"].includes(normalizedOffice)) {
-                alert("Please choose Rizal, Cebu, or Thermal.");
+            if (!["Cebu", "Thermal"].includes(normalizedOffice)) {
+                alert("Please choose Cebu or Thermal.");
                 return;
             }
 
@@ -2844,7 +2817,7 @@
             clearInventoryData();
         });
 
-            if (new URLSearchParams(window.location.search).get("openClearInventory") === "1" && getCurrentUserRole() === "Developer") {
+            if (new URLSearchParams(window.location.search).get("openClearInventory") === "1" && ["Developer", "IT Admin"].includes(getCurrentUserRole())) {
                 openClearInventoryModal();
             }
 
@@ -2936,26 +2909,28 @@
         }
 
         function getAccountRoleLevel(account, username = "") {
-            if (username === "admin" || (account && account.role === "Developer")) return 100;
-            return { "IT Admin": 80, "IT Manager": 60, "IT Supervisor": 40, "IT Support": 20, "Management": 10 }[account && account.role] || 0;
+            if (username === "admin" || (account && ["Developer", "IT Admin"].includes(account.role))) return 100;
+            return { "IT Manager": 60, "IT Support": 40, "Management": 30, "Accounting": 30, "HR": 30, "Station": 10, "Collector": 10 }[account && account.role] || 0;
         }
 
         function canEditAccount(username, accounts) {
             const currentUsername = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser");
-            if (!currentUsername || currentUsername === username) return currentUsername === username;
-            return getAccountRoleLevel(accounts[currentUsername], currentUsername) >= getAccountRoleLevel(accounts[username], username);
+            const currentAccount = accounts[currentUsername];
+            if (currentAccount && ["Developer", "IT Admin"].includes(currentAccount.role)) return true;
+            if (!currentUsername || currentUsername === username) return false;
+            return getAccountRoleLevel(accounts[currentUsername], currentUsername) > getAccountRoleLevel(accounts[username], username);
         }
 
         function canManageAccountAccess(accounts) {
             const currentUsername = (localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "").toLowerCase();
             const currentAccount = accounts[currentUsername] || accounts[localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser")];
-            return currentUsername === "admin" || Boolean(currentAccount && currentAccount.role === "Developer");
+            return currentUsername === "admin" || Boolean(currentAccount && ["Developer", "IT Admin", "IT Manager", "IT Support"].includes(currentAccount.role));
         }
 
         function canGrantAssignedTasks(accounts) {
             const currentUsername = (localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "").toLowerCase();
             const currentAccount = accounts[currentUsername] || Object.values(accounts).find(account => String(account?.username || "").toLowerCase() === currentUsername);
-            return Boolean(currentAccount && currentAccount.role === "Developer");
+            return Boolean(currentAccount && ["Developer", "IT Admin"].includes(currentAccount.role));
         }
 
         function setAddAccountPermissionAvailability(accounts) {
@@ -2986,13 +2961,36 @@
             const accessCheckboxes = Array.from(document.querySelectorAll(`#${modalId} input[id^='${accessPrefix}']`));
             const requestsCheckbox = document.getElementById(requestsCheckboxId);
             const checkboxes = [...accessCheckboxes, ...document.querySelectorAll(`#${modalId} input[id^='${permissionPrefix}']`)];
+            const policy = roleProfilePolicy(roleSelect.value);
+            const actorRole = getCurrentUserRole();
+            const assignableRoles = actorRole === "IT Manager"
+                ? ["IT Support", "Management", "Accounting", "HR", "Station"]
+                : actorRole === "IT Support"
+                    ? ["Management", "Accounting", "HR", "Station"]
+                    : actorRole === "Developer"
+                        ? null
+                        : ["IT Admin", "IT Manager", "IT Support", "Management", "Accounting", "HR", "Station"];
+            roleSelect.querySelectorAll("option[value]").forEach(option => {
+                if (option.value === "Developer") {
+                    option.hidden = actorRole !== "Developer";
+                    option.disabled = actorRole !== "Developer";
+                } else {
+                    option.hidden = false;
+                    option.disabled = assignableRoles !== null && !assignableRoles.includes(option.value);
+                }
+            });
             checkboxes.forEach(checkbox => {
-                if (isRestrictedRole) {
+                if (isRestrictedRole || policy) {
                     if (!checkbox.hasAttribute("data-restricted-role-disabled")) {
                         checkbox.dataset.restrictedRoleDisabled = String(checkbox.disabled);
                     }
                     checkbox.disabled = true;
-                    checkbox.checked = checkbox === requestsCheckbox;
+                    if (policy) {
+                        const isAccess = checkbox.id.startsWith(accessPrefix);
+                        checkbox.checked = (isAccess ? policy.inventoryAccess : policy.permissions).includes(checkbox.value);
+                    } else {
+                        checkbox.checked = checkbox === requestsCheckbox;
+                    }
                     return;
                 }
                 if (checkbox.hasAttribute("data-restricted-role-disabled")) {
@@ -3004,16 +3002,12 @@
             const officeSelect = document.getElementById(modalId === "inventoryAddUserModal"
                 ? "inventoryNewUserOffice"
                 : "inventoryEditUserOffice");
-            if (roleSelect.value === "Collector") {
-                if (!officeSelect.hasAttribute("data-collector-disabled")) {
-                    officeSelect.dataset.collectorDisabled = String(officeSelect.disabled);
-                }
-                officeSelect.value = "Collector";
-                officeSelect.disabled = true;
-            } else if (officeSelect.hasAttribute("data-collector-disabled")) {
-                officeSelect.disabled = officeSelect.dataset.collectorDisabled === "true";
-                delete officeSelect.dataset.collectorDisabled;
+            if (officeSelect.dataset.rolePolicyInitialDisabled === undefined) {
+                officeSelect.dataset.rolePolicyInitialDisabled = String(officeSelect.disabled);
             }
+            const isCollector = roleSelect.value === "Collector";
+            if (policy || isCollector) officeSelect.value = policy ? policy.office : "Collector";
+            officeSelect.disabled = officeSelect.dataset.rolePolicyInitialDisabled === "true" || Boolean(policy) || isCollector;
         }
 
         function openInventoryEditUser(username) {
@@ -3044,7 +3038,7 @@
             const currentAccounts = JSON.parse(localStorage.getItem("userAccounts") || "{}");
             const currentAccount = currentAccounts[currentUsername];
             const deleteButton = document.getElementById("inventoryDeleteUserBtn");
-            deleteButton.style.display = currentAccount && currentAccount.role === "Developer" && username !== currentUsername ? "block" : "none";
+            deleteButton.style.display = currentAccount && ["Developer", "IT Admin"].includes(currentAccount.role) && username !== currentUsername ? "block" : "none";
             const canManageAccess = canManageAccountAccess(currentAccounts);
             setAccountAccessControlsEnabled(canManageAccess);
             const assignedTasksPermission = document.getElementById("inventoryEditPermissionAssignedTasks");
@@ -3200,10 +3194,10 @@
                 username,
                 email: document.getElementById("inventoryEditUserEmail").value.trim(),
                 password: document.getElementById("inventoryEditUserPassword").value.trim(),
-                office: accessManager ? document.getElementById("inventoryEditUserOffice").value : account.office,
-                role: accessManager ? document.getElementById("inventoryEditUserRole").value : account.role,
+                office: accessManager ? document.getElementById("inventoryEditUserOffice").value || account.office : account.office,
+                role: accessManager ? document.getElementById("inventoryEditUserRole").value || account.role : account.role,
                 inventoryAccess: accessManager
-                    ? (document.getElementById("inventoryEditUserOffice").value === "Both" ? ["Rizal", "Cebu", "Thermal"] : Array.from(document.querySelectorAll("#inventoryEditUserModal input[id^='inventoryEditAccess']:checked"), input => input.value))
+                    ? (document.getElementById("inventoryEditUserOffice").value === "Both" ? ["Cebu", "Thermal"] : Array.from(document.querySelectorAll("#inventoryEditUserModal input[id^='inventoryEditAccess']:checked"), input => input.value))
                     : account.inventoryAccess,
                 permissions: accessManager
                     ? Array.from(document.querySelectorAll("#inventoryEditUserModal input[id^='inventoryEditPermission']:checked"), input => input.value)
@@ -3297,7 +3291,7 @@
                     name, username, email, password,
                     office: role === "Collector" ? "Collector" : office,
                     role,
-                    inventoryAccess: ["Station", "Collector"].includes(role) ? ["Requests"] : office === "Both" ? ["Rizal", "Cebu", "Thermal"] : inventoryAccess,
+                    inventoryAccess: ["Station", "Collector"].includes(role) ? ["Requests"] : office === "Both" ? ["Cebu", "Thermal"] : inventoryAccess,
                     permissions: safePermissions,
                     disabled: false
                 };
@@ -3456,6 +3450,7 @@
 
         document.getElementById("summaryRecordForm").addEventListener("submit", function (e) {
             e.preventDefault();
+            if (isInventoryReadOnly()) return;
 
             const model = document.getElementById("summaryModel").value.trim();
             const quantity = parseInt(document.getElementById("summaryQuantity").value, 10) || 0;
@@ -3495,6 +3490,7 @@
 
         // Add Record button - Open modal
         document.getElementById("addProductBtn").addEventListener("click", function () {
+            if (isInventoryReadOnly()) return;
             // Reset modal to default position and size
             modalContent.style.position = "fixed";
             modalContent.style.transform = "translate(-50%, -50%)";
@@ -3524,6 +3520,7 @@
         // Handle Add Record form submission
         document.getElementById("addRecordForm").addEventListener("submit", function (e) {
             e.preventDefault();
+            if (isInventoryReadOnly()) return;
             const loggedIn = getLoggedInDisplayName();
             
             const newRecord = {
@@ -3717,7 +3714,7 @@
 
         // Show detail view modal with all record information
         function deleteRecordFromInventory(recordToDelete) {
-            if (!recordToDelete) return;
+            if (!recordToDelete || isInventoryReadOnly()) return;
 
             recordDeletedInventoryRecord(recordToDelete);
 
@@ -3756,10 +3753,12 @@
         }
 
         function saveEditedDetailRecord(originalRecord, options = { silent: false }) {
+            if (isInventoryReadOnly()) return;
             const detailForm = document.getElementById("detailRecordForm");
             if (!detailForm) return;
 
             const updatedRecord = {
+                ...(originalRecord.stationRecordId ? { stationRecordId: originalRecord.stationRecordId } : {}),
                 createdBy: originalRecord.createdBy || "",
                 rack: detailForm.querySelector("[name='rack']").value || "",
                 posNo: detailForm.querySelector("[name='posNo']").value.trim() || originalRecord.posNo || "-",
@@ -3807,6 +3806,7 @@
 
         function showDetailView(record) {
             if (!record) return;
+            const readOnly = isInventoryReadOnly();
 
             document.getElementById("detailModalTitle").textContent = `POS Record: ${getReleasedDisplayValue(record)}`;
             document.getElementById("detailModalSubtitle").textContent = `Serial: ${record.serialNumber}`;
@@ -3867,6 +3867,9 @@
             document.getElementById("detailContent").innerHTML = detailHTML;
 
             const detailFields = document.querySelectorAll("#detailContent input, #detailContent select, #detailContent textarea");
+            if (readOnly) detailFields.forEach(field => { field.disabled = true; });
+            const deleteRecordButton = document.getElementById("deleteDetailRecordBtn");
+            if (readOnly && deleteRecordButton) deleteRecordButton.style.display = "none";
             const getFieldValue = (field) => {
                 if (field.tagName === "SELECT") return field.value || "";
                 return (field.value || "").trim();
