@@ -23,6 +23,17 @@ service cloud.firestore {
       return enabledUser() && currentProfile().role in ['Developer', 'IT Admin'];
     }
 
+    function isItAdmin() {
+      return enabledUser() && currentProfile().role in ['Developer', 'IT Admin'];
+    }
+
+    function canSubmitAccountApproval() {
+      return enabledUser()
+        && currentProfile().role in ['IT Manager', 'IT Support']
+        && currentProfile().permissions is list
+        && 'addAccount' in currentProfile().permissions;
+    }
+
     function canAccessOffice(office) {
       return enabledUser()
         && office in ['Cebu', 'Thermal']
@@ -42,6 +53,13 @@ service cloud.firestore {
 
     function canManageOffice(office) {
       return canAccessOffice(office)
+        && (currentProfile().role in ['Developer', 'IT Admin', 'IT Manager', 'IT Support']
+          || (office == 'Thermal'
+            && currentProfile().role in ['Management', 'Accounting', 'HR']));
+    }
+
+    function canDeleteOffice(office) {
+      return canManageOffice(office)
         && currentProfile().role in ['Developer', 'IT Admin', 'IT Manager', 'IT Support'];
     }
 
@@ -169,17 +187,23 @@ service cloud.firestore {
         && request.resource.data.uid == uid
         && request.resource.data.keys().hasOnly([
           'uid', 'username', 'name', 'email', 'role', 'permissions',
-          'office', 'inventoryAccess', 'disabled', 'theme'
-        ]);
+          'office', 'inventoryAccess', 'disabled', 'pendingApproval', 'theme'
+        ])
+        && ((isAdmin() && !('pendingApproval' in request.resource.data))
+          || (canSubmitAccountApproval()
+            && request.resource.data.disabled == true
+            && request.resource.data.pendingApproval == true));
       allow update: if (isAdmin()
           && validCollectorProfile(request.resource.data)
           && validRoleProfile(request.resource.data)
           && request.resource.data.uid == uid
           && request.resource.data.keys().hasOnly([
             'uid', 'username', 'name', 'email', 'role', 'permissions',
-            'office', 'inventoryAccess', 'disabled', 'theme'
+            'office', 'inventoryAccess', 'disabled', 'pendingApproval', 'theme'
           ]))
         || (canManageUsers()
+          && !('pendingApproval' in resource.data)
+          && !('pendingApproval' in request.resource.data)
           && canManageTargetRole(resource.data.role)
           && canManageTargetRole(request.resource.data.role)
           && validCollectorProfile(request.resource.data)
@@ -187,7 +211,7 @@ service cloud.firestore {
           && request.resource.data.uid == uid
           && request.resource.data.keys().hasOnly([
             'uid', 'username', 'name', 'email', 'role', 'permissions',
-            'office', 'inventoryAccess', 'disabled', 'theme'
+            'office', 'inventoryAccess', 'disabled', 'pendingApproval', 'theme'
           ]))
         || enabledUser()
           && request.auth.uid == uid
@@ -196,13 +220,53 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /accountApprovalRequests/{requestId} {
+      allow get, list: if isItAdmin();
+      allow create: if canSubmitAccountApproval()
+        && requestId == request.resource.data.uid
+        && request.resource.data.status == 'Pending'
+        && request.resource.data.requestedBy == currentProfile().username
+        && request.resource.data.uid is string
+        && request.resource.data.username is string
+        && request.resource.data.name is string
+        && request.resource.data.email is string
+        && request.resource.data.role is string
+        && request.resource.data.office is string
+        && request.resource.data.inventoryAccess is list
+        && request.resource.data.permissions is list
+        && request.resource.data.requestedAt is string
+        && request.resource.data.keys().hasOnly([
+          'uid', 'username', 'name', 'email', 'role', 'office',
+          'inventoryAccess', 'permissions', 'requestedBy', 'requestedAt', 'status'
+        ])
+        && existsAfter(profilePath(request.resource.data.uid))
+        && getAfter(profilePath(request.resource.data.uid)).data.pendingApproval == true
+        && getAfter(profilePath(request.resource.data.uid)).data.disabled == true
+        && getAfter(profilePath(request.resource.data.uid)).data.username == request.resource.data.username
+        && getAfter(profilePath(request.resource.data.uid)).data.email == request.resource.data.email
+        && getAfter(profilePath(request.resource.data.uid)).data.role == request.resource.data.role;
+      allow update: if isItAdmin()
+        && resource.data.status == 'Pending'
+        && request.resource.data.status == 'Approved'
+        && request.resource.data.approvedBy == currentProfile().username
+        && request.resource.data.approvedAt is string
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'approvedBy', 'approvedAt'
+        ])
+        && getAfter(profilePath(resource.data.uid)).data.disabled == false
+        && getAfter(profilePath(resource.data.uid)).data.pendingApproval == false;
+      allow delete: if false;
+    }
+
     match /inventory/{office} {
       allow read: if canAccessOffice(office);
-      allow write: if canManageOffice(office);
+      allow create, update: if canManageOffice(office);
+      allow delete: if canDeleteOffice(office);
 
       match /chunks/{chunkId} {
         allow read: if canAccessOffice(office);
-        allow write: if canManageOffice(office);
+        allow create, update: if canManageOffice(office);
+        allow delete: if canDeleteOffice(office);
       }
 
       match /history/{entryId} {
@@ -226,7 +290,7 @@ service cloud.firestore {
         && request.resource.data.updatedAt is string
         && request.resource.data.recordCount is int
         && request.resource.data.recordCount >= 0;
-      allow delete: if canManageOffice('Thermal') && isThermalInventoryGroup(station);
+      allow delete: if canDeleteOffice('Thermal') && isThermalInventoryGroup(station);
 
       match /chunks/{chunkId} {
         allow get, list: if canReadStationThermal(station) || canAccessOffice('Thermal');
@@ -234,7 +298,7 @@ service cloud.firestore {
           && isThermalInventoryGroup(station)
           && request.resource.data.keys().hasOnly(['records'])
           && request.resource.data.records is list;
-        allow delete: if canManageOffice('Thermal') && isThermalInventoryGroup(station);
+        allow delete: if canDeleteOffice('Thermal') && isThermalInventoryGroup(station);
       }
     }
 
@@ -266,7 +330,8 @@ service cloud.firestore {
         && request.resource.data.columnJ == ''
         && request.resource.data.createdBy == currentProfile().username
         && request.resource.data.recordDate is string;
-      allow update, delete: if canManageOffice('Thermal');
+      allow update: if canManageOffice('Thermal');
+      allow delete: if canDeleteOffice('Thermal');
     }
 
     match /workspaceRequests/{requestId} {

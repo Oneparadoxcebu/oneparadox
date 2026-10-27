@@ -4,6 +4,7 @@ const { getAuth } = require("firebase-admin/auth");
 const { getFirestore } = require("firebase-admin/firestore");
 const { onRequest } = require("firebase-functions/v2/https");
 const {
+    canDeleteFirebaseUser,
     getClaims,
     hashPassword,
     normalizeManagedAccount,
@@ -222,6 +223,52 @@ async function handleAccounts(request, response, claims, pathSegments) {
     return sendJson(response, 405, { message: "Unsupported account operation." });
 }
 
+async function handleFirebaseUserDeletion(request, response, claims, pathSegments) {
+    if (request.method !== "DELETE") return sendJson(response, 405, { message: "Method not allowed." });
+    if (pathSegments.length !== 2 || !pathSegments[1]) {
+        return sendJson(response, 400, { message: "A username is required." });
+    }
+
+    const actorSnapshot = await db.collection("users").doc(claims.uid).get();
+    const actor = actorSnapshot.exists ? { ...actorSnapshot.data(), uid: actorSnapshot.id } : null;
+    if (!actor || actor.disabled || !["Developer", "IT Admin"].includes(actor.role)) {
+        return sendJson(response, 403, { message: "Only enabled Developer and IT Admin accounts can delete users." });
+    }
+
+    const username = pathSegments[1].trim().toLowerCase();
+    const targetSnapshot = await db.collection("users").where("username", "==", username).limit(1).get();
+    if (targetSnapshot.empty) return sendJson(response, 404, { message: "Account not found." });
+
+    const targetDocument = targetSnapshot.docs[0];
+    const target = { ...targetDocument.data(), uid: targetDocument.id };
+    if (!canDeleteFirebaseUser(actor, target)) {
+        return sendJson(response, 403, { message: "You cannot delete this account." });
+    }
+
+    try {
+        await auth.deleteUser(target.uid);
+    } catch (error) {
+        if (error.code !== "auth/user-not-found") throw error;
+    }
+
+    try {
+        const batch = db.batch();
+        batch.delete(targetDocument.ref);
+        batch.delete(db.collection("accountApprovalRequests").doc(target.uid));
+        await batch.commit();
+    } catch (error) {
+        console.error("Firebase Authentication user was deleted, but profile cleanup failed.", {
+            uid: target.uid,
+            error
+        });
+        return sendJson(response, 500, {
+            message: "The sign-in account was deleted, but its profile cleanup failed. Contact an administrator."
+        });
+    }
+
+    return sendJson(response, 200, { ok: true });
+}
+
 async function handleRequests(request, response, claims, uid, pathSegments) {
     if (pathSegments.length === 1 && request.method === "GET") {
         if (!canSubmitRequests(claims) && !canManageRequests(claims)) {
@@ -319,6 +366,7 @@ exports.api = onRequest({ region: "us-central1", cors: true }, async (request, r
         const uid = claims.uid;
         if (segments[0] === "requests") return await handleRequests(request, response, claims, uid, segments);
         if (segments[0] === "accounts") return await handleAccounts(request, response, claims, segments);
+        if (segments[0] === "users") return await handleFirebaseUserDeletion(request, response, claims, segments);
         if (segments[0] === "account" && segments[1] === "password") return await handlePasswordChange(request, response, claims);
         if (segments[0] === "account" && segments[1] === "theme") return await handleThemeChange(request, response, claims);
         return sendJson(response, 404, { message: "Endpoint not found." });

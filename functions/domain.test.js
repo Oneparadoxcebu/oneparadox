@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
+    canDeleteFirebaseUser,
     getClaims,
     hashPassword,
     normalizeManagedAccount,
@@ -8,6 +9,21 @@ const {
     validateRequestInput,
     verifyPassword
 } = require("./domain");
+
+test("Firebase account deletion is limited to Developer and IT Admin with protected targets", () => {
+    const developer = { uid: "developer-uid", role: "Developer" };
+    const admin = { uid: "admin-uid", role: "IT Admin" };
+    const manager = { uid: "manager-uid", role: "IT Manager" };
+    const user = { uid: "user-uid", role: "Management" };
+    const otherDeveloper = { uid: "other-developer-uid", role: "Developer" };
+
+    assert.equal(canDeleteFirebaseUser(developer, user), true);
+    assert.equal(canDeleteFirebaseUser(admin, user), true);
+    assert.equal(canDeleteFirebaseUser(admin, otherDeveloper), false);
+    assert.equal(canDeleteFirebaseUser(manager, user), false);
+    assert.equal(canDeleteFirebaseUser(developer, developer), false);
+    assert.equal(canDeleteFirebaseUser({ ...developer, disabled: true }, user), false);
+});
 
 test("password hashes verify without exposing the original password", () => {
     const hash = hashPassword("a-secure-test-password");

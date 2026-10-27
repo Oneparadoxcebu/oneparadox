@@ -5,6 +5,8 @@
         "bi-1-circle": "server",
         "bi-2-circle": "server",
         "bi-3-circle": "server",
+        "bi-arrow-clockwise": "refresh-cw",
+        "bi-arrow-repeat": "refresh-cw",
         "bi-arrow-right": "arrow-right",
         "bi-bar-chart-line": "chart-no-axes-column-increasing",
         "bi-box": "box",

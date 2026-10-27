@@ -7,14 +7,14 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js?v=20261024-1"></script>
-    <script src="js/firebase-shared.js?v=20261026-7"></script>
+    <script src="js/firebase-shared.js?v=20261027-2"></script>
     <script src="js/auth-session.js?v=20261026-2"></script>
     <meta name="description" content="Inventory Management">
     <meta name="author" content="">
     <meta name="generator" content="">
     <title>Inventory Management</title>
-    <link rel="icon" type="image/x-icon" href="images/icon256.ico?v=20260929-2">
-    <link rel="apple-touch-icon" sizes="512x512" href="images/site-icon.png?v=20260929-1">
+    <link rel="icon" type="image/png" href="images/one-paradox-logo-dark.png?v=20261027-3">
+    <link rel="apple-touch-icon" sizes="512x512" href="images/one-paradox-logo-dark.png?v=20261027-3">
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/bootstrap-icons.css">
     <link href="css/login.css" rel="stylesheet">
@@ -495,7 +495,7 @@
     </style>
     <link rel="stylesheet" href="css/app-redesign.css?v=20260929-10">
     <script src="https://cdn.jsdelivr.net/npm/lucide@1.48.0/dist/umd/lucide.min.js" defer></script>
-    <script src="js/lucide-icons.js?v=20260929-2" defer></script>
+    <script src="js/lucide-icons.js?v=20261027-2" defer></script>
     <script>
         const inventoryUsername = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser");
         const inventoryAccount = JSON.parse(localStorage.getItem("userAccounts") || "{}")[inventoryUsername];
@@ -532,6 +532,9 @@
                             <li id="addAccountMenuItemDivider" style="display: none;"><hr class="dropdown-divider"></li>
                             <li id="addAccountMenuItemContainer" style="display: none;">
                                 <a class="dropdown-item" data-permission="addAccount" href="#add-user" id="addAccountBtn"><i class="bi bi-person-plus me-2"></i>Add User</a>
+                            </li>
+                            <li id="accountApprovalMenuItem" style="display: none;">
+                                <button class="dropdown-item" type="button" id="accountApprovalMenuBtn"><i class="bi bi-person-check me-2"></i>Added Account Approval</button>
                             </li>
                             <li id="usersMenuItemContainer" style="display: none;">
                                 <a class="dropdown-item" data-permission="users" href="#users" id="usersMenuBtn"><i class="bi bi-people me-2"></i>Users</a>
@@ -649,9 +652,17 @@
                         <div style="display: flex; align-items: center;">
                             <i class="bi bi-boxes me-2"></i><span id="summarySectionTitle">POS Product Summary</span>
                         </div>
-                        <button id="addSummaryRecordBtn" class="btn btn-light btn-sm" type="button" style="background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25); color: white; font-weight: 600;">
-                            <i class="bi bi-plus-circle me-1"></i>Add Summary Record
-                        </button>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button id="replenishThermalBtn" class="btn btn-light btn-sm thermal-only-overview" type="button" style="background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25); color: white; font-weight: 600;">
+                                <i class="bi bi-plus-circle me-1"></i>Replenish
+                            </button>
+                            <button id="addSummaryRecordBtn" class="btn btn-light btn-sm" type="button" style="background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25); color: white; font-weight: 600;">
+                                <i class="bi bi-plus-circle me-1"></i>Add Summary Record
+                            </button>
+                            <button class="btn btn-light btn-sm" id="exportThermalExcelButton" type="button" hidden style="background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25); color: white; font-weight: 600;">
+                                <i class="bi bi-download me-1"></i>Export Excel
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <table class="inventory-table">
@@ -708,6 +719,22 @@
                                 </tr>
                             </tbody>
                         </table>
+                        <div id="thermalReplenishmentHistory" hidden style="margin-top: 24px;">
+                            <h6 style="font-weight: 700;">Replenishment History</h6>
+                            <div style="overflow-x: auto;">
+                                <table class="inventory-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Box</th>
+                                            <th>Delivery Receipt / Invoice Number</th>
+                                            <th>Recorded At</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="thermalReplenishmentHistoryBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -728,7 +755,7 @@
                     <div class="card-body">
                         <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                             <input type="text" id="searchInventory" placeholder="Search by Station" style="flex: 1; padding: 8px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
-                            <button class="btn btn-light" id="exportThermalExcelButton" type="button" hidden><i class="bi bi-download me-2"></i>Export Excel</button>
+                            <button class="btn btn-light" id="exportThermalRecordsExcelButton" type="button" hidden><i class="bi bi-download me-2"></i>Export Excel</button>
                             <button class="btn btn-primary" id="addProductBtn"><i class="bi bi-plus-circle me-2"></i>Add Record</button>
                         </div>
                         <div class="detailed-records-scroll">
@@ -747,6 +774,7 @@
                                     <th>Price</th>
                                     <th>Transfer To</th>
                                     <th>Column J</th>
+                                    <th class="thermal-only-overview">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="inventoryTableBody">
@@ -943,25 +971,25 @@
     <div id="addSummaryRecordModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; align-items: center; justify-content: center; z-index: 1100; overflow: hidden;">
         <div style="background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2); width: 90%; max-width: 500px; padding: 24px; position: relative;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                <h5 style="margin: 0; color: #1e3a5f; font-weight: 700;">Add POS Summary Record</h5>
+                <h5 id="summaryRecordModalTitle" style="margin: 0; color: #1e3a5f; font-weight: 700;">Add Thermal Record</h5>
                 <button type="button" id="closeSummaryRecordBtn" style="border: none; background: transparent; font-size: 24px; color: #697c8f; cursor: pointer; line-height: 1;">×</button>
             </div>
 
             <form id="summaryRecordForm">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                    <div>
+                    <div id="summaryModelField">
                         <label id="summaryModelLabel" style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">POS Model</label>
                         <input type="text" id="summaryModel" required style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
                     </div>
-                    <div>
+                    <div id="summaryQuantityInputField">
                         <label id="summaryQuantityLabel" style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">Quantity</label>
                         <input type="number" id="summaryQuantity" value="0" min="0" required style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
                     </div>
-                    <div>
+                    <div id="summaryDamageInputField">
                         <label id="summaryDamageLabel" style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">Damage</label>
                         <input type="number" id="summaryDamage" value="0" min="0" style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
                     </div>
-                    <div>
+                    <div id="summaryReleasedInputField">
                         <label id="summaryReleasedLabel" style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">POS Released</label>
                         <input type="number" id="summaryReleased" value="0" min="0" style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
                     </div>
@@ -972,6 +1000,14 @@
                     <div id="summaryChargerField">
                         <label style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">Charger</label>
                         <input type="number" id="summaryCharger" value="0" min="0" style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div id="summaryReplenishmentBoxField" style="display: none;">
+                        <label for="summaryReplenishmentBox" style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">Box</label>
+                        <input type="text" id="summaryReplenishmentBox" pattern="[A-Za-z0-9]+" title="Use letters and numbers only." style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div id="summaryReceiptInvoiceField" style="display: none;">
+                        <label for="summaryReceiptInvoiceNumber" style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">Delivery Receipt / Invoice Number <span aria-hidden="true">*</span></label>
+                        <input type="text" id="summaryReceiptInvoiceNumber" required style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
                     </div>
                 </div>
 
@@ -987,7 +1023,7 @@
     <div id="addRecordModal" style="position: fixed; inset: 0; background: rgba(10, 17, 29, 0.62); display: none; align-items: center; justify-content: center; z-index: 3000; overflow: hidden; padding: 20px;">
         <div id="addRecordModalContent" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border: 1px solid rgba(30, 58, 95, 0.16); border-radius: 12px; box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35); padding: 40px; width: min(90vw, 600px); min-width: min(400px, calc(100vw - 40px)); max-height: 90vh; margin: 0; overflow-y: auto; resize: both;">
             <h2 style="color: #1e3a5f; font-size: 28px; font-weight: 700; margin-bottom: 30px; display: flex; align-items: center; cursor: move;" id="modalDragHandle">
-                <i class="bi bi-plus-circle me-2"></i>Add New POS Record
+                <i class="bi bi-plus-circle me-2"></i>Add Thermal Records
             </h2>
             
             <form id="addRecordForm" style="display: flex; flex-direction: column; gap: 15px;">
@@ -1087,8 +1123,23 @@
     <div class="account-modal-overlay" id="inventoryUsersModal">
         <div class="account-modal users-modal">
             <h2><i class="bi bi-people me-2"></i>User Management</h2>
+            <div class="d-flex justify-content-end mb-3">
+                <button type="button" class="btn btn-danger btn-sm" id="inventoryClearOtherUsersBtn" style="display: none;">
+                    <i class="bi bi-trash me-1"></i>Remove All Other Accounts
+                </button>
+            </div>
             <div id="inventoryUsersTable"></div>
             <div class="account-modal-buttons" style="margin-top: 20px;"><button type="button" class="btn-cancel" id="inventoryCloseUsersBtn">Close</button></div>
+        </div>
+    </div>
+    <div class="account-modal-overlay" id="accountApprovalModal">
+        <div class="account-modal users-modal">
+            <h2><i class="bi bi-person-check me-2"></i>Added Account Approval</h2>
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="refreshAccountApprovalsBtn"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+            </div>
+            <div id="accountApprovalRequestsTable">Loading approval requests...</div>
+            <div class="account-modal-buttons" style="margin-top: 20px;"><button type="button" class="btn-cancel" id="closeAccountApprovalModalBtn">Close</button></div>
         </div>
     </div>
     <div class="account-modal-overlay" id="inventoryEditUserModal">
@@ -1200,7 +1251,7 @@
             if (rackField && rackField.tagName === "SELECT") {
                 const selectedValue = rackField.value;
                 const options = isThermalInventory
-                    ? ["Guadalupe Station", "Punta Princessa Station", "Babag Station", "Collector"]
+                    ? ["Guadalupe Station", "Punta Princessa Station", "Babag Station"]
                     : systems;
                 const placeholder = isThermalInventory ? "-- Select Station --" : "-- Select System --";
                 rackField.innerHTML = `<option value="">${placeholder}</option>${options.map(option => `<option value="${option}">${option}</option>`).join("")}`;
@@ -1282,6 +1333,10 @@
                 excelRow(["Generated", new Date().toLocaleString()]),
                 excelRow(["Metric", "Quantity", "Damage / Rolls", "Released / PCS", "Remaining", "Charger"])
             ];
+            const replenishmentRows = [
+                excelRow(["Detailed Replenishment History"]),
+                excelRow(["Summary Entry", "Boxes Added", "Box", "Delivery Receipt / Invoice Number", "Recorded At", "Account Used"])
+            ];
             Object.entries(summary).forEach(([model, values]) => {
                 summaryRows.push(excelRow([
                     model,
@@ -1291,6 +1346,18 @@
                     [values?.remaining ?? "", true],
                     [values?.charger ?? "", true]
                 ]));
+            });
+            Object.entries(summary).forEach(([model, values]) => {
+                (Array.isArray(values?.replenishments) ? values.replenishments : []).forEach(replenishment => {
+                    replenishmentRows.push(excelRow([
+                        model === "TOTAL" ? "Thermal Total" : model,
+                        [replenishment?.totalBoxes ?? 1, true],
+                        replenishment?.box || "",
+                        replenishment?.receiptInvoiceNumber || "",
+                        replenishment?.recordedAt || "",
+                        replenishment?.accountUsed || replenishment?.createdBy || "Unknown"
+                    ]));
+                });
             });
 
             const recordRows = [
@@ -1323,7 +1390,39 @@
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:html="http://www.w3.org/TR/REC-html40">
  <Worksheet ss:Name="Summary"><Table>${summaryRows.join("")}</Table></Worksheet>
+ <Worksheet ss:Name="Replenishment History"><Table>${replenishmentRows.join("")}</Table></Worksheet>
  <Worksheet ss:Name="Thermal Records"><Table>${recordRows.join("")}</Table></Worksheet>
+</Workbook>`;
+        }
+
+        function createThermalRecordsExcelWorkbook(inventory) {
+            const records = Array.isArray(inventory?.recordsData) ? inventory.recordsData : [];
+            const recordRows = [
+                excelRow(["Detailed Released Thermal Records"]),
+                excelRow(["Station", "Released", "Unit", "Full Name", "User ID", "Address", "Status", "Note / Issue", "Price", "Created By", "Record Date"])
+            ];
+            records.forEach(record => recordRows.push(excelRow([
+                record.rack || "",
+                [record.posNo ?? "", true],
+                record.posUnit || "",
+                record.fullName || "",
+                record.userId || "",
+                record.address || "",
+                record.status || "",
+                record.noteIssue || "",
+                [record.price ?? "", true],
+                record.createdBy || "",
+                record.recordDate || ""
+            ])));
+
+            return `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Worksheet ss:Name="Released Thermal Records"><Table>${recordRows.join("")}</Table></Worksheet>
 </Workbook>`;
         }
 
@@ -1337,13 +1436,44 @@
             const originalLabel = button.innerHTML;
             button.innerHTML = "Preparing Excel…";
             try {
-                const inventory = await window.sharedInventory.load("Thermal");
+                await flushPendingSharedInventory();
+                await sharedInventorySaveQueue;
+                const pendingInventory = JSON.parse(localStorage.getItem("inventoryPendingSync_Thermal") || "null");
+                const inventory = pendingInventory || await window.sharedInventory.load("Thermal");
+                if (!inventory) throw new Error("Thermal inventory data could not be loaded.");
                 const workbook = createThermalExcelWorkbook(inventory);
                 const blob = new Blob([workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
                 const objectUrl = URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = objectUrl;
-                link.download = `thermal-inventory-report-${new Date().toISOString().slice(0, 10)}.xls`;
+                link.download = `thermal-inventory-report-${new Date().toISOString().replace(/[:.]/g, "-")}.xls`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalLabel;
+            }
+        }
+
+        async function exportThermalRecordsExcel(button) {
+            if (getCurrentUserOffice() !== "Thermal") {
+                throw new Error("Detailed Thermal records export is available only for Thermal Inventory.");
+            }
+            if (!window.sharedInventory) throw new Error("Shared inventory storage is unavailable.");
+
+            button.disabled = true;
+            const originalLabel = button.innerHTML;
+            button.innerHTML = "Preparing Excel…";
+            try {
+                const inventory = await window.sharedInventory.load("Thermal");
+                const workbook = createThermalRecordsExcelWorkbook(inventory);
+                const blob = new Blob([workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
+                const objectUrl = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = objectUrl;
+                link.download = `detailed-released-thermal-records-${new Date().toISOString().slice(0, 10)}.xls`;
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
@@ -1455,7 +1585,13 @@
         }
 
         function isInventoryReadOnly() {
-            return ["Management", "Accounting", "HR"].includes(getCurrentUserRole());
+            return ["Management", "Accounting", "HR"].includes(getCurrentUserRole()) &&
+                getCurrentUserOffice() !== "Thermal";
+        }
+
+        function canDeleteThermalRecords() {
+            return getCurrentUserOffice() === "Thermal" &&
+                ["Developer", "IT Admin", "IT Manager"].includes(getCurrentUserRole());
         }
 
         function updateMenuVisibility() {
@@ -1464,10 +1600,12 @@
             const currentRole = getCurrentUserRole();
             const addAccountMenuContainer = document.getElementById('addAccountMenuItemContainer');
             const addAccountMenuDivider = document.getElementById('addAccountMenuItemDivider');
+            const accountApprovalMenuItem = document.getElementById("accountApprovalMenuItem");
             const usersMenuContainer = document.getElementById('usersMenuItemContainer');
             const administratorMenuItem = document.getElementById('administratorMenuItem');
-            const readOnly = ["Management", "Accounting", "HR"].includes(currentRole);
-            ["addSummaryRecordBtn", "addProductBtn"].forEach(id => {
+            const readOnly = ["Management", "Accounting", "HR"].includes(currentRole) &&
+                getCurrentUserOffice() !== "Thermal";
+            ["addSummaryRecordBtn", "addProductBtn", "replenishThermalBtn"].forEach(id => {
                 const control = document.getElementById(id);
                 if (control) control.style.display = readOnly ? "none" : "";
             });
@@ -1482,6 +1620,7 @@
             }
             if (addAccountMenuContainer) addAccountMenuContainer.style.display = canAddAccount ? 'block' : 'none';
             if (addAccountMenuDivider) addAccountMenuDivider.style.display = canAddAccount ? 'block' : 'none';
+            if (accountApprovalMenuItem) accountApprovalMenuItem.style.display = ["Developer", "IT Admin"].includes(currentRole) ? "block" : "none";
             if (usersMenuContainer) usersMenuContainer.style.display = canManageUsers ? 'block' : 'none';
 
             document.querySelectorAll('#adminMenu + .dropdown-menu [data-permission]').forEach(item => {
@@ -1687,10 +1826,10 @@
             body.thermal-inventory #formSerialNumberField,
             body.thermal-inventory #formLokalsField,
             body.thermal-inventory #formTransferToField,
-            body.thermal-inventory .detailed-records-scroll th:last-child,
-            body.thermal-inventory .detailed-records-scroll td:last-child,
             body.thermal-inventory #fullInventoryModal th:last-child,
             body.thermal-inventory #fullInventoryModal td:last-child,
+            body.thermal-inventory .detailed-records-scroll th:nth-child(12),
+            body.thermal-inventory .detailed-records-scroll td:nth-child(12),
             body.thermal-inventory .detailed-records-scroll th:nth-child(11),
             body.thermal-inventory .detailed-records-scroll td:nth-child(11),
             body.thermal-inventory #fullInventoryModal th:nth-child(11),
@@ -1756,6 +1895,16 @@
                     } catch (error) {
                         console.error("Unable to export Thermal inventory report.", error);
                         alert(`Unable to export Thermal inventory: ${error.message || "check your connection and permissions."}`);
+                    }
+                });
+                const exportRecordsButton = document.getElementById("exportThermalRecordsExcelButton");
+                exportRecordsButton.hidden = false;
+                exportRecordsButton.addEventListener("click", async () => {
+                    try {
+                        await exportThermalRecordsExcel(exportRecordsButton);
+                    } catch (error) {
+                        console.error("Unable to export Detailed Released Thermal Records.", error);
+                        alert(`Unable to export Thermal records: ${error.message || "check your connection and permissions."}`);
                     }
                 });
                 loadThermalPaperRequests();
@@ -1975,7 +2124,8 @@
 
             const inventoryBody = document.getElementById("inventoryTableBody");
             if (inventoryBody) {
-                inventoryBody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:#697c8f;">No inventory data available</td></tr>';
+                const columnCount = getCurrentUserOffice() === "Thermal" ? 13 : 12;
+                inventoryBody.innerHTML = `<tr><td colspan="${columnCount}" style="text-align:center;padding:20px;color:#697c8f;">No inventory data available</td></tr>`;
             }
 
             const badge = document.getElementById("recordCountBadge");
@@ -2198,7 +2348,7 @@
                 totalReleased += rel;
                 totalRemaining += rem;
                 totalCharger += chr;
-                if (isThermalInventory && Number.isFinite(boxCount)) totalBoxes += boxCount;
+                if (isThermalInventory && !data.replenishmentOnly && Number.isFinite(boxCount)) totalBoxes += boxCount;
                 
                 models.push(model);
                 quantities.push(qty);
@@ -2214,6 +2364,7 @@
                     </tr>
                 `;
             }
+            if (isThermalInventory) totalBoxes += Number(thermalOverviewTotals.replenishmentBoxes) || 0;
             
             // Add TOTAL row
             html += `
@@ -2228,6 +2379,30 @@
             `;
             
             tbody.innerHTML = html;
+            const replenishmentHistory = document.getElementById("thermalReplenishmentHistory");
+            const replenishmentHistoryBody = document.getElementById("thermalReplenishmentHistoryBody");
+            if (replenishmentHistory && replenishmentHistoryBody) {
+                const replenishments = [
+                    ...(Array.isArray(thermalOverviewTotals.replenishments)
+                        ? thermalOverviewTotals.replenishments.map((entry, index) => ({ model: "TOTAL", ...entry, index }))
+                        : []),
+                    ...Object.entries(summaryData)
+                    .filter(([key]) => key !== "TOTAL")
+                    .flatMap(([model, data]) => (Array.isArray(data?.replenishments) ? data.replenishments : [])
+                        .map((entry, index) => ({ model, ...entry, index })))
+                ];
+                replenishmentHistory.hidden = !isThermalInventory;
+                replenishmentHistoryBody.innerHTML = replenishments.length
+                    ? replenishments.map(entry => `
+                        <tr>
+                            <td>${escapeHtml(entry.box || "-")}</td>
+                            <td>${escapeHtml(entry.receiptInvoiceNumber || "-")}</td>
+                            <td>${escapeHtml(entry.recordedAt ? new Date(entry.recordedAt).toLocaleString() : "-")}</td>
+                            <td>${canDeleteThermalRecords() ? `<button type="button" class="btn btn-danger btn-sm delete-thermal-replenishment" data-model="${escapeHtml(entry.model)}" data-entry-id="${escapeHtml(entry.id || "")}" data-index="${entry.index}" aria-label="Delete replenishment"><i class="bi bi-trash"></i></button>` : "-"}</td>
+                        </tr>
+                    `).join("")
+                    : `<tr><td colspan="4" class="text-center">No replenishments recorded.</td></tr>`;
+            }
             
             // Save inventory data for shared inventory views
             localStorage.setItem(getInventoryStorageKeys().inventoryKey, JSON.stringify({
@@ -2320,6 +2495,7 @@
                         <td>${escapeHtml(displayPrice)}</td>
                         <td>${displayTransferTo}</td>
                         <td>${displayColumnJ}</td>
+                        ${getCurrentUserOffice() === "Thermal" ? `<td class="thermal-only-overview">${canDeleteThermalRecords() ? `<button type="button" class="btn btn-outline-danger btn-sm delete-thermal-record" data-record-index="${index}" aria-label="Delete thermal record ${index + 1}" title="Delete record"><i class="bi bi-trash" aria-hidden="true"></i></button>` : ""}</td>` : ""}
                     </tr>
                 `;
             });
@@ -2867,15 +3043,10 @@
             let accounts = localAccounts;
 
             if (window.sharedAccounts) {
-                try {
-                    const sharedAccounts = await window.sharedAccounts.load();
-                    accounts = { ...accounts, ...sharedAccounts };
-                } catch (error) {
-                    console.warn("Shared account load failed; using local copy.", error);
-                }
+                accounts = await window.sharedAccounts.load();
             }
 
-            if (isLocalBackendHost()) {
+            if (isLocalBackendHost() && !window.sharedAccounts) {
                 try {
                     const response = await fetch(inventoryAccountsApi, { cache: "no-store" });
                     const result = await response.json();
@@ -2902,6 +3073,7 @@
         function closeInventoryAccountModals() {
             document.getElementById("inventoryAddUserModal").style.display = "none";
             document.getElementById("inventoryUsersModal").style.display = "none";
+            document.getElementById("accountApprovalModal").style.display = "none";
             document.getElementById("inventoryEditUserModal").style.display = "none";
             if (new URLSearchParams(window.location.search).get("embedded") === "1" && window.parent !== window) {
                 window.parent.postMessage({ type: "closeAccountOverlay" }, "*");
@@ -2919,6 +3091,17 @@
             if (currentAccount && ["Developer", "IT Admin"].includes(currentAccount.role)) return true;
             if (!currentUsername || currentUsername === username) return false;
             return getAccountRoleLevel(accounts[currentUsername], currentUsername) > getAccountRoleLevel(accounts[username], username);
+        }
+
+        function canDeleteAccount(username, accounts) {
+            const currentUsername = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser");
+            const currentAccount = accounts[currentUsername];
+            const targetAccount = accounts[username];
+            if (!currentAccount || !["Developer", "IT Admin"].includes(currentAccount.role) ||
+                !targetAccount || String(currentUsername).toLowerCase() === String(username).toLowerCase()) {
+                return false;
+            }
+            return currentAccount.role === "Developer" || targetAccount.role !== "Developer";
         }
 
         function canManageAccountAccess(accounts) {
@@ -3038,7 +3221,7 @@
             const currentAccounts = JSON.parse(localStorage.getItem("userAccounts") || "{}");
             const currentAccount = currentAccounts[currentUsername];
             const deleteButton = document.getElementById("inventoryDeleteUserBtn");
-            deleteButton.style.display = currentAccount && ["Developer", "IT Admin"].includes(currentAccount.role) && username !== currentUsername ? "block" : "none";
+            deleteButton.style.display = canDeleteAccount(username, currentAccounts) ? "block" : "none";
             const canManageAccess = canManageAccountAccess(currentAccounts);
             setAccountAccessControlsEnabled(canManageAccess);
             const assignedTasksPermission = document.getElementById("inventoryEditPermissionAssignedTasks");
@@ -3060,17 +3243,51 @@
             const table = document.getElementById("inventoryUsersTable");
             table.textContent = "Loading users...";
             document.getElementById("inventoryUsersModal").style.display = "flex";
+            const clearButton = document.getElementById("inventoryClearOtherUsersBtn");
+            clearButton.style.display = ["Developer", "IT Admin"].includes(getCurrentUserRole()) ? "inline-block" : "none";
 
             try {
                 const accounts = await getInventoryAccounts();
-                table.innerHTML = `<table class="inventory-users-table"><thead><tr><th>Name</th><th>Username</th><th>Office</th><th>Inventory Access</th><th>Status</th><th>Actions</th></tr></thead><tbody>${Object.values(accounts).map(account => { const username = account.username || ""; const editButton = canEditAccount(username, accounts) ? `<button type="button" class="btn btn-sm btn-primary inventory-edit-user" data-username="${escapeHtml(username)}"><i class="bi bi-pencil-square me-1"></i>Edit</button>` : `<span style="color: #697c8f; font-size: 12px;">Higher role</span>`; return `<tr><td>${escapeHtml(account.name || "")}</td><td>${escapeHtml(username)}</td><td>${escapeHtml(account.office || "")}</td><td>${escapeHtml((account.inventoryAccess || []).join(", ") || "None")}</td><td>${account.disabled ? "Disabled" : "Active"}</td><td>${editButton}</td></tr>`; }).join("")}</tbody></table>`;
+                table.innerHTML = `<table class="inventory-users-table"><thead><tr><th>Name</th><th>Username</th><th>Office</th><th>Inventory Access</th><th>Status</th><th>Actions</th></tr></thead><tbody>${Object.values(accounts).map(account => { const username = account.username || ""; const editButton = canEditAccount(username, accounts) ? `<button type="button" class="btn btn-sm btn-primary inventory-edit-user" data-username="${escapeHtml(username)}"><i class="bi bi-pencil-square me-1"></i>Edit</button>` : `<span style="color: #697c8f; font-size: 12px;">Higher role</span>`; const deleteButton = canDeleteAccount(username, accounts) ? ` <button type="button" class="btn btn-sm btn-danger inventory-delete-user" data-username="${escapeHtml(username)}"><i class="bi bi-trash me-1"></i>Delete</button>` : ""; return `<tr><td>${escapeHtml(account.name || "")}</td><td>${escapeHtml(username)}</td><td>${escapeHtml(account.office || "")}</td><td>${escapeHtml((account.inventoryAccess || []).join(", ") || "None")}</td><td>${account.disabled ? "Disabled" : "Active"}</td><td>${editButton}${deleteButton}</td></tr>`; }).join("")}</tbody></table>`;
                 table.querySelectorAll(".inventory-edit-user").forEach(button => {
                     button.addEventListener("click", () => openInventoryEditUser(button.dataset.username));
                 });
+                table.querySelectorAll(".inventory-delete-user").forEach(button => {
+                    button.addEventListener("click", async () => {
+                        button.disabled = true;
+                        const deleted = await deleteInventoryAccount(button.dataset.username);
+                        if (deleted) await openInventoryUsers();
+                        else button.disabled = false;
+                    });
+                });
             } catch (error) {
-                table.textContent = "Unable to load users.";
+                table.textContent = `Unable to load users: ${error.message || "check your Firebase connection and permissions."}`;
             }
         }
+
+        document.getElementById("inventoryClearOtherUsersBtn")?.addEventListener("click", async function () {
+            if (!["Developer", "IT Admin"].includes(getCurrentUserRole())) {
+                alert("Only Developer and IT Admin accounts can remove other account profiles.");
+                return;
+            }
+            if (!confirm("Permanently remove every other account profile from Firestore and clear the local User Management cache? The currently signed-in administrator will remain.")) {
+                return;
+            }
+
+            this.disabled = true;
+            try {
+                if (!window.sharedAccounts?.clearOtherProfiles) {
+                    throw new Error("The Firebase account cleanup service is unavailable. Reload the page and try again.");
+                }
+                await window.sharedAccounts.clearOtherProfiles();
+                await openInventoryUsers();
+                alert("All other account profiles were removed. The signed-in administrator remains.");
+            } catch (error) {
+                alert(`Unable to clear other account profiles: ${error.message || "check Firebase rules and your connection."}`);
+            } finally {
+                this.disabled = false;
+            }
+        });
 
         document.getElementById("addAccountBtn")?.addEventListener("click", function (event) {
             event.preventDefault();
@@ -3108,6 +3325,58 @@
             openInventoryUsers();
         });
 
+        async function openAccountApprovalModal() {
+            if (!["Developer", "IT Admin"].includes(getCurrentUserRole())) {
+                alert("Only Developer and IT Admin accounts can access account approvals.");
+                return;
+            }
+            document.getElementById("accountApprovalModal").style.display = "flex";
+            await loadAccountApprovalRequests();
+        }
+
+        async function loadAccountApprovalRequests() {
+            const table = document.getElementById("accountApprovalRequestsTable");
+            if (!["Developer", "IT Admin"].includes(getCurrentUserRole())) {
+                table.textContent = "Only Developer and IT Admin accounts can access account approvals.";
+                return;
+            }
+            table.textContent = "Loading approval requests...";
+            try {
+                const requests = await window.sharedAccounts.loadPendingApprovals();
+                if (!requests.length) {
+                    table.textContent = "There are no pending account approvals.";
+                    return;
+                }
+                table.innerHTML = `<table class="inventory-users-table"><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Office</th><th>Requested By</th><th>Requested At</th><th>Action</th></tr></thead><tbody>${requests.map(request => `<tr><td>${escapeHtml(request.name || "")}</td><td>${escapeHtml(request.username || "")}</td><td>${escapeHtml(request.email || "")}</td><td>${escapeHtml(request.role || "")}</td><td>${escapeHtml(request.office || "")}</td><td>${escapeHtml(request.requestedBy || "")}</td><td>${escapeHtml(request.requestedAt ? new Date(request.requestedAt).toLocaleString() : "")}</td><td><button type="button" class="btn btn-success btn-sm approve-account-request" data-request-id="${escapeHtml(request.id)}"><i class="bi bi-check-circle me-1"></i>Approve</button></td></tr>`).join("")}</tbody></table>`;
+                table.querySelectorAll(".approve-account-request").forEach(button => {
+                    button.addEventListener("click", async () => {
+                        if (!["Developer", "IT Admin"].includes(getCurrentUserRole()) || !confirm(`Approve account ${button.closest("tr").cells[1].textContent}?`)) return;
+                        button.disabled = true;
+                        try {
+                            await window.sharedAccounts.approveAccountApproval(button.dataset.requestId);
+                            await loadAccountApprovalRequests();
+                            alert("Account approved and activated successfully.");
+                        } catch (error) {
+                            console.error("Account approval failed.", error);
+                            button.disabled = false;
+                            alert(`Unable to approve account: ${error.message || "check Firestore rules and Firebase setup."}`);
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error("Account approval requests could not be loaded.", error);
+                table.textContent = `Unable to load approval requests: ${error.message || "check Firestore rules and Firebase setup."}`;
+            }
+        }
+
+        document.getElementById("accountApprovalMenuBtn")?.addEventListener("click", () => {
+            void openAccountApprovalModal();
+        });
+        document.getElementById("refreshAccountApprovalsBtn")?.addEventListener("click", () => {
+            void loadAccountApprovalRequests();
+        });
+        document.getElementById("closeAccountApprovalModalBtn")?.addEventListener("click", closeInventoryAccountModals);
+
         function openInventoryPasswordModal() {
             const modal = document.getElementById("changePasswordModal");
             if (!modal) return;
@@ -3133,36 +3402,47 @@
 
         document.getElementById("inventoryDeleteUserBtn")?.addEventListener("click", async function () {
             const username = document.getElementById("inventoryEditOriginalUsername").value;
-            const currentUsername = localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser");
-            if (!username || username === currentUsername || !confirm(`Delete account ${username}? This cannot be undone.`)) return;
+            const deleted = await deleteInventoryAccount(username);
+            if (deleted) {
+                closeInventoryAccountModals();
+                openInventoryUsers();
+            }
+        });
 
-            const accounts = JSON.parse(localStorage.getItem("userAccounts")) || {};
-
+        async function deleteInventoryAccount(username) {
+            const accounts = JSON.parse(localStorage.getItem("userAccounts") || "{}");
+            if (!canDeleteAccount(username, accounts)) {
+                alert("You do not have permission to delete this account.");
+                return false;
+            }
+            if (!confirm(`Permanently delete ${username} from Firebase Authentication and remove its app profile? This cannot be undone.`)) {
+                return false;
+            }
             try {
-                if (window.sharedAccounts) {
-                    await window.sharedAccounts.delete(username);
-                } else {
-                    throw new Error("Shared account service is unavailable.");
-                }
+                if (!window.sharedAccounts?.delete) throw new Error("Shared account service is unavailable.");
+                await window.sharedAccounts.delete(username);
+            } catch (error) {
+                alert(`Unable to delete account: ${error.message || "check the Firebase Functions deployment and try again."}`);
+                return false;
+            }
 
-                if (isLocalBackendHost()) {
+            delete accounts[username];
+            localStorage.setItem("userAccounts", JSON.stringify(accounts));
+            if (isLocalBackendHost()) {
+                try {
                     const response = await fetch(inventoryAccountsApi, {
                         method: "DELETE",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ username })
                     });
-                    if (!response.ok) throw new Error("Account delete sync failed");
+                    if (!response.ok) throw new Error(`Local account cache sync failed (${response.status}).`);
+                } catch (error) {
+                    console.warn("Firebase account was deleted, but the optional local account cache could not be synchronized.", error);
                 }
-
-                delete accounts[username];
-                localStorage.setItem("userAccounts", JSON.stringify(accounts));
-                closeInventoryAccountModals();
-                openInventoryUsers();
-                alert("Account deleted successfully.");
-            } catch (error) {
-                alert("The account was removed locally, but could not be deleted from all shared stores. Check Firestore rules and the server, then try again.");
             }
-        });
+            alert("Account deleted successfully.");
+            return true;
+        }
 
         document.getElementById("inventorySaveEditUserBtn")?.addEventListener("click", async function () {
             const originalUsername = document.getElementById("inventoryEditOriginalUsername").value;
@@ -3287,7 +3567,7 @@
                     permission !== "assignedTasks" || canGrantAssignedTasksPermission
                 );
 
-                accounts[username] = {
+                const newAccount = {
                     name, username, email, password,
                     office: role === "Collector" ? "Collector" : office,
                     role,
@@ -3296,6 +3576,14 @@
                     disabled: false
                 };
 
+                if (["IT Manager", "IT Support"].includes(getCurrentUserRole())) {
+                    await window.sharedAccounts.createPendingApproval(username, newAccount);
+                    closeInventoryAccountModals();
+                    alert("Account approval request submitted. The account will be activated after an IT Admin approves it.");
+                    return;
+                }
+
+                accounts[username] = newAccount;
                 await saveInventoryAccounts(accounts, username);
                 closeInventoryAccountModals();
                 alert("User created successfully.");
@@ -3404,8 +3692,19 @@
             modalContent.style.cursor = "auto";
         });
 
-        // Summary modal controls
-        document.getElementById("addSummaryRecordBtn").addEventListener("click", function () {
+        let isThermalReplenishment = false;
+
+        function openSummaryRecordModal(replenishment = false) {
+            if (isInventoryReadOnly()) return;
+            isThermalReplenishment = replenishment;
+            document.getElementById("summaryRecordModalTitle").textContent = replenishment ? "Replenish" : "Add Thermal Record";
+            ["summaryModelField", "summaryQuantityInputField", "summaryDamageInputField", "summaryReleasedInputField"].forEach(id => {
+                document.getElementById(id).style.display = replenishment ? "none" : "";
+            });
+            document.getElementById("summaryModel").required = !replenishment;
+            document.getElementById("summaryReplenishmentBoxField").style.display = replenishment ? "" : "none";
+            document.getElementById("summaryReceiptInvoiceField").style.display = replenishment ? "" : "none";
+            document.getElementById("summaryReceiptInvoiceNumber").required = replenishment;
             document.getElementById("addSummaryRecordModal").style.display = "flex";
             document.getElementById("summaryRecordForm").reset();
             document.getElementById("summaryQuantity").value = "0";
@@ -3414,19 +3713,31 @@
             document.getElementById("summaryRemaining").value = "0";
             const summaryCharger = document.getElementById("summaryCharger");
             if (summaryCharger) summaryCharger.value = "0";
+        }
+
+        // Summary modal controls
+        document.getElementById("addSummaryRecordBtn").addEventListener("click", function () {
+            openSummaryRecordModal();
+        });
+
+        document.getElementById("replenishThermalBtn").addEventListener("click", function () {
+            if (getCurrentUserOffice() === "Thermal") openSummaryRecordModal(true);
         });
 
         document.getElementById("closeSummaryRecordBtn").addEventListener("click", function () {
             document.getElementById("addSummaryRecordModal").style.display = "none";
+            isThermalReplenishment = false;
         });
 
         document.getElementById("cancelSummaryRecordBtn").addEventListener("click", function () {
             document.getElementById("addSummaryRecordModal").style.display = "none";
+            isThermalReplenishment = false;
         });
 
         document.getElementById("addSummaryRecordModal").addEventListener("click", function (e) {
             if (e.target === this) {
                 this.style.display = "none";
+                isThermalReplenishment = false;
             }
         });
 
@@ -3448,48 +3759,113 @@
             }
         });
 
-        document.getElementById("summaryRecordForm").addEventListener("submit", function (e) {
+        document.getElementById("summaryRecordForm").addEventListener("submit", async function (e) {
             e.preventDefault();
             if (isInventoryReadOnly()) return;
 
-            const model = document.getElementById("summaryModel").value.trim();
-            const quantity = parseInt(document.getElementById("summaryQuantity").value, 10) || 0;
-            const damage = parseInt(document.getElementById("summaryDamage").value, 10) || 0;
-            const released = parseInt(document.getElementById("summaryReleased").value, 10) || 0;
+            const model = isThermalReplenishment ? "" : document.getElementById("summaryModel").value.trim();
+            const quantity = isThermalReplenishment ? 0 : parseInt(document.getElementById("summaryQuantity").value, 10) || 0;
+            const damage = isThermalReplenishment ? 0 : parseInt(document.getElementById("summaryDamage").value, 10) || 0;
+            const released = isThermalReplenishment ? 0 : parseInt(document.getElementById("summaryReleased").value, 10) || 0;
             const remaining = calculateRemainingPos(quantity, damage, released);
-            const charger = parseInt(document.getElementById("summaryCharger")?.value || "0", 10) || 0;
+            const charger = isThermalReplenishment ? 0 : parseInt(document.getElementById("summaryCharger")?.value || "0", 10) || 0;
+            const replenishmentBox = document.getElementById("summaryReplenishmentBox").value.trim();
+            const receiptInvoiceNumber = document.getElementById("summaryReceiptInvoiceNumber").value.trim();
 
-            if (!model) {
+            if (!isThermalReplenishment && !model) {
                 alert("Please enter the POS model name.");
+                return;
+            }
+            if (isThermalReplenishment && replenishmentBox && !/^[a-z0-9]+$/i.test(replenishmentBox)) {
+                alert("Please enter the Box using letters and numbers only.");
+                return;
+            }
+            if (isThermalReplenishment && !receiptInvoiceNumber) {
+                alert("Please enter the Delivery Receipt / Invoice Number.");
+                document.getElementById("summaryReceiptInvoiceNumber").focus();
                 return;
             }
 
             const storageKeys = getInventoryStorageKeys();
-            const currentSummary = JSON.parse(localStorage.getItem(storageKeys.summaryKey) || "{}");
-            currentSummary[model] = {
-                quantity: quantity,
-                damage: damage,
-                released: released,
-                remaining: remaining,
-                charger: charger
-            };
+            let currentSummary = JSON.parse(localStorage.getItem(storageKeys.summaryKey) || "{}");
+            let recordsData = JSON.parse(localStorage.getItem(storageKeys.recordsKey) || "[]");
+            if (isThermalReplenishment && window.sharedInventory) {
+                try {
+                    await sharedInventorySaveQueue;
+                    const latestInventory = await window.sharedInventory.load(storageKeys.office);
+                    if (latestInventory) {
+                        currentSummary = latestInventory.summaryData || {};
+                        recordsData = Array.isArray(latestInventory.recordsData) ? latestInventory.recordsData : [];
+                    }
+                } catch (error) {
+                    console.error("Unable to load current Thermal inventory before replenishing.", error);
+                    alert("Unable to load the latest Thermal inventory. Refresh the page and try again.");
+                    return;
+                }
+            }
+            if (isThermalReplenishment) {
+                currentSummary.TOTAL = currentSummary.TOTAL || {};
+                currentSummary.TOTAL.replenishments = Array.isArray(currentSummary.TOTAL.replenishments)
+                    ? currentSummary.TOTAL.replenishments
+                    : [];
+                currentSummary.TOTAL = {
+                    ...currentSummary.TOTAL,
+                    replenishmentBoxes: (Number(currentSummary.TOTAL.replenishmentBoxes) || 0) + 1
+                };
+                currentSummary.TOTAL.replenishments.push({
+                    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                    box: replenishmentBox,
+                    receiptInvoiceNumber,
+                    totalBoxes: 1,
+                    accountUsed: getLoggedInDisplayName()?.username || "Unknown",
+                    recordedAt: new Date().toISOString()
+                });
+            } else {
+                const existingRecord = currentSummary[model] || {};
+                currentSummary[model] = {
+                    ...existingRecord,
+                    quantity,
+                    damage,
+                    released,
+                    remaining,
+                    charger,
+                    replenishments: Array.isArray(existingRecord.replenishments) ? existingRecord.replenishments : []
+                };
+            }
 
-            const recordsData = JSON.parse(localStorage.getItem(storageKeys.recordsKey) || "[]");
-            saveInventoryData(currentSummary, recordsData);
+            if (isThermalReplenishment && window.sharedInventory) {
+                try {
+                    await window.sharedInventory.save(storageKeys.office, {
+                        summaryData: currentSummary,
+                        recordsData,
+                        updatedAt: new Date().toISOString()
+                    });
+                    saveInventoryData(currentSummary, recordsData, false);
+                } catch (error) {
+                    console.error("Thermal replenishment could not be saved.", error);
+                    alert(`Unable to save replenishment: ${error.message || "check your connection and permissions."}`);
+                    return;
+                }
+            } else {
+                saveInventoryData(currentSummary, recordsData);
+            }
             updateSummaryDisplay(currentSummary);
             document.getElementById("addSummaryRecordModal").style.display = "none";
+            const wasReplenishment = isThermalReplenishment;
+            isThermalReplenishment = false;
             document.getElementById("summaryRecordForm").reset();
             document.getElementById("summaryQuantity").value = "0";
             document.getElementById("summaryDamage").value = "0";
             document.getElementById("summaryReleased").value = "0";
             document.getElementById("summaryRemaining").value = "0";
+            document.getElementById("summaryReplenishmentBox").value = "";
+            document.getElementById("summaryReceiptInvoiceNumber").value = "";
             const summaryCharger = document.getElementById("summaryCharger");
             if (summaryCharger) summaryCharger.value = "0";
-            alert("Summary record added successfully!");
+            alert(wasReplenishment ? "Thermal inventory replenished successfully!" : "Summary record added successfully!");
         });
 
-        // Add Record button - Open modal
-        document.getElementById("addProductBtn").addEventListener("click", function () {
+        function openAddRecordModal() {
             if (isInventoryReadOnly()) return;
             // Reset modal to default position and size
             modalContent.style.position = "fixed";
@@ -3503,7 +3879,9 @@
             
             document.getElementById("addRecordModal").style.display = "flex";
             document.getElementById("addRecordForm").reset();
-        });
+        }
+
+        document.getElementById("addProductBtn").addEventListener("click", openAddRecordModal);
 
         // Close Add Record modal
         document.getElementById("closeAddRecordBtn").addEventListener("click", function () {
@@ -3517,26 +3895,27 @@
             }
         });
 
-        // Handle Add Record form submission
-        document.getElementById("addRecordForm").addEventListener("submit", function (e) {
+        function handleAddRecordSubmit(e, idPrefix = "") {
             e.preventDefault();
             if (isInventoryReadOnly()) return;
+            const form = e.currentTarget;
+            const field = id => form.querySelector(`#${idPrefix ? `${idPrefix}${id.charAt(0).toUpperCase()}${id.slice(1)}` : id}`);
             const loggedIn = getLoggedInDisplayName();
             
             const newRecord = {
-                rack: document.getElementById("formRack")?.value || "",
-                posNo: document.getElementById("formPosNo")?.value || "",
-                ...(getCurrentUserOffice() === "Thermal" ? { posUnit: document.getElementById("formPosUnit").value } : {}),
-                serialNumber: document.getElementById("formSerialNumber")?.value || "",
-                fullName: document.getElementById("formFullName")?.value || "",
-                userId: document.getElementById("formUserId")?.value || "",
-                address: document.getElementById("formAddress")?.value || "",
-                status: document.getElementById("formStatus")?.value || "",
-                lokals: document.getElementById("formLokals")?.value || "",
-                noteIssue: document.getElementById("formNoteIssue")?.value || "",
-                price: document.getElementById("formPrice").value !== "" ? Number(document.getElementById("formPrice").value) : "",
-                transferTo: document.getElementById("formTransferTo")?.value || "",
-                columnJ: document.getElementById("formColumnJ")?.value || "",
+                rack: field("formRack")?.value || "",
+                posNo: field("formPosNo")?.value || "",
+                ...(getCurrentUserOffice() === "Thermal" ? { posUnit: field("formPosUnit").value } : {}),
+                serialNumber: field("formSerialNumber")?.value || "",
+                fullName: field("formFullName")?.value || "",
+                userId: field("formUserId")?.value || "",
+                address: field("formAddress")?.value || "",
+                status: field("formStatus")?.value || "",
+                lokals: field("formLokals")?.value || "",
+                noteIssue: field("formNoteIssue")?.value || "",
+                price: field("formPrice").value !== "" ? Number(field("formPrice").value) : "",
+                transferTo: field("formTransferTo")?.value || "",
+                columnJ: field("formColumnJ")?.value || "",
                 createdBy: loggedIn?.username || localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "Unknown",
                 recordDate: new Date().toISOString()
             };
@@ -3564,19 +3943,21 @@
             updateLostItemsMetric(recordsData);
             
             // Add row to table
-            addRecordToTable(newRecord);
+            addRecordToTable(newRecord, recordsData.length - 1);
             updateActiveItemsMetric(recordsData);
             updateRackMetrics(recordsData);
             
             // Close modal and reset form
-            document.getElementById("addRecordModal").style.display = "none";
-            document.getElementById("addRecordForm").reset();
+            form.closest("#addRecordModal").style.display = "none";
+            form.reset();
             
-            alert("Record added successfully!");
-        });
+            alert(idPrefix ? "Thermal replenishment added successfully!" : "Record added successfully!");
+        }
+
+        document.getElementById("addRecordForm").addEventListener("submit", handleAddRecordSubmit);
 
         // Add record to table
-        function addRecordToTable(record) {
+        function addRecordToTable(record, recordIndex) {
             const tbody = document.getElementById("inventoryTableBody");
             const statusClass = getStatusBadgeClass(record.status);
             const displayNote = record.noteIssue && record.noteIssue !== "-" ? record.noteIssue : "-";
@@ -3585,8 +3966,6 @@
             const displayTransferTo = record.transferTo && record.transferTo !== "-" ? record.transferTo : "-";
             const displayRack = record.rack || "-";
             const displayColumnJ = record.columnJ && record.columnJ !== "-" ? record.columnJ : "-";
-            const recordIndex = document.querySelectorAll("#inventoryTableBody tr").length;
-            
             const row = tbody.insertRow(0);
             row.dataset.recordIndex = String(recordIndex);
             row.innerHTML = `
@@ -3602,6 +3981,7 @@
                 <td>${escapeHtml(displayPrice)}</td>
                 <td>${displayTransferTo}</td>
                 <td>${displayColumnJ}</td>
+                ${getCurrentUserOffice() === "Thermal" ? `<td class="thermal-only-overview">${canDeleteThermalRecords() ? `<button type="button" class="btn btn-outline-danger btn-sm delete-thermal-record" data-record-index="${recordIndex}" aria-label="Delete thermal record ${recordIndex + 1}" title="Delete record"><i class="bi bi-trash" aria-hidden="true"></i></button>` : ""}</td>` : ""}
             `;
             
             // Update record count
@@ -3662,6 +4042,155 @@
 
         document.getElementById("searchInventory").addEventListener("input", applyInventorySearch);
 
+        function inventoryRecordIdentity(record) {
+            if (record.stationRecordId) return `station:${record.stationRecordId}`;
+            return JSON.stringify(Object.keys(record).sort().map(key => [key, record[key]]));
+        }
+
+        async function deleteThermalRecord(button) {
+            if (!canDeleteThermalRecords()) {
+                alert("Only Developer, IT Admin, and IT Manager accounts can delete Thermal records.");
+                return;
+            }
+
+            const storageKeys = getInventoryStorageKeys("Thermal");
+            const localRecords = JSON.parse(localStorage.getItem(storageKeys.recordsKey) || "[]");
+            const recordIndex = Number(button.dataset.recordIndex);
+            const selectedRecord = localRecords[recordIndex];
+            if (!selectedRecord) {
+                alert("This record is no longer available. Refresh the inventory and try again.");
+                return;
+            }
+
+            const recordLabel = `${getReleasedDisplayValue(selectedRecord)} / ${selectedRecord.serialNumber || selectedRecord.fullName || selectedRecord.rack || "Thermal record"}`;
+            if (!window.confirm(`Delete ${recordLabel}? This action cannot be undone.`)) return;
+
+            button.disabled = true;
+            try {
+                if (!window.sharedInventory?.load || !window.sharedInventory?.save) {
+                    throw new Error("Shared Thermal inventory is unavailable.");
+                }
+
+                await sharedInventorySaveQueue;
+                const currentInventory = await window.sharedInventory.load("Thermal");
+                if (!currentInventory) throw new Error("Thermal inventory could not be loaded.");
+                const recordsData = Array.isArray(currentInventory.recordsData) ? currentInventory.recordsData : [];
+                const selectedIdentity = inventoryRecordIdentity(selectedRecord);
+                const currentIndex = recordsData.findIndex(record => inventoryRecordIdentity(record) === selectedIdentity);
+                if (currentIndex < 0) {
+                    throw new Error("This record has changed since it was displayed. Refresh the inventory and try again.");
+                }
+
+                const [deletedRecord] = recordsData.splice(currentIndex, 1);
+                const summaryData = currentInventory.summaryData || {};
+                const summaryFieldByUnit = { BOX: "quantity", ROLLS: "damage", PCS: "released" };
+                const summaryField = summaryFieldByUnit[deletedRecord.posUnit];
+                const deletedQuantity = Number(String(deletedRecord.posNo || "").trim());
+                if (summaryField && Number.isFinite(deletedQuantity)) {
+                    const totals = summaryData.TOTAL || {};
+                    totals[summaryField] = Math.max(0, (Number.parseInt(totals[summaryField], 10) || 0) - deletedQuantity);
+                    summaryData.TOTAL = totals;
+                }
+
+                await window.sharedInventory.save("Thermal", {
+                    summaryData,
+                    recordsData,
+                    updatedAt: new Date().toISOString()
+                });
+                saveInventoryData(summaryData, recordsData, false);
+                recordDeletedInventoryRecord(deletedRecord);
+                updateSummaryDisplay(summaryData);
+                populateInventoryTable(recordsData);
+                alert("Thermal record deleted successfully.");
+            } catch (error) {
+                console.error("Thermal record could not be deleted.", error);
+                alert(`Unable to delete Thermal record: ${error.message || "check your connection and permissions."}`);
+                button.disabled = false;
+            }
+        }
+
+        document.getElementById("inventoryTableBody").addEventListener("click", event => {
+            const button = event.target.closest(".delete-thermal-record");
+            if (button) void deleteThermalRecord(button);
+        });
+
+        async function deleteThermalReplenishment(button) {
+            if (!canDeleteThermalRecords()) {
+                alert("Only Developer, IT Admin, and IT Manager accounts can delete Thermal replenishments.");
+                return;
+            }
+            const model = button.dataset.model;
+            const entryId = button.dataset.entryId;
+            const entryIndex = Number.parseInt(button.dataset.index, 10);
+            if (!model || (!entryId && !Number.isInteger(entryIndex))) {
+                alert("This replenishment cannot be identified. Refresh the inventory and try again.");
+                return;
+            }
+            if (!window.confirm("Delete this Thermal replenishment? Its box total will be subtracted from the inventory.")) return;
+
+            button.disabled = true;
+            try {
+                if (!window.sharedInventory?.load || !window.sharedInventory?.save) {
+                    throw new Error("Shared Thermal inventory is unavailable.");
+                }
+                await sharedInventorySaveQueue;
+                const currentInventory = await window.sharedInventory.load("Thermal");
+                if (!currentInventory) throw new Error("Thermal inventory could not be loaded.");
+                const summaryData = currentInventory.summaryData || {};
+                const summaryRecord = summaryData[model];
+                const replenishments = Array.isArray(summaryRecord?.replenishments) ? summaryRecord.replenishments : [];
+                const targetIndex = entryId
+                    ? replenishments.findIndex(entry => entry.id === entryId)
+                    : entryIndex;
+                if (targetIndex < 0 || targetIndex >= replenishments.length) {
+                    throw new Error("This replenishment has changed since it was displayed. Refresh the inventory and try again.");
+                }
+
+                const [deletedEntry] = replenishments.splice(targetIndex, 1);
+                const totals = summaryData.TOTAL || {};
+                totals.replenishmentBoxes = Math.max(
+                    0,
+                    (Number(totals.replenishmentBoxes) || 0) - (Number(deletedEntry.totalBoxes) || 0)
+                );
+                summaryData.TOTAL = totals;
+                if (summaryRecord && model !== "TOTAL") {
+                    ["quantity", "damage", "released", "charger"].forEach(field => {
+                        if (deletedEntry[field] !== undefined) {
+                            summaryRecord[field] = Math.max(0, (Number(summaryRecord[field]) || 0) - (Number(deletedEntry[field]) || 0));
+                        }
+                    });
+                    if (summaryRecord.replenishments.length === 0 && summaryRecord.replenishmentOnly) {
+                        delete summaryData[model];
+                    } else {
+                        summaryRecord.remaining = calculateRemainingPos(
+                            summaryRecord.quantity || 0,
+                            summaryRecord.damage || 0,
+                            summaryRecord.released || 0
+                        );
+                    }
+                }
+
+                const recordsData = Array.isArray(currentInventory.recordsData) ? currentInventory.recordsData : [];
+                await window.sharedInventory.save("Thermal", {
+                    summaryData,
+                    recordsData,
+                    updatedAt: new Date().toISOString()
+                });
+                saveInventoryData(summaryData, recordsData, false);
+                updateSummaryDisplay(summaryData);
+                populateInventoryTable(recordsData);
+            } catch (error) {
+                console.error("Thermal replenishment could not be deleted.", error);
+                alert(`Unable to delete Thermal replenishment: ${error.message || "check your connection and permissions."}`);
+                button.disabled = false;
+            }
+        }
+
+        document.getElementById("thermalReplenishmentHistoryBody").addEventListener("click", event => {
+            const button = event.target.closest(".delete-thermal-replenishment");
+            if (button) void deleteThermalReplenishment(button);
+        });
+
         function openFullInventoryModal() {
             const storageKeys = getInventoryStorageKeys();
             const records = JSON.parse(localStorage.getItem(storageKeys.recordsKey) || "[]");
@@ -3715,6 +4244,7 @@
         // Show detail view modal with all record information
         function deleteRecordFromInventory(recordToDelete) {
             if (!recordToDelete || isInventoryReadOnly()) return;
+            if (getCurrentUserOffice() === "Thermal" && !canDeleteThermalRecords()) return;
 
             recordDeletedInventoryRecord(recordToDelete);
 
@@ -3834,9 +4364,9 @@
                         <tbody>
                             <tr>
                                 <td style="padding: 12px 10px; vertical-align: top;"><select name="rack" style="width: 100%; min-width: 100px; padding: 8px 10px; border: 1px solid #dfe6ef; border-radius: 6px; color: #1e3a5f; background: white;">
-                                    <option value="">${getCurrentUserOffice() === "Thermal" ? "-- Select Station/Collector --" : "-- Select System --"}</option>
+                                    <option value="">${getCurrentUserOffice() === "Thermal" ? "-- Select Station --" : "-- Select System --"}</option>
                                     ${(getCurrentUserOffice() === "Thermal"
-                                        ? ["Guadalupe Station", "Punta Princessa Station", "Babag Station", "Collector"]
+                                        ? ["Guadalupe Station", "Punta Princessa Station", "Babag Station"]
                                         : getSystemOptions()).map(rack => `<option value="${rack}" ${String(record.rack || "").trim().toLowerCase() === rack.toLowerCase() ? "selected" : ""}>${rack}</option>`).join("")}
                                 </select></td>
                                 <td style="padding: 12px 10px; vertical-align: top;"><input name="posNo" value="${escapeDetailHtml(record.posNo || "")}" style="width: 100%; min-width: 120px; padding: 8px 10px; border: 1px solid #dfe6ef; border-radius: 6px; font-weight: 700; color: #1e3a5f;" /></td>
@@ -3869,7 +4399,9 @@
             const detailFields = document.querySelectorAll("#detailContent input, #detailContent select, #detailContent textarea");
             if (readOnly) detailFields.forEach(field => { field.disabled = true; });
             const deleteRecordButton = document.getElementById("deleteDetailRecordBtn");
-            if (readOnly && deleteRecordButton) deleteRecordButton.style.display = "none";
+            if ((readOnly || (getCurrentUserOffice() === "Thermal" && !canDeleteThermalRecords())) && deleteRecordButton) {
+                deleteRecordButton.style.display = "none";
+            }
             const getFieldValue = (field) => {
                 if (field.tagName === "SELECT") return field.value || "";
                 return (field.value || "").trim();

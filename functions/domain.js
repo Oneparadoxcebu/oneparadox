@@ -49,6 +49,14 @@ function getClaims(account) {
     };
 }
 
+function canDeleteFirebaseUser(actor, target) {
+    if (!actor || actor.disabled || !["Developer", "IT Admin"].includes(actor.role) ||
+        !target || !target.uid || target.uid === actor.uid) {
+        return false;
+    }
+    return actor.role === "Developer" || target.role !== "Developer";
+}
+
 function normalizeManagedAccount(input, username, claims) {
     const account = { ...input, username };
     if (account.role === "Station") {
@@ -100,6 +108,7 @@ function validateRequestInput(input) {
 }
 
 module.exports = {
+    canDeleteFirebaseUser,
     getClaims,
     hashPassword,
     normalizeManagedAccount,

@@ -9,6 +9,7 @@
     const auth = app.auth();
     const db = app.firestore();
     const USERS = "users";
+    const ACCOUNT_APPROVALS = "accountApprovalRequests";
     const INVENTORY = "inventory";
     const STATION_THERMAL_INVENTORY = "stationThermalInventory";
     const STATION_THERMAL_RECORDS = "stationThermalRecords";
@@ -36,7 +37,7 @@
 
     function accountMap(profiles) {
         return Object.fromEntries(profiles
-            .filter(profile => profile && profile.username)
+            .filter(profile => profile && profile.username && profile.pendingApproval !== true)
             .map(profile => [profile.username, profile]));
     }
 
@@ -51,6 +52,7 @@
             office,
             inventoryAccess,
             disabled,
+            pendingApproval,
             theme
         } = profile;
         const isCollector = role === "Collector";
@@ -84,6 +86,7 @@
             office: isCollector ? "Collector" : roleAccess?.office || String(office || ""),
             inventoryAccess: isCollector ? ["Requests"] : roleAccess?.inventoryAccess || (Array.isArray(inventoryAccess) ? inventoryAccess : []),
             disabled: Boolean(disabled),
+            ...(pendingApproval === true ? { pendingApproval: true } : {}),
             ...(theme === "light" || theme === "dark" ? { theme } : {})
         };
     }
@@ -116,6 +119,10 @@
     }
 
     async function createAccount(username, profile) {
+        const actor = await getProfile();
+        if (!actor || actor.disabled || !["Developer", "IT Admin"].includes(actor.role)) {
+            throw new Error("Only Developer or IT Admin accounts can create active accounts directly.");
+        }
         const normalizedUsername = String(username || profile.username || "").trim().toLowerCase();
         const email = String(profile.email || "").trim().toLowerCase();
         const password = String(profile.password || "");
@@ -149,10 +156,117 @@
         }
     }
 
+    async function createPendingAccountApproval(username, profile) {
+        const actor = await getProfile();
+        if (!actor || actor.disabled || !["IT Manager", "IT Support"].includes(actor.role)) {
+            throw new Error("Only IT Manager and IT Support accounts can submit account approval requests.");
+        }
+        const assignableRoles = actor.role === "IT Manager"
+            ? ["IT Support", "Management", "Accounting", "HR", "Station"]
+            : ["Management", "Accounting", "HR", "Station"];
+        if (!assignableRoles.includes(profile.role)) {
+            throw new Error(`${actor.role} accounts cannot create an account with the ${profile.role || "selected"} role.`);
+        }
+        const normalizedUsername = String(username || profile.username || "").trim().toLowerCase();
+        const email = String(profile.email || "").trim().toLowerCase();
+        const password = String(profile.password || "");
+        if (!normalizedUsername || !email || password.length < 6) {
+            throw new Error("A username, valid email address, and password of at least 6 characters are required.");
+        }
+        const existing = await getProfileByUsername(normalizedUsername);
+        if (existing) throw new Error("That username is already in use.");
+
+        const secondaryName = `oneparadox-pending-user-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const secondaryApp = firebase.initializeApp(window.firebaseConfig, secondaryName);
+        let createdUser = null;
+        try {
+            const credential = await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
+            createdUser = credential.user;
+            const pendingProfile = cleanProfile({
+                ...profile,
+                username: normalizedUsername,
+                email,
+                uid: credential.user.uid,
+                disabled: true,
+                pendingApproval: true
+            });
+            const requestedAt = new Date().toISOString();
+            const requestRef = db.collection(ACCOUNT_APPROVALS).doc(credential.user.uid);
+            await db.runTransaction(async transaction => {
+                transaction.set(db.collection(USERS).doc(credential.user.uid), pendingProfile);
+                transaction.set(requestRef, {
+                    uid: credential.user.uid,
+                    username: normalizedUsername,
+                    name: pendingProfile.name,
+                    email,
+                    role: pendingProfile.role,
+                    office: pendingProfile.office,
+                    inventoryAccess: pendingProfile.inventoryAccess,
+                    permissions: pendingProfile.permissions,
+                    requestedBy: actor.username,
+                    requestedAt,
+                    status: "Pending"
+                });
+            });
+            return pendingProfile;
+        } catch (error) {
+            if (createdUser) {
+                try {
+                    await createdUser.delete();
+                } catch (cleanupError) {
+                    console.error("Firebase Authentication account cleanup failed after approval request creation failed.", cleanupError);
+                }
+            }
+            throw error;
+        } finally {
+            await secondaryApp.delete();
+        }
+    }
+
+    async function loadPendingAccountApprovals() {
+        const actor = await getProfile();
+        if (!actor || actor.disabled || !["Developer", "IT Admin"].includes(actor.role)) {
+            throw new Error("Only Developer and IT Admin accounts can view account approval requests.");
+        }
+        const snapshot = await db.collection(ACCOUNT_APPROVALS).where("status", "==", "Pending").get();
+        return snapshot.docs.map(document => ({ id: document.id, ...document.data() }));
+    }
+
+    async function approveAccountApproval(requestId) {
+        const actor = await getProfile();
+        if (!actor || actor.disabled || !["Developer", "IT Admin"].includes(actor.role)) {
+            throw new Error("Only Developer and IT Admin accounts can approve account requests.");
+        }
+        if (!requestId) throw new Error("An account approval request ID is required.");
+        const requestRef = db.collection(ACCOUNT_APPROVALS).doc(requestId);
+        await db.runTransaction(async transaction => {
+            const requestSnapshot = await transaction.get(requestRef);
+            if (!requestSnapshot.exists || requestSnapshot.data().status !== "Pending") {
+                throw new Error("This approval request is no longer pending.");
+            }
+            const request = requestSnapshot.data();
+            const profileRef = db.collection(USERS).doc(request.uid);
+            const profileSnapshot = await transaction.get(profileRef);
+            if (!profileSnapshot.exists || profileSnapshot.data().pendingApproval !== true) {
+                throw new Error("The requested account profile is missing or has already been processed.");
+            }
+            transaction.update(profileRef, { disabled: false, pendingApproval: false });
+            transaction.update(requestRef, {
+                status: "Approved",
+                approvedBy: actor.username,
+                approvedAt: new Date().toISOString()
+            });
+        });
+    }
+
     async function saveOne(username, profile) {
         const current = await getProfileByUsername(username);
         if (!current) {
             if (!profile.password) throw new Error("A password is required when creating an account.");
+            const actor = await getProfile();
+            if (!profile.uid && ["IT Manager", "IT Support"].includes(actor?.role)) {
+                return createPendingAccountApproval(username, profile);
+            }
             return createAccount(username, profile);
         }
         if (String(profile.username || username).toLowerCase() !== current.username ||
@@ -164,8 +278,57 @@
         return clean;
     }
 
-    async function deleteAccount() {
-        throw new Error("Firebase Spark cannot delete another user's Authentication account. Disable the account instead.");
+    async function deleteAccount(username) {
+        const actor = await getProfile();
+        if (!actor || actor.disabled || !["Developer", "IT Admin"].includes(actor.role)) {
+            throw new Error("Only enabled Developer and IT Admin accounts can delete users.");
+        }
+        const target = await getProfileByUsername(username);
+        if (!target) throw new Error("Account not found.");
+        if (target.uid === actor.uid) throw new Error("You cannot delete your own account.");
+        if (actor.role === "IT Admin" && target.role === "Developer") {
+            throw new Error("IT Admin accounts cannot delete Developer accounts.");
+        }
+
+        const user = auth.currentUser;
+        if (!user || user.uid !== actor.uid) throw new Error("Your Firebase session is no longer available. Sign in again.");
+        const projectId = String(window.firebaseConfig?.projectId || "").trim();
+        if (!projectId) throw new Error("Firebase project configuration is missing.");
+
+        const response = await fetch(
+            `https://us-central1-${projectId}.cloudfunctions.net/api/users/${encodeURIComponent(target.username)}`,
+            {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${await user.getIdToken()}` }
+            }
+        );
+        let result;
+        try {
+            result = await response.json();
+        } catch (error) {
+            throw new Error(`Account deletion service returned an invalid response (${response.status}).`);
+        }
+        if (!response.ok) throw new Error(result.message || `Account deletion failed (${response.status}).`);
+        return true;
+    }
+
+    async function clearOtherAccountProfiles() {
+        const actor = await getProfile();
+        if (!actor || actor.disabled || !["Developer", "IT Admin"].includes(actor.role)) {
+            throw new Error("Only enabled Developer and IT Admin accounts can clear other account profiles.");
+        }
+
+        const snapshot = await db.collection(USERS).get();
+        const targets = snapshot.docs.filter(document => document.id !== actor.uid);
+        for (let index = 0; index < targets.length; index += 400) {
+            const batch = db.batch();
+            targets.slice(index, index + 400).forEach(document => batch.delete(document.ref));
+            await batch.commit();
+        }
+
+        const remaining = { [actor.username]: actor };
+        localStorage.setItem("userAccounts", JSON.stringify(remaining));
+        return remaining;
     }
 
     async function loadAccounts() {
@@ -186,7 +349,7 @@
         const tasks = [];
         for (const [username, profile] of Object.entries(desired)) {
             if (!current[username]) {
-                tasks.push(createAccount(username, profile));
+                tasks.push(saveOne(username, profile));
             } else {
                 const merged = cleanProfile({ ...current[username], ...profile });
                 if (JSON.stringify(merged) !== JSON.stringify(cleanProfile(current[username]))) {
@@ -244,6 +407,7 @@
     function canManageInventory(profile, office) {
         if (["Developer", "IT Admin", "IT Manager"].includes(profile?.role)) return ["Cebu", "Thermal"].includes(office);
         if (profile?.role === "IT Support") return office === "Cebu";
+        if (["Management", "Accounting", "HR"].includes(profile?.role)) return office === "Thermal";
         return false;
     }
 
@@ -734,7 +898,11 @@
         save: saveAccounts,
         saveOne,
         create: createAccount,
+        createPendingApproval: createPendingAccountApproval,
+        loadPendingApprovals: loadPendingAccountApprovals,
+        approveAccountApproval,
         delete: deleteAccount,
+        clearOtherProfiles: clearOtherAccountProfiles,
         saveTheme
     };
     window.sharedInventory = {
