@@ -3305,6 +3305,23 @@
 
         const inventoryAddRoleSelect = document.getElementById("inventoryNewUserRole");
         const inventoryEditRoleSelect = document.getElementById("inventoryEditUserRole");
+        function resetInventoryAddUserForm() {
+            const form = document.getElementById("inventoryAddUserModal");
+            form.querySelectorAll("input").forEach(input => {
+                if (input.type === "checkbox") input.checked = input.defaultChecked;
+                else input.value = "";
+            });
+            form.querySelectorAll("select").forEach(select => {
+                select.selectedIndex = 0;
+            });
+            applyInventoryStationRoleAccess(
+                inventoryAddRoleSelect,
+                "inventoryAddUserModal",
+                "inventoryAccess",
+                "inventoryPermission",
+                "inventoryAccessRequests"
+            );
+        }
         inventoryAddRoleSelect.addEventListener("change", () => applyInventoryStationRoleAccess(
             inventoryAddRoleSelect,
             "inventoryAddUserModal",
@@ -3578,6 +3595,7 @@
 
                 if (["IT Manager", "IT Support"].includes(getCurrentUserRole())) {
                     await window.sharedAccounts.createPendingApproval(username, newAccount);
+                    resetInventoryAddUserForm();
                     closeInventoryAccountModals();
                     alert("Account approval request submitted. The account will be activated after an IT Admin approves it.");
                     return;
@@ -3585,6 +3603,7 @@
 
                 accounts[username] = newAccount;
                 await saveInventoryAccounts(accounts, username);
+                resetInventoryAddUserForm();
                 closeInventoryAccountModals();
                 alert("User created successfully.");
             } catch (error) {
