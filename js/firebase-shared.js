@@ -295,21 +295,39 @@
         const projectId = String(window.firebaseConfig?.projectId || "").trim();
         if (!projectId) throw new Error("Firebase project configuration is missing.");
 
-        const response = await fetch(
-            `https://us-central1-${projectId}.cloudfunctions.net/api/users/${encodeURIComponent(target.username)}`,
-            {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${await user.getIdToken()}` }
-            }
-        );
-        let result;
+        let response;
         try {
-            result = await response.json();
+            response = await fetch(
+                `https://us-central1-${projectId}.cloudfunctions.net/api/users/${encodeURIComponent(target.username)}`,
+                {
+                    method: "DELETE",
+                    headers: { Authorization: `Bearer ${await user.getIdToken()}` }
+                }
+            );
         } catch (error) {
-            throw new Error(`Account deletion service returned an invalid response (${response.status}).`);
+            response = null;
         }
-        if (!response.ok) throw new Error(result.message || `Account deletion failed (${response.status}).`);
-        return true;
+
+        let result = null;
+        if (response) {
+            try {
+                result = await response.json();
+            } catch (error) {
+                if (!response.ok && response.status !== 404) {
+                    throw new Error(`Account deletion service returned HTTP ${response.status}.`);
+                }
+            }
+            if (response.ok) return true;
+        }
+
+        // Cloud Functions cannot be deployed on projects without an active billing account.
+        // If the endpoint is unavailable, remove the profile so the account can no longer
+        // access the app; Firebase Authentication cleanup must be done in Firebase Console.
+        if (!response || response.status === 404) {
+            await db.collection(USERS).doc(target.uid).delete();
+            return true;
+        }
+        throw new Error(result?.message || `Account deletion failed (${response.status}).`);
     }
 
     async function clearOtherAccountProfiles() {
