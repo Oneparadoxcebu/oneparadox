@@ -118,6 +118,22 @@
                         <div class="stat-label-subtitle" id="requestThermalReleasedRollsSubtitle">Total Received Rolls</div>
                     </div>
                 </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card stat-card">
+                        <div class="icon-box"><i class="bi bi-box-seam"></i></div>
+                        <div class="stat-label" id="requestThermalReleasedPcsLabel">Total Revenue</div>
+                        <div class="stat-value" id="requestThermalReleasedPcs">0</div>
+                        <div class="stat-label-subtitle" id="requestThermalReleasedPcsSubtitle">Paid Balance</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card stat-card">
+                        <div class="icon-box"><i class="bi bi-receipt"></i></div>
+                        <div class="stat-label" id="requestThermalReceivablesLabel">Total Receivables</div>
+                        <div class="stat-value" id="requestThermalReceivables">0</div>
+                        <div class="stat-label-subtitle" id="requestThermalReceivablesSubtitle">Unpaid Balance</div>
+                    </div>
+                </div>
             </div>
             <section class="card" aria-labelledby="requestThermalRecordsTitle">
                 <div class="card-header d-flex align-items-center justify-content-between gap-3">
@@ -174,6 +190,7 @@
                                         <select id="stationThermalRecordUnit" class="form-select" aria-label="Released unit" required>
                                             <option value="BOX">BOX</option>
                                             <option value="ROLLS">ROLLS</option>
+                                            <option value="PCS">PCS</option>
                                         </select>
                                     </div>
                                 </div>
@@ -395,9 +412,14 @@
                     record.noteIssue && record.noteIssue !== "-" ? record.noteIssue : "-",
                     record.price ?? "-"
                 ];
-                return `<tr>${values.map((value, index) => `<td>${index === 6
-                    ? `<span class="badge ${statusClass(status)}">${escapeRequestHtml(value)}</span>`
-                    : escapeRequestHtml(value)}</td>`).join("")}</tr>`;
+                return `<tr>${values.map((value, index) => {
+                    if (index === 5 && isStationAccount) {
+                        return `<td class="station-thermal-status-cell" data-record-id="${escapeRequestHtml(record.stationRecordId || "")}" data-record-index="${thermalRecords.indexOf(record)}" title="Double-click to edit payment status">${escapeRequestHtml(value)}</td>`;
+                    }
+                    return `<td>${index === 6
+                        ? `<span class="badge ${statusClass(status)}">${escapeRequestHtml(value)}</span>`
+                        : escapeRequestHtml(value)}</td>`;
+                }).join("")}</tr>`;
             }).join("");
         }
 
@@ -426,9 +448,16 @@
                         const quantity = Number(String(record.posNo || "").replace(/,/g, "").trim());
                         return total + (Number.isFinite(quantity) && quantity > 0 ? quantity : 0);
                     }, 0);
+                    const sumByStatus = (records, status) => records.reduce((total, record) => {
+                        if (String(record.status || "").trim().toLowerCase() !== status) return total;
+                        const price = Number(String(record.price ?? "").replace(/,/g, "").trim());
+                        return total + (Number.isFinite(price) ? price : 0);
+                    }, 0);
                     document.getElementById("requestThermalTotalBoxes").textContent = thermalRecords.length;
                     document.getElementById("requestThermalReleasedBoxes").textContent = sumReleasedForUnit("BOX");
                     document.getElementById("requestThermalReleasedRolls").textContent = sumReleasedForUnit("ROLLS");
+                    document.getElementById("requestThermalReleasedPcs").textContent = sumByStatus(thermalRecords, "paid");
+                    document.getElementById("requestThermalReceivables").textContent = sumByStatus(thermalRecords, "not paid");
                     renderThermalRecords(thermalRecords);
                     thermalInventoryMessage.textContent = "";
                     return;
@@ -449,11 +478,23 @@
                 document.getElementById("requestThermalReleasedBoxes").textContent = releasedBoxes;
                 document.getElementById("requestThermalReleasedRolls").textContent = releasedRolls;
                 thermalRecords = Array.isArray(inventory?.recordsData) ? inventory.recordsData : [];
+                const paidRevenue = thermalRecords.reduce((total, record) => {
+                    if (String(record.status || "").trim().toLowerCase() !== "paid") return total;
+                    const price = Number(String(record.price ?? "").replace(/,/g, "").trim());
+                    return total + (Number.isFinite(price) ? price : 0);
+                }, 0);
+                document.getElementById("requestThermalReleasedPcs").textContent = paidRevenue;
+                const receivables = thermalRecords.reduce((total, record) => {
+                    if (String(record.status || "").trim().toLowerCase() !== "not paid") return total;
+                    const price = Number(String(record.price ?? "").replace(/,/g, "").trim());
+                    return total + (Number.isFinite(price) ? price : 0);
+                }, 0);
+                document.getElementById("requestThermalReceivables").textContent = receivables;
                 renderThermalRecords(thermalRecords);
                 thermalInventoryMessage.textContent = "";
             } catch (error) {
                 console.error("Unable to load Thermal inventory overview.", error);
-                ["requestThermalTotalBoxes", "requestThermalReleasedBoxes", "requestThermalReleasedRolls"]
+                ["requestThermalTotalBoxes", "requestThermalReleasedBoxes", "requestThermalReleasedRolls", "requestThermalReleasedPcs", "requestThermalReceivables"]
                     .forEach(id => { document.getElementById(id).textContent = "Unavailable"; });
                 thermalRecordCount.textContent = "Unavailable";
                 thermalRecordsBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Unable to load Thermal inventory.</td></tr>';
@@ -516,6 +557,83 @@
         });
 
         thermalRecordSearch.addEventListener("input", () => renderThermalRecords(thermalRecords));
+
+        thermalRecordsBody.addEventListener("dblclick", event => {
+            if (!isStationAccount) return;
+            const cell = event.target.closest("td.station-thermal-status-cell");
+            if (!cell || cell.querySelector("select")) return;
+            const sourceRecord = thermalRecords[Number(cell.dataset.recordIndex)];
+            if (!sourceRecord) return;
+
+            const originalStatus = cell.textContent.trim();
+            const select = document.createElement("select");
+            select.className = "form-select form-select-sm";
+            select.setAttribute("aria-label", "Payment status");
+            ["Paid", "Not Paid"].forEach(status => {
+                const option = document.createElement("option");
+                option.value = status;
+                option.textContent = status;
+                option.selected = status === originalStatus;
+                select.appendChild(option);
+            });
+            cell.textContent = "";
+            cell.appendChild(select);
+
+            let saveStarted = false;
+            let cancelled = false;
+            const finishEdit = () => {
+                document.removeEventListener("pointerdown", handleOutsidePointerDown, true);
+            };
+            const cancelEdit = () => {
+                if (saveStarted) return;
+                cancelled = true;
+                finishEdit();
+                cell.textContent = originalStatus;
+            };
+            const saveStatus = async () => {
+                if (cancelled || saveStarted) return;
+                const selectedStatus = select.value;
+                if (selectedStatus === originalStatus) return;
+                saveStarted = true;
+                finishEdit();
+                select.disabled = true;
+                try {
+                    const savedRecordId = await window.sharedInventory.updateStationThermalRecordStatus(
+                        cell.dataset.recordId,
+                        selectedStatus,
+                        sourceRecord
+                    );
+                    sourceRecord.stationRecordId = savedRecordId;
+                    sourceRecord.status = selectedStatus;
+                    renderThermalRecords(thermalRecords);
+                    await loadThermalInventoryOverview();
+                    thermalInventoryMessage.textContent = "Payment status updated.";
+                } catch (error) {
+                    console.error("Unable to update Station Thermal record status.", error);
+                    const reason = error instanceof Error ? error.message : String(error);
+                    thermalInventoryMessage.textContent = error?.code === "permission-denied"
+                        ? "Firebase denied the status update. Deploy the latest firestore.rules, then try again."
+                        : `Unable to update payment status: ${reason}`;
+                    finishEdit();
+                    cell.textContent = originalStatus;
+                }
+            };
+            const handleOutsidePointerDown = pointerEvent => {
+                if (!cell.contains(pointerEvent.target)) window.setTimeout(saveStatus, 0);
+            };
+            document.addEventListener("pointerdown", handleOutsidePointerDown, true);
+            select.addEventListener("keydown", keyEvent => {
+                if (keyEvent.key === "Escape") {
+                    keyEvent.preventDefault();
+                    cancelEdit();
+                }
+            });
+            select.addEventListener("change", saveStatus);
+            select.addEventListener("blur", () => window.setTimeout(saveStatus, 0));
+            select.focus();
+            if (typeof select.showPicker === "function") select.showPicker();
+            else select.click();
+        });
 
         function escapeRequestHtml(value) {
             return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");

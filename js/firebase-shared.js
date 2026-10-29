@@ -429,6 +429,37 @@
         return false;
     }
 
+    function stationThermalRecordKey(record) {
+        return JSON.stringify(Object.keys(record || {})
+            .filter(key => !["stationRecordId", "status", "createdBy", "sourceRecordKey"].includes(key))
+            .sort()
+            .map(key => [key, record[key]]));
+    }
+
+    function mergeStationThermalRecords(recordsData, stationRecordSnapshots) {
+        const recordIndexById = new Map();
+        const recordIndexBySourceKey = new Map();
+        recordsData.forEach((record, index) => {
+            if (record.stationRecordId) recordIndexById.set(record.stationRecordId, index);
+            recordIndexBySourceKey.set(stationThermalRecordKey(record), index);
+        });
+        stationRecordSnapshots.forEach(snapshot => {
+            snapshot.docs.forEach(document => {
+                const stationRecord = { ...document.data(), stationRecordId: document.id };
+                const existingIndex = recordIndexById.get(document.id) ??
+                    (stationRecord.sourceRecordKey ? recordIndexBySourceKey.get(stationRecord.sourceRecordKey) : undefined);
+                if (existingIndex === undefined) {
+                    recordIndexById.set(document.id, recordsData.length);
+                    recordsData.push(stationRecord);
+                } else {
+                    recordsData[existingIndex] = { ...recordsData[existingIndex], ...stationRecord };
+                    recordIndexById.set(document.id, existingIndex);
+                }
+            });
+        });
+        return recordsData;
+    }
+
     async function loadInventory(office) {
         requireSignedIn();
         await assertInventoryOffice(office);
@@ -445,15 +476,7 @@
         const [metadata, chunks, ...stationRecordSnapshots] = await Promise.all(reads);
         const recordsData = chunks.docs.flatMap(snapshot => snapshot.data().records || []);
         if (office === "Thermal") {
-            const knownRecordIds = new Set(recordsData.map(record => record.stationRecordId).filter(Boolean));
-            stationRecordSnapshots.forEach(snapshot => {
-                snapshot.docs.forEach(document => {
-                    if (!knownRecordIds.has(document.id)) {
-                        recordsData.push({ ...document.data(), stationRecordId: document.id });
-                        knownRecordIds.add(document.id);
-                    }
-                });
-            });
+            mergeStationThermalRecords(recordsData, stationRecordSnapshots);
         }
         if (!metadata.exists && !recordsData.length) return null;
         return {
@@ -597,13 +620,7 @@
             stationRecordsRef.get()
         ]);
         const recordsData = chunks.docs.flatMap(snapshot => snapshot.data().records || []);
-        const knownRecordIds = new Set(recordsData.map(record => record.stationRecordId).filter(Boolean));
-        stationRecords.docs.forEach(document => {
-            if (!knownRecordIds.has(document.id)) {
-                recordsData.push({ ...document.data(), stationRecordId: document.id });
-                knownRecordIds.add(document.id);
-            }
-        });
+        mergeStationThermalRecords(recordsData, [stationRecords]);
         if (!metadata.exists && !recordsData.length) return null;
         return {
             ...(metadata.exists ? metadata.data() : { station, updatedAt: "" }),
@@ -626,7 +643,7 @@
         if (!posNo || posNo.length > 120 || !Number.isFinite(quantity) || quantity < 0) {
             throw new Error("Enter a valid Released quantity.");
         }
-        if (!["BOX", "ROLLS"].includes(posUnit)) throw new Error("Select a valid Released unit.");
+        if (!["BOX", "ROLLS", "PCS"].includes(posUnit)) throw new Error("Select a valid Released unit.");
         if (!["Paid", "Not Paid"].includes(status)) {
             throw new Error("Select a valid record status.");
         }
@@ -658,6 +675,60 @@
         });
         await reference.set(record);
         return record;
+    }
+
+    async function updateStationThermalRecordStatus(stationRecordId, status, sourceRecord) {
+        requireSignedIn();
+        const profile = await getProfile();
+        const station = normalizeThermalStation(profile?.office);
+        if (!profile || profile.disabled || profile.role !== "Station" || !station ||
+            !Array.isArray(profile.inventoryAccess) || !profile.inventoryAccess.includes("Requests")) {
+            throw new Error("An enabled Station account with an assigned station is required.");
+        }
+        if (!["Paid", "Not Paid"].includes(status)) {
+            throw new Error("Select a valid record status.");
+        }
+        const id = String(stationRecordId || "").trim();
+        const recordsRef = db.collection(STATION_THERMAL_RECORDS).doc(station).collection("records");
+        if (id) {
+            const existingRecord = await recordsRef.doc(id).get();
+            if (existingRecord.exists) {
+                await existingRecord.ref.update({ status });
+                return id;
+            }
+        }
+        if (!sourceRecord || normalizeThermalStation(sourceRecord.rack) !== station) {
+            throw new Error("Unable to identify this Thermal record.");
+        }
+        const sourceRecordKey = stationThermalRecordKey(sourceRecord);
+        const recordRef = id ? recordsRef.doc(id) : recordsRef.doc();
+        const priceValue = sourceRecord.price === "" || sourceRecord.price === null || sourceRecord.price === undefined
+            ? ""
+            : Number(String(sourceRecord.price).replace(/,/g, "").trim());
+        const record = {
+            stationRecordId: recordRef.id,
+            sourceRecordKey,
+            rack: station,
+            posNo: String(sourceRecord.posNo ?? "").trim(),
+            posUnit: String(sourceRecord.posUnit || "").trim().toUpperCase(),
+            serialNumber: String(sourceRecord.serialNumber || ""),
+            fullName: String(sourceRecord.fullName || ""),
+            userId: String(sourceRecord.userId || ""),
+            address: String(sourceRecord.address || ""),
+            status,
+            lokals: String(sourceRecord.lokals || ""),
+            noteIssue: String(sourceRecord.noteIssue || ""),
+            price: Number.isFinite(priceValue) ? priceValue : "",
+            transferTo: String(sourceRecord.transferTo || ""),
+            columnJ: String(sourceRecord.columnJ || ""),
+            createdBy: profile.username,
+            recordDate: String(sourceRecord.recordDate || "")
+        };
+        if (!record.posNo || !["", "BOX", "ROLLS", "PCS"].includes(record.posUnit)) {
+            throw new Error("This Thermal record cannot be saved because its Released quantity or unit is invalid.");
+        }
+        await recordRef.set(record);
+        return recordRef.id;
     }
 
     async function loadCollectorThermalInventory() {
@@ -730,15 +801,24 @@
         const savedRecords = new Map(records
             .filter(record => record.stationRecordId)
             .map(record => [record.stationRecordId, record]));
+        const savedRecordsBySourceKey = new Map(records.map(record => [stationThermalRecordKey(record), record]));
         const writes = [];
         snapshots.forEach(snapshot => {
             snapshot.docs.forEach(document => {
-                const record = savedRecords.get(document.id);
+                const record = savedRecords.get(document.id) ||
+                    (document.data().sourceRecordKey
+                        ? savedRecordsBySourceKey.get(document.data().sourceRecordKey)
+                        : undefined);
                 if (!record) {
                     writes.push({ type: "delete", ref: document.ref });
                     return;
                 }
-                const payload = removeUndefined({ ...record, stationRecordId: document.id });
+                const payload = removeUndefined({
+                    ...document.data(),
+                    ...record,
+                    stationRecordId: document.id,
+                    ...(document.data().sourceRecordKey ? { sourceRecordKey: document.data().sourceRecordKey } : {})
+                });
                 if (stableSerialize(document.data()) !== stableSerialize(payload)) {
                     writes.push({ type: "set", ref: document.ref, payload });
                 }
@@ -927,6 +1007,7 @@
         load: loadInventory,
         loadStationThermal: loadStationThermalInventory,
         createStationThermalRecord,
+        updateStationThermalRecordStatus,
         loadCollectorThermal: loadCollectorThermalInventory,
         publishThermalStation: publishThermalStationInventory,
         watch: watchInventory,

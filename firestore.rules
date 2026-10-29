@@ -308,29 +308,38 @@ service cloud.firestore {
       allow create: if canReadStationThermal(station)
         && currentProfile().role == 'Station'
         && request.resource.data.keys().hasOnly([
-          'stationRecordId', 'rack', 'posNo', 'posUnit', 'serialNumber',
+          'stationRecordId', 'sourceRecordKey', 'rack', 'posNo', 'posUnit', 'serialNumber',
           'fullName', 'userId', 'address', 'status', 'lokals', 'noteIssue',
           'price', 'transferTo', 'columnJ', 'createdBy', 'recordDate'
         ])
         && request.resource.data.stationRecordId == recordId
+        && (!('sourceRecordKey' in request.resource.data)
+          || request.resource.data.sourceRecordKey is string)
         && request.resource.data.rack == station
         && request.resource.data.posNo is string
         && request.resource.data.posNo.size() > 0
         && request.resource.data.posNo.size() <= 120
-        && request.resource.data.posUnit in ['BOX', 'ROLLS']
-        && request.resource.data.serialNumber == ''
+        && request.resource.data.posUnit in ['', 'BOX', 'ROLLS', 'PCS']
+        && request.resource.data.serialNumber is string
         && request.resource.data.fullName is string
         && request.resource.data.userId is string
         && request.resource.data.address is string
         && request.resource.data.status in ['Paid', 'Not Paid']
-        && request.resource.data.lokals == ''
+        && (('sourceRecordKey' in request.resource.data && request.resource.data.lokals is string)
+          || request.resource.data.lokals == '')
         && request.resource.data.noteIssue is string
         && (request.resource.data.price is number || request.resource.data.price == '')
-        && request.resource.data.transferTo == ''
-        && request.resource.data.columnJ == ''
+        && (('sourceRecordKey' in request.resource.data && request.resource.data.transferTo is string)
+          || request.resource.data.transferTo == '')
+        && (('sourceRecordKey' in request.resource.data && request.resource.data.columnJ is string)
+          || request.resource.data.columnJ == '')
         && request.resource.data.createdBy == currentProfile().username
         && request.resource.data.recordDate is string;
-      allow update: if canManageOffice('Thermal');
+      allow update: if canManageOffice('Thermal')
+        || (canReadStationThermal(station)
+          && currentProfile().role == 'Station'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+          && request.resource.data.status in ['Paid', 'Not Paid']);
       allow delete: if canDeleteOffice('Thermal');
     }
 

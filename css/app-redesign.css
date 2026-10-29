@@ -459,6 +459,8 @@ h1, h2, h3, h4, h5 { color: var(--ui-text); font-family: "Segoe UI", Tahoma, san
 	white-space: nowrap;
 }
 .request-thermal-records-scroll td { padding: 12px; font-size: 14px; vertical-align: middle; }
+.request-thermal-records-scroll .station-thermal-status-cell { cursor: pointer; }
+.request-thermal-records-scroll .station-thermal-status-cell:hover { background: var(--ui-border); }
 .request-thermal-records-scroll thead th { position: sticky; top: 0; z-index: 1; }
 .request-thermal-toolbar { display: flex; gap: 10px; margin-bottom: 20px; }
 .request-thermal-toolbar input {
