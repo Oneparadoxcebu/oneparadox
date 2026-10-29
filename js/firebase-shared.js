@@ -964,8 +964,8 @@
 
     async function saveRequest(request) {
         const profile = await getProfile();
-        if (!profile || profile.disabled || !["IT Admin", "IT Manager", "Management"].includes(profile.role)) {
-            throw new Error("Only IT Admin, IT Manager, and Management accounts can change Request status.");
+        if (!profile || profile.disabled || !["IT Admin", "IT Manager", "Management", "Accounting"].includes(profile.role)) {
+            throw new Error("Only IT Admin, IT Manager, Management, and Accounting accounts can change Request status.");
         }
         if (!request?.id || !["Pending", "Approved", "Rejected"].includes(request.status)) {
             throw new Error("A valid request ID and status are required.");

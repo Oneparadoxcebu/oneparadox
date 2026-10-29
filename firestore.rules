@@ -144,7 +144,7 @@ service cloud.firestore {
 
     function canChangeRequestStatus() {
       return enabledUser()
-        && currentProfile().role in ['IT Admin', 'IT Manager', 'Management'];
+        && currentProfile().role in ['IT Admin', 'IT Manager', 'Management', 'Accounting'];
     }
 
     function validCollectorProfile(profile) {
