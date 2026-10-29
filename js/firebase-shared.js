@@ -894,7 +894,7 @@
     }
 
     function canManageRequests(profile) {
-        return ["Developer", "IT Admin", "IT Manager", "Management"].includes(profile.role) ||
+        return ["Developer", "IT Admin", "IT Manager", "Management", "Accounting"].includes(profile.role) ||
             !["IT Support", "Accounting", "HR"].includes(profile.role) &&
             (Array.isArray(profile.permissions) && profile.permissions.includes("inventory") &&
                 Array.isArray(profile.inventoryAccess) && profile.inventoryAccess.includes("Thermal"));

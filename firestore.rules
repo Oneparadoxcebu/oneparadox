@@ -134,6 +134,7 @@ service cloud.firestore {
         && (isAdmin()
           || currentProfile().role == 'IT Manager'
           || currentProfile().role == 'Management'
+          || currentProfile().role == 'Accounting'
           || (currentProfile().permissions is list
             && 'inventory' in currentProfile().permissions
             && currentProfile().inventoryAccess is list
