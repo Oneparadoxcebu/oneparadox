@@ -135,6 +135,7 @@ service cloud.firestore {
           || currentProfile().role == 'IT Manager'
           || currentProfile().role == 'Management'
           || currentProfile().role == 'Accounting'
+          || currentProfile().role == 'HR'
           || (currentProfile().permissions is list
             && 'inventory' in currentProfile().permissions
             && currentProfile().inventoryAccess is list
@@ -144,7 +145,7 @@ service cloud.firestore {
 
     function canChangeRequestStatus() {
       return enabledUser()
-        && currentProfile().role in ['IT Admin', 'IT Manager', 'Management', 'Accounting'];
+        && currentProfile().role in ['IT Admin', 'IT Manager', 'Management', 'Accounting', 'HR'];
     }
 
     function validCollectorProfile(profile) {
@@ -162,7 +163,7 @@ service cloud.firestore {
     }
 
     function isThermalInventoryGroup(group) {
-      return isThermalStation(group) || group == 'Collector';
+      return isThermalStation(group) || group in ['Collector', 'HR'];
     }
 
     function canReadStationThermal(station) {

@@ -7,7 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js?v=20261024-1"></script>
-    <script src="js/firebase-shared.js?v=20261029-2"></script>
+    <script src="js/firebase-shared.js?v=20261030-3"></script>
     <script src="js/auth-session.js?v=20261026-2"></script>
     <meta name="description" content="Inventory Management">
     <meta name="author" content="">
@@ -1251,7 +1251,7 @@
             if (rackField && rackField.tagName === "SELECT") {
                 const selectedValue = rackField.value;
                 const options = isThermalInventory
-                    ? ["Guadalupe Station", "Punta Princessa Station", "Babag Station"]
+                    ? ["Guadalupe Station", "Punta Princessa Station", "Babag Station", "HR"]
                     : systems;
                 const placeholder = isThermalInventory ? "-- Select Station --" : "-- Select System --";
                 rackField.innerHTML = `<option value="">${placeholder}</option>${options.map(option => `<option value="${option}">${option}</option>`).join("")}`;
@@ -1666,7 +1666,7 @@
             const requestBody = document.getElementById("thermalPaperRequestsBody");
             if (!requestBody) return;
 
-            const canManageRequests = ["IT Admin", "IT Manager", "Management", "Accounting"].includes(getCurrentUserRole());
+            const canManageRequests = ["IT Admin", "IT Manager", "Management", "Accounting", "HR"].includes(getCurrentUserRole());
             const canDeleteRequests = ["Developer", "IT Admin"].includes(getCurrentUserRole());
             const sortedRequests = [...requests].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
             if (!sortedRequests.length) {
@@ -4385,7 +4385,7 @@
                                 <td style="padding: 12px 10px; vertical-align: top;"><select name="rack" style="width: 100%; min-width: 100px; padding: 8px 10px; border: 1px solid #dfe6ef; border-radius: 6px; color: #1e3a5f; background: white;">
                                     <option value="">${getCurrentUserOffice() === "Thermal" ? "-- Select Station --" : "-- Select System --"}</option>
                                     ${(getCurrentUserOffice() === "Thermal"
-                                        ? ["Guadalupe Station", "Punta Princessa Station", "Babag Station"]
+                                        ? ["Guadalupe Station", "Punta Princessa Station", "Babag Station", "HR"]
                                         : getSystemOptions()).map(rack => `<option value="${rack}" ${String(record.rack || "").trim().toLowerCase() === rack.toLowerCase() ? "selected" : ""}>${rack}</option>`).join("")}
                                 </select></td>
                                 <td style="padding: 12px 10px; vertical-align: top;"><input name="posNo" value="${escapeDetailHtml(record.posNo || "")}" style="width: 100%; min-width: 120px; padding: 8px 10px; border: 1px solid #dfe6ef; border-radius: 6px; font-weight: 700; color: #1e3a5f;" /></td>

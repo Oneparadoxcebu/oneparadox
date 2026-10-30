@@ -14,7 +14,7 @@
     const STATION_THERMAL_INVENTORY = "stationThermalInventory";
     const STATION_THERMAL_RECORDS = "stationThermalRecords";
     const THERMAL_STATIONS = ["Guadalupe Station", "Punta Princessa Station", "Babag Station"];
-    const THERMAL_INVENTORY_GROUPS = [...THERMAL_STATIONS, "Collector"];
+    const THERMAL_INVENTORY_GROUPS = [...THERMAL_STATIONS, "Collector", "HR"];
 
     function normalizeThermalStation(value) {
         const normalized = String(value || "").trim().toLowerCase();
@@ -894,7 +894,7 @@
     }
 
     function canManageRequests(profile) {
-        return ["Developer", "IT Admin", "IT Manager", "Management", "Accounting"].includes(profile.role) ||
+        return ["Developer", "IT Admin", "IT Manager", "Management", "Accounting", "HR"].includes(profile.role) ||
             !["IT Support", "Accounting", "HR"].includes(profile.role) &&
             (Array.isArray(profile.permissions) && profile.permissions.includes("inventory") &&
                 Array.isArray(profile.inventoryAccess) && profile.inventoryAccess.includes("Thermal"));
@@ -964,8 +964,8 @@
 
     async function saveRequest(request) {
         const profile = await getProfile();
-        if (!profile || profile.disabled || !["IT Admin", "IT Manager", "Management", "Accounting"].includes(profile.role)) {
-            throw new Error("Only IT Admin, IT Manager, Management, and Accounting accounts can change Request status.");
+        if (!profile || profile.disabled || !["IT Admin", "IT Manager", "Management", "Accounting", "HR"].includes(profile.role)) {
+            throw new Error("Only IT Admin, IT Manager, Management, Accounting, and HR accounts can change Request status.");
         }
         if (!request?.id || !["Pending", "Approved", "Rejected"].includes(request.status)) {
             throw new Error("A valid request ID and status are required.");
