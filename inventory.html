@@ -3572,6 +3572,7 @@
             const office = document.getElementById("inventoryNewUserOffice").value;
             const role = document.getElementById("inventoryNewUserRole").value;
             const customAccess = getCurrentUserRole() === "Developer";
+            const rolePolicy = customAccess ? undefined : roleProfilePolicy(role);
             const inventoryAccess = Array.from(document.querySelectorAll("#inventoryAddUserModal input[id^='inventoryAccess']:checked"), input => input.value);
             const permissions = Array.from(document.querySelectorAll("#inventoryAddUserModal input[id^='inventoryPermission']:checked"), input => input.value);
             if (role === "Station" || role === "Collector") {
@@ -3595,13 +3596,18 @@
                 const safePermissions = permissions.filter(permission =>
                     permission !== "assignedTasks" || canGrantAssignedTasksPermission
                 );
+                const normalizedPermissions = role === "Station" || role === "Collector"
+                    ? []
+                    : rolePolicy?.permissions || safePermissions;
 
                 const newAccount = {
                     name, username, email, password,
-                    office: role === "Collector" ? "Collector" : office,
+                    office: role === "Collector" ? "Collector" : rolePolicy?.office || office,
                     role,
-                    inventoryAccess: ["Station", "Collector"].includes(role) ? ["Requests"] : office === "Both" && !customAccess ? ["Cebu", "Thermal"] : inventoryAccess,
-                    permissions: safePermissions,
+                    inventoryAccess: ["Station", "Collector"].includes(role)
+                        ? ["Requests"]
+                        : rolePolicy?.inventoryAccess || (office === "Both" && !customAccess ? ["Cebu", "Thermal"] : inventoryAccess),
+                    permissions: normalizedPermissions,
                     customAccess,
                     disabled: false
                 };

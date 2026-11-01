@@ -1883,6 +1883,7 @@
             const office = document.getElementById('newAccountOffice').value;
             const role = document.getElementById('newAccountRole').value;
             const customAccess = getCurrentUserRole() === 'Developer';
+            const rolePolicy = customAccess ? undefined : roleProfilePolicy(role);
             const inventoryAccess = [];
 
             document.querySelectorAll('#addAccountModal input[id^="permInventory"]:checked').forEach(checkbox => {
@@ -1891,6 +1892,8 @@
 
             const normalizedInventoryAccess = role === 'Station'
                 ? ['Requests']
+                : rolePolicy
+                ? rolePolicy.inventoryAccess
                 : office === 'Both' && !customAccess
                 ? ['Cebu', 'Thermal', ...(inventoryAccess.includes('Requests') ? ['Requests'] : [])]
                 : inventoryAccess;
@@ -1907,6 +1910,7 @@
                 permissions.push(checkbox.value);
             });
             if (role === 'Station') permissions.length = 0;
+            else if (rolePolicy) permissions.splice(0, permissions.length, ...rolePolicy.permissions);
 
             // Add account to storage
             let accounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
@@ -1921,7 +1925,7 @@
                 username: username,
                 email: email,
                 password: password,
-                office: office,
+                office: rolePolicy?.office || office,
                 inventoryAccess: normalizedInventoryAccess,
                 role: role,
                 permissions: permissions,
