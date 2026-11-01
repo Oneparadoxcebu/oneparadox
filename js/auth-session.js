@@ -14,6 +14,11 @@
     let currentUser = null;
     let currentProfile = null;
     let profileUnsubscribe = null;
+    let sessionTimeout = null;
+    let expiredSession = false;
+    const SESSION_DURATION_MS = 9 * 60 * 60 * 1000;
+    const SESSION_START_KEY = "authSessionStart";
+    const EXPIRED_SESSION_KEY = "authSessionExpiredUid";
     let readyResolve;
     const ready = new Promise(resolve => { readyResolve = resolve; });
 
@@ -39,6 +44,75 @@
             messageElement.textContent = message;
             messageElement.style.color = "red";
         }
+    }
+
+    function clearSessionState() {
+        if (sessionTimeout !== null) {
+            window.clearTimeout(sessionTimeout);
+            sessionTimeout = null;
+        }
+        try {
+            localStorage.removeItem(SESSION_START_KEY);
+            localStorage.removeItem(EXPIRED_SESSION_KEY);
+        } catch (error) {
+            console.warn("The authentication session timer could not be cleared from browser storage.", error);
+        }
+    }
+
+    function getSessionStartedAt(user) {
+        const now = Date.now();
+        try {
+            const storedSession = JSON.parse(localStorage.getItem(SESSION_START_KEY) || "null");
+            if (storedSession?.uid === user.uid &&
+                Number.isFinite(storedSession.startedAt) &&
+                storedSession.startedAt > 0 &&
+                storedSession.startedAt <= now) {
+                return storedSession.startedAt;
+            }
+            localStorage.setItem(SESSION_START_KEY, JSON.stringify({ uid: user.uid, startedAt: now }));
+        } catch (error) {
+            console.warn("The authentication session start time could not be read or saved.", error);
+        }
+        return now;
+    }
+
+    async function expireSession() {
+        if (expiredSession) return;
+        expiredSession = true;
+        if (sessionTimeout !== null) {
+            window.clearTimeout(sessionTimeout);
+            sessionTimeout = null;
+        }
+        const expiredUid = currentUser?.uid;
+        currentProfile = null;
+        clearLegacyCredentials();
+        try {
+            if (expiredUid) localStorage.setItem(EXPIRED_SESSION_KEY, expiredUid);
+        } catch (error) {
+            console.warn("The expired session could not be marked in browser storage.", error);
+        }
+        try {
+            await window.firebaseAuth.signOut();
+        } catch (error) {
+            console.error("The expired Firebase session could not be signed out.", error);
+        }
+        if (!isLoginPage) window.location.replace("index.html?auth=expired");
+        else showLoginError("Your 9-hour session has expired. Sign in again to continue.");
+        document.documentElement.classList.add("auth-ready");
+        readyResolve(null);
+    }
+
+    function scheduleSessionExpiration(user) {
+        if (sessionTimeout !== null) window.clearTimeout(sessionTimeout);
+        const startedAt = getSessionStartedAt(user);
+        const remainingTime = SESSION_DURATION_MS - (Date.now() - startedAt);
+        if (remainingTime <= 0) {
+            void expireSession();
+            return;
+        }
+        sessionTimeout = window.setTimeout(() => {
+            void expireSession();
+        }, remainingTime);
     }
 
     function getLandingPage(profile) {
@@ -69,6 +143,8 @@
             return currentProfile;
         },
         async logout() {
+            expiredSession = false;
+            clearSessionState();
             clearLegacyCredentials();
             currentProfile = null;
             currentUser = null;
@@ -85,6 +161,25 @@
         currentProfile = null;
 
         if (user) {
+            if (expiredSession) {
+                try {
+                    await window.firebaseAuth.signOut();
+                } catch (error) {
+                    console.error("The expired Firebase session could not be signed out.", error);
+                }
+                return;
+            }
+            let expiredUid = null;
+            try {
+                expiredUid = localStorage.getItem(EXPIRED_SESSION_KEY);
+            } catch (error) {
+                console.warn("The expired-session marker could not be read.", error);
+            }
+            if (expiredUid === user.uid) {
+                await expireSession();
+                return;
+            }
+            scheduleSessionExpiration(user);
             try {
                 currentProfile = await window.firebaseProfiles.get(user.uid);
             } catch (error) {
@@ -134,6 +229,8 @@
                 if (isLoginPage) window.location.replace(getLandingPage(currentProfile));
             }
         } else {
+            expiredSession = false;
+            clearSessionState();
             clearLegacyCredentials();
             if (!isLoginPage) window.location.replace("index.html");
         }
