@@ -1516,11 +1516,11 @@
                 return ["inventory"];
             }
 
-            if (account && ["Developer", "IT Admin"].includes(account.role)) {
+            if (account && (account.role === "Developer" || (account.role === "IT Admin" && !account.customAccess))) {
                 return roleProfilePolicy("IT Admin").permissions.filter(permission =>
                     !["dashboard", "analytics", "reports", "attendance", "attendanceReport", "settings"].includes(permission));
             }
-            const rolePolicy = account && roleProfilePolicy(account.role);
+            const rolePolicy = account && !account.customAccess && roleProfilePolicy(account.role);
             return rolePolicy ? rolePolicy.permissions : account && Array.isArray(account.permissions)
                 ? account.permissions.filter(permission => permission !== "dashboard" && permission !== "analytics" && permission !== "reports" && permission !== "attendance" && permission !== "attendanceReport" && permission !== "settings")
                 : ["inventory"];
@@ -1563,7 +1563,7 @@
             const accounts = JSON.parse(localStorage.getItem("userAccounts")) || {};
             const account = accounts[username];
 
-            if (username === "admin" || (account && ["Developer", "IT Admin"].includes(account.role))) {
+            if (username === "admin" || (account && (account.role === "Developer" || (account.role === "IT Admin" && !account.customAccess)))) {
                 return ["Cebu", "Thermal", "Requests"];
             }
 
@@ -1571,9 +1571,9 @@
                 return [];
             }
 
-            const rolePolicy = roleProfilePolicy(account.role);
+            const rolePolicy = !account.customAccess && roleProfilePolicy(account.role);
             if (rolePolicy) return rolePolicy.inventoryAccess;
-            if (account.office === "Both") {
+            if (account.office === "Both" && !account.customAccess) {
                 return ["Cebu", "Thermal", ...(Array.isArray(account.inventoryAccess) && account.inventoryAccess.includes("Requests") ? ["Requests"] : [])];
             }
 
@@ -3144,8 +3144,11 @@
             const accessCheckboxes = Array.from(document.querySelectorAll(`#${modalId} input[id^='${accessPrefix}']`));
             const requestsCheckbox = document.getElementById(requestsCheckboxId);
             const checkboxes = [...accessCheckboxes, ...document.querySelectorAll(`#${modalId} input[id^='${permissionPrefix}']`)];
-            const policy = roleProfilePolicy(roleSelect.value);
             const actorRole = getCurrentUserRole();
+            const targetHasCustomAccess = document.getElementById(modalId).dataset.customAccess === "true";
+            const canCustomizeAccess = actorRole === "Developer";
+            const customAccess = canCustomizeAccess || targetHasCustomAccess;
+            const policy = customAccess ? undefined : roleProfilePolicy(roleSelect.value);
             const assignableRoles = actorRole === "IT Manager"
                 ? ["IT Support", "Management", "Accounting", "HR", "Station"]
                 : actorRole === "IT Support"
@@ -3176,6 +3179,10 @@
                     }
                     return;
                 }
+                if (targetHasCustomAccess && !canCustomizeAccess) {
+                    checkbox.disabled = true;
+                    return;
+                }
                 if (checkbox.hasAttribute("data-restricted-role-disabled")) {
                     checkbox.disabled = checkbox.dataset.restrictedRoleDisabled === "true";
                     delete checkbox.dataset.restrictedRoleDisabled;
@@ -3190,7 +3197,8 @@
             }
             const isCollector = roleSelect.value === "Collector";
             if (policy || isCollector) officeSelect.value = policy ? policy.office : "Collector";
-            officeSelect.disabled = officeSelect.dataset.rolePolicyInitialDisabled === "true" || Boolean(policy) || isCollector;
+            officeSelect.disabled = officeSelect.dataset.rolePolicyInitialDisabled === "true" ||
+                Boolean(policy) || isCollector || (targetHasCustomAccess && !canCustomizeAccess);
         }
 
         function openInventoryEditUser(username) {
@@ -3208,6 +3216,7 @@
             }
 
             document.getElementById("inventoryEditOriginalUsername").value = username;
+            document.getElementById("inventoryEditUserModal").dataset.customAccess = String(Boolean(account.customAccess));
             document.getElementById("inventoryEditUserName").value = account.name || "";
             document.getElementById("inventoryEditUserUsername").value = account.username || username;
             document.getElementById("inventoryEditUserEmail").value = account.email || "";
@@ -3479,6 +3488,7 @@
 
             const accessManager = canManageAccountAccess(accounts);
             const assignedTasksPermissionManager = canGrantAssignedTasks(accounts);
+            const customAccess = getCurrentUserRole() === "Developer" || Boolean(account.customAccess);
 
             if (username !== originalUsername && accounts[username]) {
                 alert("Username already exists.");
@@ -3494,14 +3504,15 @@
                 office: accessManager ? document.getElementById("inventoryEditUserOffice").value || account.office : account.office,
                 role: accessManager ? document.getElementById("inventoryEditUserRole").value || account.role : account.role,
                 inventoryAccess: accessManager
-                    ? (document.getElementById("inventoryEditUserOffice").value === "Both" ? ["Cebu", "Thermal"] : Array.from(document.querySelectorAll("#inventoryEditUserModal input[id^='inventoryEditAccess']:checked"), input => input.value))
+                    ? (document.getElementById("inventoryEditUserOffice").value === "Both" && !customAccess ? ["Cebu", "Thermal"] : Array.from(document.querySelectorAll("#inventoryEditUserModal input[id^='inventoryEditAccess']:checked"), input => input.value))
                     : account.inventoryAccess,
                 permissions: accessManager
                     ? Array.from(document.querySelectorAll("#inventoryEditUserModal input[id^='inventoryEditPermission']:checked"), input => input.value)
                         .filter(permission =>
                             permission !== "assignedTasks" || assignedTasksPermissionManager || (account.permissions || []).includes("assignedTasks")
                         )
-                    : account.permissions
+                    : account.permissions,
+                customAccess: accessManager ? customAccess : account.customAccess
             };
             if (updatedAccount.role === "Station") {
                 updatedAccount.inventoryAccess = ["Requests"];
@@ -3560,6 +3571,7 @@
             const password = document.getElementById("inventoryNewUserPassword").value.trim();
             const office = document.getElementById("inventoryNewUserOffice").value;
             const role = document.getElementById("inventoryNewUserRole").value;
+            const customAccess = getCurrentUserRole() === "Developer";
             const inventoryAccess = Array.from(document.querySelectorAll("#inventoryAddUserModal input[id^='inventoryAccess']:checked"), input => input.value);
             const permissions = Array.from(document.querySelectorAll("#inventoryAddUserModal input[id^='inventoryPermission']:checked"), input => input.value);
             if (role === "Station" || role === "Collector") {
@@ -3588,8 +3600,9 @@
                     name, username, email, password,
                     office: role === "Collector" ? "Collector" : office,
                     role,
-                    inventoryAccess: ["Station", "Collector"].includes(role) ? ["Requests"] : office === "Both" ? ["Cebu", "Thermal"] : inventoryAccess,
+                    inventoryAccess: ["Station", "Collector"].includes(role) ? ["Requests"] : office === "Both" && !customAccess ? ["Cebu", "Thermal"] : inventoryAccess,
                     permissions: safePermissions,
+                    customAccess,
                     disabled: false
                 };
 

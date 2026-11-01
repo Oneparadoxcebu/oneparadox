@@ -52,6 +52,7 @@
             office,
             inventoryAccess,
             disabled,
+            customAccess,
             pendingApproval,
             theme
         } = profile;
@@ -76,16 +77,18 @@
             Accounting: { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory"] },
             HR: { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory"] }
         }[role];
+        const effectiveRoleAccess = customAccess ? undefined : roleAccess;
         return {
             ...(uid ? { uid } : {}),
             username: String(username || "").trim(),
             name: String(name || "").trim(),
             email: String(email || "").trim().toLowerCase(),
             role: String(role || "Management"),
-            permissions: isCollector ? [] : roleAccess?.permissions || (Array.isArray(permissions) ? permissions : []),
-            office: isCollector ? "Collector" : roleAccess?.office || String(office || ""),
-            inventoryAccess: isCollector ? ["Requests"] : roleAccess?.inventoryAccess || (Array.isArray(inventoryAccess) ? inventoryAccess : []),
+            permissions: isCollector ? [] : effectiveRoleAccess?.permissions || (Array.isArray(permissions) ? permissions : []),
+            office: isCollector ? "Collector" : effectiveRoleAccess?.office || String(office || ""),
+            inventoryAccess: isCollector ? ["Requests"] : effectiveRoleAccess?.inventoryAccess || (Array.isArray(inventoryAccess) ? inventoryAccess : []),
             disabled: Boolean(disabled),
+            customAccess: Boolean(customAccess),
             ...(pendingApproval === true ? { pendingApproval: true } : {}),
             ...(theme === "light" || theme === "dark" ? { theme } : {})
         };

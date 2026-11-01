@@ -78,7 +78,18 @@ service cloud.firestore {
     }
 
     function validRoleProfile(profile) {
-      return !(profile.role in ['IT Admin', 'IT Manager', 'IT Support', 'Management', 'Accounting', 'HR', 'Station'])
+      return (profile.customAccess == true
+          && !(profile.role in ['Station', 'Collector'])
+          && profile.office in ['Cebu', 'Thermal', 'Both']
+          && profile.inventoryAccess is list
+          && profile.inventoryAccess.hasOnly(['Cebu', 'Thermal', 'Requests'])
+          && profile.permissions is list
+          && profile.permissions.hasOnly([
+            'dashboard', 'analytics', 'reports', 'inventory', 'settings',
+            'addAccount', 'users', 'assignedTasks', 'administrator'
+          ]))
+        || (!(profile.customAccess == true)
+        && !(profile.role in ['IT Admin', 'IT Manager', 'IT Support', 'Management', 'Accounting', 'HR', 'Station'])
         || (profile.role == 'IT Admin'
           && profile.office == 'Both'
           && profile.inventoryAccess is list
@@ -119,7 +130,20 @@ service cloud.firestore {
           && profile.inventoryAccess.size() == 1
           && 'Requests' in profile.inventoryAccess
           && profile.permissions is list
-          && profile.permissions.size() == 0);
+          && profile.permissions.size() == 0));
+    }
+
+    function canCreateCustomAccess(profile) {
+      return currentProfile().role == 'Developer'
+        || profile.customAccess != true;
+    }
+
+    function canUpdateCustomAccess(profile) {
+      return currentProfile().role == 'Developer'
+        || profile.customAccess != true
+        || (resource.data.customAccess == true
+          && profile.permissions.hasOnly(resource.data.permissions)
+          && profile.inventoryAccess.hasOnly(resource.data.inventoryAccess));
     }
 
     function canSubmitRequests() {
@@ -186,10 +210,11 @@ service cloud.firestore {
         && canManageTargetRole(request.resource.data.role)
         && validCollectorProfile(request.resource.data)
         && validRoleProfile(request.resource.data)
+        && canCreateCustomAccess(request.resource.data)
         && request.resource.data.uid == uid
         && request.resource.data.keys().hasOnly([
           'uid', 'username', 'name', 'email', 'role', 'permissions',
-          'office', 'inventoryAccess', 'disabled', 'pendingApproval', 'theme'
+          'office', 'inventoryAccess', 'disabled', 'customAccess', 'pendingApproval', 'theme'
         ])
         && ((isAdmin() && !('pendingApproval' in request.resource.data))
           || (canSubmitAccountApproval()
@@ -198,10 +223,11 @@ service cloud.firestore {
       allow update: if (isAdmin()
           && validCollectorProfile(request.resource.data)
           && validRoleProfile(request.resource.data)
+          && canUpdateCustomAccess(request.resource.data)
           && request.resource.data.uid == uid
           && request.resource.data.keys().hasOnly([
             'uid', 'username', 'name', 'email', 'role', 'permissions',
-            'office', 'inventoryAccess', 'disabled', 'pendingApproval', 'theme'
+            'office', 'inventoryAccess', 'disabled', 'customAccess', 'pendingApproval', 'theme'
           ]))
         || (canManageUsers()
           && !('pendingApproval' in resource.data)
@@ -210,10 +236,11 @@ service cloud.firestore {
           && canManageTargetRole(request.resource.data.role)
           && validCollectorProfile(request.resource.data)
           && validRoleProfile(request.resource.data)
+          && canUpdateCustomAccess(request.resource.data)
           && request.resource.data.uid == uid
           && request.resource.data.keys().hasOnly([
             'uid', 'username', 'name', 'email', 'role', 'permissions',
-            'office', 'inventoryAccess', 'disabled', 'pendingApproval', 'theme'
+            'office', 'inventoryAccess', 'disabled', 'customAccess', 'pendingApproval', 'theme'
           ]))
         || enabledUser()
           && request.auth.uid == uid

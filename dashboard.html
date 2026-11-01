@@ -1260,7 +1260,7 @@
             Object.keys(accounts).forEach(username => {
                 if (typeof accounts[username] === 'object' && accounts[username] !== null) {
                     const rolePolicy = roleProfilePolicy(accounts[username].role);
-                    if (rolePolicy) Object.assign(accounts[username], rolePolicy);
+                    if (rolePolicy && !accounts[username].customAccess) Object.assign(accounts[username], rolePolicy);
                     accounts[username].name = accounts[username].name || username;
                     accounts[username].username = accounts[username].username || username;
                     accounts[username].office = accounts[username].office || '';
@@ -1269,11 +1269,11 @@
                         ? accounts[username].inventoryAccess.filter(value => ['Cebu', 'Thermal', 'Requests'].includes(value))
                         : [];
 
-                    if (accounts[username].office === 'Both') {
+                    if (accounts[username].office === 'Both' && !accounts[username].customAccess) {
                         accounts[username].inventoryAccess = ['Cebu', 'Thermal', ...(inventoryAccess.includes('Requests') ? ['Requests'] : [])];
                     } else if (inventoryAccess.length > 0) {
                         accounts[username].inventoryAccess = inventoryAccess;
-                    } else if (accounts[username].role === 'Developer') {
+                    } else if (accounts[username].role === 'Developer' && !accounts[username].customAccess) {
                         accounts[username].inventoryAccess = ['Cebu', 'Thermal'];
                     } else {
                         accounts[username].inventoryAccess = [];
@@ -1318,8 +1318,8 @@
             }
             
             const userAccount = accounts[username];
-            const policy = userAccount && roleProfilePolicy(userAccount.role);
-            if (userAccount && ['Developer', 'IT Admin'].includes(userAccount.role)) {
+            const policy = userAccount && !userAccount.customAccess && roleProfilePolicy(userAccount.role);
+            if (userAccount && (userAccount.role === 'Developer' || (userAccount.role === 'IT Admin' && !userAccount.customAccess))) {
                 return roleProfilePolicy('IT Admin').permissions;
             }
             return policy ? policy.permissions : userAccount ? userAccount.permissions : ['dashboard'];
@@ -1330,7 +1330,7 @@
             const accounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
             const userAccount = accounts[username];
 
-            if (username === 'admin' || (userAccount && ['Developer', 'IT Admin'].includes(userAccount.role))) {
+            if (username === 'admin' || (userAccount && (userAccount.role === 'Developer' || (userAccount.role === 'IT Admin' && !userAccount.customAccess)))) {
                 return ['Cebu', 'Thermal', 'Requests'];
             }
 
@@ -1338,9 +1338,9 @@
                 return [];
             }
 
-            const policy = roleProfilePolicy(userAccount.role);
+            const policy = !userAccount.customAccess && roleProfilePolicy(userAccount.role);
             if (policy) return policy.inventoryAccess;
-            if (userAccount.office === 'Both') {
+            if (userAccount.office === 'Both' && !userAccount.customAccess) {
                 return ['Cebu', 'Thermal', ...(Array.isArray(userAccount.inventoryAccess) && userAccount.inventoryAccess.includes('Requests') ? ['Requests'] : [])];
             }
 
@@ -1622,6 +1622,7 @@
             const modal = document.getElementById('editAccountModal');
             const originalUsername = username;
             modal.dataset.originalUsername = originalUsername;
+            modal.dataset.customAccess = String(Boolean(account.customAccess));
 
             document.getElementById('editAccountName').value = account.name || '';
             document.getElementById('editAccountUsername').value = username;
@@ -1651,6 +1652,7 @@
             document.getElementById('editPermInventoryThermal').checked = false;
             document.getElementById('editPermInventoryRequests').checked = false;
             document.getElementById('editAccountRole').value = '';
+            document.getElementById('editAccountModal').dataset.customAccess = 'false';
             document.querySelectorAll('#editAccountMenuPermissions input[type="checkbox"]').forEach(checkbox => {
                 checkbox.checked = checkbox.id === 'editPermDashboard';
             });
@@ -1777,6 +1779,7 @@
             const office = document.getElementById('editAccountOffice').value;
             const accounts = getAccounts();
             const role = document.getElementById('editAccountRole').value || accounts[originalUsername]?.role || '';
+            const customAccess = getCurrentUserRole() === 'Developer' || Boolean(accounts[originalUsername]?.customAccess);
             const inventoryAccess = [];
 
             document.querySelectorAll('#editAccountModal input[id^="editPermInventory"]:checked').forEach(checkbox => {
@@ -1785,7 +1788,7 @@
 
             const normalizedInventoryAccess = role === 'Station'
                 ? ['Requests']
-                : office === 'Both'
+                : office === 'Both' && !customAccess
                 ? ['Cebu', 'Thermal', ...(inventoryAccess.includes('Requests') ? ['Requests'] : [])]
                 : inventoryAccess;
 
@@ -1799,11 +1802,6 @@
                 permissions.push(checkbox.value);
             });
             if (role === 'Station') permissions.length = 0;
-
-            if (permissions.length === 0 && !normalizedInventoryAccess.includes('Requests')) {
-                alert('Please select at least one menu permission');
-                return;
-            }
 
             if (!accounts[originalUsername]) {
                 alert('Account not found.');
@@ -1825,6 +1823,7 @@
                 inventoryAccess: normalizedInventoryAccess,
                 role: role,
                 permissions: permissions,
+                customAccess,
                 disabled: accounts[originalUsername].disabled || false
             };
 
@@ -1883,6 +1882,7 @@
             const password = document.getElementById('newAccountPassword').value.trim();
             const office = document.getElementById('newAccountOffice').value;
             const role = document.getElementById('newAccountRole').value;
+            const customAccess = getCurrentUserRole() === 'Developer';
             const inventoryAccess = [];
 
             document.querySelectorAll('#addAccountModal input[id^="permInventory"]:checked').forEach(checkbox => {
@@ -1891,7 +1891,7 @@
 
             const normalizedInventoryAccess = role === 'Station'
                 ? ['Requests']
-                : office === 'Both'
+                : office === 'Both' && !customAccess
                 ? ['Cebu', 'Thermal', ...(inventoryAccess.includes('Requests') ? ['Requests'] : [])]
                 : inventoryAccess;
 
@@ -1907,11 +1907,6 @@
                 permissions.push(checkbox.value);
             });
             if (role === 'Station') permissions.length = 0;
-
-            if (permissions.length === 0 && !normalizedInventoryAccess.includes('Requests')) {
-                alert('Please select at least one menu permission');
-                return;
-            }
 
             // Add account to storage
             let accounts = JSON.parse(localStorage.getItem('userAccounts')) || {};
@@ -1930,6 +1925,7 @@
                 inventoryAccess: normalizedInventoryAccess,
                 role: role,
                 permissions: permissions,
+                customAccess,
                 disabled: false
             };
 
@@ -1964,8 +1960,12 @@
 
         function applyStationRoleAccess(roleSelect, inventoryCheckboxes, requestsCheckbox, menuCheckboxes) {
             const isStation = roleSelect.value === 'Station';
-            const policy = roleProfilePolicy(roleSelect.value);
             const actorRole = getCurrentUserRole();
+            const editModal = roleSelect.id === 'editAccountRole' ? document.getElementById('editAccountModal') : null;
+            const targetHasCustomAccess = editModal?.dataset.customAccess === 'true';
+            const canCustomizeAccess = actorRole === 'Developer';
+            const customAccess = canCustomizeAccess || targetHasCustomAccess;
+            const policy = customAccess ? undefined : roleProfilePolicy(roleSelect.value);
             const assignableRoles = actorRole === 'IT Manager'
                 ? ['IT Support', 'Management', 'Accounting', 'HR', 'Station']
                 : actorRole === 'IT Support'
@@ -1989,12 +1989,16 @@
             });
             inventoryCheckboxes.forEach(checkbox => {
                 const isRequests = checkbox === requestsCheckbox;
-                checkbox.disabled = isStation || Boolean(policy) || checkbox.dataset.policyInitialDisabled === 'true';
+                checkbox.disabled = isStation || Boolean(policy) ||
+                    (targetHasCustomAccess && !canCustomizeAccess) ||
+                    checkbox.dataset.policyInitialDisabled === 'true';
                 if (policy) checkbox.checked = policy.inventoryAccess.includes(checkbox.value);
                 else if (isStation) checkbox.checked = isRequests;
             });
             menuCheckboxes.forEach(checkbox => {
-                checkbox.disabled = isStation || Boolean(policy) || checkbox.dataset.policyInitialDisabled === 'true';
+                checkbox.disabled = isStation || Boolean(policy) ||
+                    (targetHasCustomAccess && !canCustomizeAccess) ||
+                    checkbox.dataset.policyInitialDisabled === 'true';
                 if (policy) checkbox.checked = policy.permissions.includes(checkbox.value);
                 else if (isStation) checkbox.checked = false;
             });
@@ -2003,7 +2007,8 @@
                 officeSelect.dataset.policyInitialDisabled = String(officeSelect.disabled);
             }
             if (policy) officeSelect.value = policy.office;
-            officeSelect.disabled = Boolean(policy) || officeSelect.dataset.policyInitialDisabled === 'true';
+            officeSelect.disabled = Boolean(policy) || officeSelect.dataset.policyInitialDisabled === 'true' ||
+                (targetHasCustomAccess && !canCustomizeAccess);
         }
 
         const addRoleSelect = document.getElementById('newAccountRole');
