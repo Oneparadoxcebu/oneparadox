@@ -428,7 +428,7 @@
     function canManageInventory(profile, office) {
         if (["Developer", "IT Admin", "IT Manager"].includes(profile?.role)) return ["Cebu", "Thermal"].includes(office);
         if (profile?.role === "IT Support") return office === "Cebu";
-        if (["Management", "Accounting", "HR"].includes(profile?.role)) return office === "Thermal";
+        if (["Management", "HR"].includes(profile?.role)) return office === "Thermal";
         return false;
     }
 
@@ -938,8 +938,8 @@
 
     async function saveRequest(request) {
         const profile = await getProfile();
-        if (!profile || profile.disabled || !["IT Admin", "IT Manager", "Management", "Accounting", "HR"].includes(profile.role)) {
-            throw new Error("Only IT Admin, IT Manager, Management, Accounting, and HR accounts can change Request status.");
+        if (!profile || profile.disabled || !["IT Admin", "IT Manager", "Management", "HR"].includes(profile.role)) {
+            throw new Error("Only IT Admin, IT Manager, Management, and HR accounts can change Request status.");
         }
         if (!request?.id || !["Pending", "Approved", "Rejected"].includes(request.status)) {
             throw new Error("A valid request ID and status are required.");

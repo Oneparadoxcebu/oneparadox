@@ -55,7 +55,7 @@ service cloud.firestore {
       return canAccessOffice(office)
         && (currentProfile().role in ['Developer', 'IT Admin', 'IT Manager', 'IT Support']
           || (office == 'Thermal'
-            && currentProfile().role in ['Management', 'Accounting', 'HR']));
+            && currentProfile().role in ['Management', 'HR']));
     }
 
     function canDeleteOffice(office) {
@@ -169,7 +169,7 @@ service cloud.firestore {
 
     function canChangeRequestStatus() {
       return enabledUser()
-        && currentProfile().role in ['IT Admin', 'IT Manager', 'Management', 'Accounting', 'HR'];
+        && currentProfile().role in ['IT Admin', 'IT Manager', 'Management', 'HR'];
     }
 
     function validCollectorProfile(profile) {

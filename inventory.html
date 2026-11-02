@@ -1586,8 +1586,9 @@
         }
 
         function isInventoryReadOnly() {
-            return ["Management", "Accounting", "HR"].includes(getCurrentUserRole()) &&
-                getCurrentUserOffice() !== "Thermal";
+            return getCurrentUserRole() === "Accounting" ||
+                (["Management", "HR"].includes(getCurrentUserRole()) &&
+                    getCurrentUserOffice() !== "Thermal");
         }
 
         function canDeleteThermalRecords() {
@@ -1604,8 +1605,7 @@
             const accountApprovalMenuItem = document.getElementById("accountApprovalMenuItem");
             const usersMenuContainer = document.getElementById('usersMenuItemContainer');
             const administratorMenuItem = document.getElementById('administratorMenuItem');
-            const readOnly = ["Management", "Accounting", "HR"].includes(currentRole) &&
-                getCurrentUserOffice() !== "Thermal";
+            const readOnly = isInventoryReadOnly();
             ["addSummaryRecordBtn", "addProductBtn", "replenishThermalBtn"].forEach(id => {
                 const control = document.getElementById(id);
                 if (control) control.style.display = readOnly ? "none" : "";
@@ -1667,7 +1667,7 @@
             const requestBody = document.getElementById("thermalPaperRequestsBody");
             if (!requestBody) return;
 
-            const canManageRequests = ["IT Admin", "IT Manager", "Management", "Accounting", "HR"].includes(getCurrentUserRole());
+            const canManageRequests = ["IT Admin", "IT Manager", "Management", "HR"].includes(getCurrentUserRole());
             const canDeleteRequests = ["Developer", "IT Admin"].includes(getCurrentUserRole());
             const sortedRequests = [...requests].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
             if (!sortedRequests.length) {
@@ -1752,6 +1752,10 @@
             requestBody.addEventListener("change", async event => {
                 const statusSelect = event.target.closest(".thermal-request-status-select");
                 if (!statusSelect) return;
+                if (getCurrentUserRole() === "Accounting") {
+                    await loadThermalPaperRequests();
+                    return;
+                }
 
                 const requestId = statusSelect.dataset.requestId;
                 const selectedStatus = statusSelect.value;
