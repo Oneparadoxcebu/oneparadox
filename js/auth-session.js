@@ -116,13 +116,16 @@
     }
 
     function getLandingPage(profile) {
-        if (["Developer", "IT Admin", "IT Manager", "IT Support", "Management", "Accounting", "HR"].includes(profile.role)) {
-            return "inventory.html?office=Cebu";
-        }
         const inventoryAccess = Array.isArray(profile.inventoryAccess) ? profile.inventoryAccess : [];
         if (Array.isArray(profile.permissions) && profile.permissions.includes("inventory") && inventoryAccess.length) {
+            if (inventoryAccess.includes("Thermal")) return "inventory.html?office=Thermal";
             return `inventory.html?office=${encodeURIComponent(inventoryAccess[0])}`;
         }
+        if (!profile.customAccess &&
+            ["Developer", "IT Admin", "IT Manager", "Management", "Accounting", "HR"].includes(profile.role)) {
+            return "inventory.html?office=Thermal";
+        }
+        if (profile.role === "IT Support") return "inventory.html?office=Cebu";
         if (Array.isArray(profile.permissions) && profile.permissions.includes("dashboard")) return "dashboard.html";
         return "requests.html";
     }

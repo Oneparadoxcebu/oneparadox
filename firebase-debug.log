@@ -1,0 +1,232 @@
+[debug] [2026-11-01T07:40:57.187Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.192Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.193Z] > refreshing access token with scopes: []
+[debug] [2026-11-01T07:40:57.197Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-01T07:40:57.198Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.243Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.243Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.243Z] > refreshing access token with scopes: []
+[debug] [2026-11-01T07:40:57.244Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-01T07:40:57.244Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.248Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.248Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.248Z] > refreshing access token with scopes: []
+[debug] [2026-11-01T07:40:57.249Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-01T07:40:57.249Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.252Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.252Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.252Z] > refreshing access token with scopes: []
+[debug] [2026-11-01T07:40:57.253Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-01T07:40:57.253Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.256Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.256Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.256Z] > refreshing access token with scopes: []
+[debug] [2026-11-01T07:40:57.257Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-01T07:40:57.257Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.316Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.316Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.316Z] > refreshing access token with scopes: []
+[debug] [2026-11-01T07:40:57.317Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-01T07:40:57.317Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.320Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.320Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.321Z] > refreshing access token with scopes: []
+[debug] [2026-11-01T07:40:57.321Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-01T07:40:57.321Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.323Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.324Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.324Z] > refreshing access token with scopes: []
+[debug] [2026-11-01T07:40:57.324Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-01T07:40:57.324Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.326Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.326Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.326Z] > refreshing access token with scopes: []
+[debug] [2026-11-01T07:40:57.327Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-01T07:40:57.327Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.330Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.330Z] Checked if tokens are valid: false, expires at: 1793514756969
+[debug] [2026-11-01T07:40:57.330Z] > refreshing access token with scopes: []
+[debug] [2026-11-01T07:40:57.331Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-01T07:40:57.331Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.449Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-01T07:40:57.449Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.458Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com [none]
+[debug] [2026-11-01T07:40:57.458Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-01T07:40:57.460Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-01T07:40:57.460Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.467Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com [none]
+[debug] [2026-11-01T07:40:57.467Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-01T07:40:57.469Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-01T07:40:57.469Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.476Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ [none]
+[debug] [2026-11-01T07:40:57.476Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-01T07:40:57.477Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-01T07:40:57.477Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.483Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com [none]
+[debug] [2026-11-01T07:40:57.483Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-01T07:40:57.496Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-01T07:40:57.496Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.501Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com [none]
+[debug] [2026-11-01T07:40:57.501Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-01T07:40:57.504Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-01T07:40:57.504Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.510Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com [none]
+[debug] [2026-11-01T07:40:57.510Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-01T07:40:57.512Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-01T07:40:57.512Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.518Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ [none]
+[debug] [2026-11-01T07:40:57.519Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-01T07:40:57.523Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-01T07:40:57.524Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.531Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com [none]
+[debug] [2026-11-01T07:40:57.531Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-01T07:40:57.538Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-01T07:40:57.538Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.556Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com [none]
+[debug] [2026-11-01T07:40:57.556Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-01T07:40:57.559Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-01T07:40:57.559Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-01T07:40:57.566Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com [none]
+[debug] [2026-11-01T07:40:57.567Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-01T07:40:58.747Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com 200
+[debug] [2026-11-01T07:40:58.747Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2026-11-01T07:40:58.790Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com 200
+[debug] [2026-11-01T07:40:58.790Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2026-11-01T07:40:58.808Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com 200
+[debug] [2026-11-01T07:40:58.808Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com [omitted]
+[debug] [2026-11-01T07:40:58.830Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com 403
+[debug] [2026-11-01T07:40:58.830Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com [omitted]
+[debug] [2026-11-01T07:40:58.852Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com 403
+[debug] [2026-11-01T07:40:58.852Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com [omitted]
+[debug] [2026-11-01T07:40:58.892Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com 200
+[debug] [2026-11-01T07:40:58.892Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2026-11-01T07:40:59.192Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ 200
+[debug] [2026-11-01T07:40:59.192Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ [omitted]
+[debug] [2026-11-01T07:40:59.207Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ 200
+[debug] [2026-11-01T07:40:59.207Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ [omitted]
+[debug] [2026-11-01T07:40:59.958Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com 200
+[debug] [2026-11-01T07:40:59.958Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2026-11-01T07:41:00.006Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com 200
+[debug] [2026-11-01T07:41:00.006Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com [omitted]
+[debug] [2026-11-01T07:41:00.011Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-11-01T07:41:00.011Z] > authorizing via signed-in user (musiccrates3@gmail.com)
+[debug] [2026-11-01T07:41:00.051Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-11-01T07:41:00.051Z] > authorizing via signed-in user (musiccrates3@gmail.com)
+[debug] [2026-11-01T07:41:00.067Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-11-01T07:41:00.067Z] > authorizing via signed-in user (musiccrates3@gmail.com)
+[debug] [2026-11-02T11:45:18.987Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:18.990Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:18.991Z] > refreshing access token with scopes: []
+[debug] [2026-11-02T11:45:18.993Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-02T11:45:18.994Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.022Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.022Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.022Z] > refreshing access token with scopes: []
+[debug] [2026-11-02T11:45:19.023Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-02T11:45:19.023Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.029Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.030Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.030Z] > refreshing access token with scopes: []
+[debug] [2026-11-02T11:45:19.030Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-02T11:45:19.030Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.032Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.033Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.033Z] > refreshing access token with scopes: []
+[debug] [2026-11-02T11:45:19.033Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-02T11:45:19.033Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.035Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.036Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.036Z] > refreshing access token with scopes: []
+[debug] [2026-11-02T11:45:19.036Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-02T11:45:19.036Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.076Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.076Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.077Z] > refreshing access token with scopes: []
+[debug] [2026-11-02T11:45:19.077Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-02T11:45:19.077Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.082Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.082Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.082Z] > refreshing access token with scopes: []
+[debug] [2026-11-02T11:45:19.083Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-02T11:45:19.083Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.085Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.086Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.086Z] > refreshing access token with scopes: []
+[debug] [2026-11-02T11:45:19.086Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-02T11:45:19.086Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.088Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.088Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.088Z] > refreshing access token with scopes: []
+[debug] [2026-11-02T11:45:19.089Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-02T11:45:19.089Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.091Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.092Z] Checked if tokens are valid: false, expires at: 1793522456560
+[debug] [2026-11-02T11:45:19.092Z] > refreshing access token with scopes: []
+[debug] [2026-11-02T11:45:19.092Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-11-02T11:45:19.092Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.190Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-02T11:45:19.191Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.198Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com [none]
+[debug] [2026-11-02T11:45:19.198Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-02T11:45:19.199Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-02T11:45:19.199Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.203Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com [none]
+[debug] [2026-11-02T11:45:19.203Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-02T11:45:19.205Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-02T11:45:19.205Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.209Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com [none]
+[debug] [2026-11-02T11:45:19.209Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-02T11:45:19.212Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-02T11:45:19.212Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.217Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com [none]
+[debug] [2026-11-02T11:45:19.218Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-02T11:45:19.220Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-02T11:45:19.220Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.224Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ [none]
+[debug] [2026-11-02T11:45:19.225Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-02T11:45:19.232Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-02T11:45:19.232Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.235Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com [none]
+[debug] [2026-11-02T11:45:19.235Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-02T11:45:19.239Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-02T11:45:19.239Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.243Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com [none]
+[debug] [2026-11-02T11:45:19.243Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-02T11:45:19.245Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-02T11:45:19.245Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.249Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ [none]
+[debug] [2026-11-02T11:45:19.249Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-02T11:45:19.250Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-02T11:45:19.250Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.253Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com [none]
+[debug] [2026-11-02T11:45:19.253Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-02T11:45:19.256Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-11-02T11:45:19.256Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-11-02T11:45:19.260Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com [none]
+[debug] [2026-11-02T11:45:19.260Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com x-goog-quota-user=projects/oneparadox-c5c48
+[debug] [2026-11-02T11:45:20.430Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com 403
+[debug] [2026-11-02T11:45:20.430Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com [omitted]
+[debug] [2026-11-02T11:45:20.460Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com 200
+[debug] [2026-11-02T11:45:20.461Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2026-11-02T11:45:20.469Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com 200
+[debug] [2026-11-02T11:45:20.469Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2026-11-02T11:45:20.485Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com 200
+[debug] [2026-11-02T11:45:20.485Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com [omitted]
+[debug] [2026-11-02T11:45:20.487Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com 403
+[debug] [2026-11-02T11:45:20.487Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseio.com [omitted]
+[debug] [2026-11-02T11:45:20.507Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com 200
+[debug] [2026-11-02T11:45:20.508Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2026-11-02T11:45:20.529Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com 200
+[debug] [2026-11-02T11:45:20.529Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2026-11-02T11:45:21.028Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ 200
+[debug] [2026-11-02T11:45:21.028Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ [omitted]
+[debug] [2026-11-02T11:45:21.115Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ 200
+[debug] [2026-11-02T11:45:21.115Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/ [omitted]
+[debug] [2026-11-02T11:45:21.750Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com 200
+[debug] [2026-11-02T11:45:21.750Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/oneparadox-c5c48/services/firebasecrashlytics.googleapis.com [omitted]
+[debug] [2026-11-02T11:45:21.754Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-11-02T11:45:21.754Z] > authorizing via signed-in user (musiccrates3@gmail.com)
+[debug] [2026-11-02T11:45:21.769Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-11-02T11:45:21.769Z] > authorizing via signed-in user (musiccrates3@gmail.com)
+[debug] [2026-11-02T11:45:21.781Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-11-02T11:45:21.782Z] > authorizing via signed-in user (musiccrates3@gmail.com)

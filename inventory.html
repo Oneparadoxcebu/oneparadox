@@ -674,6 +674,7 @@
                                     <th id="summaryReleasedColumnLabel">POS Released</th>
                                     <th class="summary-remaining-column">Remaining POS</th>
                                     <th class="summary-charger-column">Charger</th>
+                                    <th id="summaryActionColumn" hidden>Action</th>
                                 </tr>
                             </thead>
                             <tbody id="posSummaryTableBody">
@@ -725,7 +726,7 @@
                                 <table class="inventory-table">
                                     <thead>
                                         <tr>
-                                            <th>Box</th>
+                                            <th>Boxes</th>
                                             <th>Delivery Receipt / Invoice Number</th>
                                             <th>Recorded At</th>
                                             <th>Action</th>
@@ -1001,9 +1002,9 @@
                         <label style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">Charger</label>
                         <input type="number" id="summaryCharger" value="0" min="0" style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
                     </div>
-                    <div id="summaryReplenishmentBoxField" style="display: none;">
-                        <label for="summaryReplenishmentBox" style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">Box</label>
-                        <input type="text" id="summaryReplenishmentBox" pattern="[A-Za-z0-9]+" title="Use letters and numbers only." style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
+                    <div id="summaryReplenishmentCountField" style="display: none;">
+                        <label for="summaryReplenishmentCount" style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">Number of Boxes</label>
+                        <input type="number" id="summaryReplenishmentCount" min="1" step="1" value="1" required style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
                     </div>
                     <div id="summaryReceiptInvoiceField" style="display: none;">
                         <label for="summaryReceiptInvoiceNumber" style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">Delivery Receipt / Invoice Number <span aria-hidden="true">*</span></label>
@@ -2342,6 +2343,7 @@
                 const rem = parseInt(data.remaining) || 0;
                 const chr = parseInt(data.charger) || 0;
                 const boxCount = Number(model);
+                const canDeleteSummary = isThermalInventory && canDeleteThermalRecords();
 
                 totalQty += qty;
                 totalDamage += dmg;
@@ -2361,6 +2363,7 @@
                         <td>${rel > 0 ? rel : "-"}</td>
                         <td class="summary-remaining-column">${rem}</td>
                         <td class="summary-charger-column">${chr > 0 ? chr : "-"}</td>
+                        ${canDeleteSummary ? `<td><button type="button" class="btn btn-outline-danger btn-sm delete-thermal-summary" data-summary-model="${escapeHtml(model)}" aria-label="Delete Thermal summary entry ${escapeHtml(model)}" title="Delete summary entry"><i class="bi bi-trash" aria-hidden="true"></i></button></td>` : ""}
                     </tr>
                 `;
             }
@@ -2379,6 +2382,8 @@
             `;
             
             tbody.innerHTML = html;
+            const summaryActionColumn = document.getElementById("summaryActionColumn");
+            if (summaryActionColumn) summaryActionColumn.hidden = !(isThermalInventory && canDeleteThermalRecords());
             const replenishmentHistory = document.getElementById("thermalReplenishmentHistory");
             const replenishmentHistoryBody = document.getElementById("thermalReplenishmentHistoryBody");
             if (replenishmentHistory && replenishmentHistoryBody) {
@@ -2395,7 +2400,7 @@
                 replenishmentHistoryBody.innerHTML = replenishments.length
                     ? replenishments.map(entry => `
                         <tr>
-                            <td>${escapeHtml(entry.box || "-")}</td>
+                            <td>${Number(entry.totalBoxes) || 1}</td>
                             <td>${escapeHtml(entry.receiptInvoiceNumber || "-")}</td>
                             <td>${escapeHtml(entry.recordedAt ? new Date(entry.recordedAt).toLocaleString() : "-")}</td>
                             <td>${canDeleteThermalRecords() ? `<button type="button" class="btn btn-danger btn-sm delete-thermal-replenishment" data-model="${escapeHtml(entry.model)}" data-entry-id="${escapeHtml(entry.id || "")}" data-index="${entry.index}" aria-label="Delete replenishment"><i class="bi bi-trash"></i></button>` : "-"}</td>
@@ -3740,7 +3745,8 @@
                 document.getElementById(id).style.display = replenishment ? "none" : "";
             });
             document.getElementById("summaryModel").required = !replenishment;
-            document.getElementById("summaryReplenishmentBoxField").style.display = replenishment ? "" : "none";
+            document.getElementById("summaryReplenishmentCountField").style.display = replenishment ? "" : "none";
+            document.getElementById("summaryReplenishmentCount").required = replenishment;
             document.getElementById("summaryReceiptInvoiceField").style.display = replenishment ? "" : "none";
             document.getElementById("summaryReceiptInvoiceNumber").required = replenishment;
             document.getElementById("addSummaryRecordModal").style.display = "flex";
@@ -3749,6 +3755,7 @@
             document.getElementById("summaryDamage").value = "0";
             document.getElementById("summaryReleased").value = "0";
             document.getElementById("summaryRemaining").value = "0";
+            document.getElementById("summaryReplenishmentCount").value = "1";
             const summaryCharger = document.getElementById("summaryCharger");
             if (summaryCharger) summaryCharger.value = "0";
         }
@@ -3807,15 +3814,17 @@
             const released = isThermalReplenishment ? 0 : parseInt(document.getElementById("summaryReleased").value, 10) || 0;
             const remaining = calculateRemainingPos(quantity, damage, released);
             const charger = isThermalReplenishment ? 0 : parseInt(document.getElementById("summaryCharger")?.value || "0", 10) || 0;
-            const replenishmentBox = document.getElementById("summaryReplenishmentBox").value.trim();
+            const replenishmentCount = Number(document.getElementById("summaryReplenishmentCount").value);
             const receiptInvoiceNumber = document.getElementById("summaryReceiptInvoiceNumber").value.trim();
 
             if (!isThermalReplenishment && !model) {
                 alert("Please enter the POS model name.");
                 return;
             }
-            if (isThermalReplenishment && replenishmentBox && !/^[a-z0-9]+$/i.test(replenishmentBox)) {
-                alert("Please enter the Box using letters and numbers only.");
+            if (isThermalReplenishment &&
+                (!Number.isSafeInteger(replenishmentCount) || replenishmentCount < 1)) {
+                alert("Please enter a whole number of boxes greater than zero.");
+                document.getElementById("summaryReplenishmentCount").focus();
                 return;
             }
             if (isThermalReplenishment && !receiptInvoiceNumber) {
@@ -3848,13 +3857,12 @@
                     : [];
                 currentSummary.TOTAL = {
                     ...currentSummary.TOTAL,
-                    replenishmentBoxes: (Number(currentSummary.TOTAL.replenishmentBoxes) || 0) + 1
+                    replenishmentBoxes: (Number(currentSummary.TOTAL.replenishmentBoxes) || 0) + replenishmentCount
                 };
                 currentSummary.TOTAL.replenishments.push({
                     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-                    box: replenishmentBox,
                     receiptInvoiceNumber,
-                    totalBoxes: 1,
+                    totalBoxes: replenishmentCount,
                     accountUsed: getLoggedInDisplayName()?.username || "Unknown",
                     recordedAt: new Date().toISOString()
                 });
@@ -3896,7 +3904,7 @@
             document.getElementById("summaryDamage").value = "0";
             document.getElementById("summaryReleased").value = "0";
             document.getElementById("summaryRemaining").value = "0";
-            document.getElementById("summaryReplenishmentBox").value = "";
+            document.getElementById("summaryReplenishmentCount").value = "1";
             document.getElementById("summaryReceiptInvoiceNumber").value = "";
             const summaryCharger = document.getElementById("summaryCharger");
             if (summaryCharger) summaryCharger.value = "0";
@@ -4227,6 +4235,63 @@
         document.getElementById("thermalReplenishmentHistoryBody").addEventListener("click", event => {
             const button = event.target.closest(".delete-thermal-replenishment");
             if (button) void deleteThermalReplenishment(button);
+        });
+
+        async function deleteThermalSummary(button) {
+            if (!canDeleteThermalRecords()) {
+                alert("Only Developer, IT Admin, and IT Manager accounts can delete Thermal summary entries.");
+                return;
+            }
+            const model = button.dataset.summaryModel;
+            if (!model || model === "TOTAL") {
+                alert("This Thermal summary entry cannot be identified. Refresh the inventory and try again.");
+                return;
+            }
+            if (!window.confirm(`Delete the Thermal summary entry for ${model}?`)) return;
+
+            button.disabled = true;
+            try {
+                if (!window.sharedInventory?.load || !window.sharedInventory?.save) {
+                    throw new Error("Shared Thermal inventory is unavailable.");
+                }
+                await sharedInventorySaveQueue;
+                const currentInventory = await window.sharedInventory.load("Thermal");
+                if (!currentInventory) throw new Error("Thermal inventory could not be loaded.");
+                const summaryData = currentInventory.summaryData || {};
+                const summaryRecord = summaryData[model];
+                if (!summaryRecord) {
+                    throw new Error("This summary entry has changed since it was displayed. Refresh the inventory and try again.");
+                }
+
+                delete summaryData[model];
+                const replenishmentBoxes = (Array.isArray(summaryRecord.replenishments) ? summaryRecord.replenishments : [])
+                    .reduce((total, entry) => total + (Number(entry.totalBoxes) || 1), 0);
+                if (replenishmentBoxes) {
+                    const totals = summaryData.TOTAL || {};
+                    totals.replenishmentBoxes = Math.max(0,
+                        (Number(totals.replenishmentBoxes) || 0) - replenishmentBoxes);
+                    summaryData.TOTAL = totals;
+                }
+
+                const recordsData = Array.isArray(currentInventory.recordsData) ? currentInventory.recordsData : [];
+                await window.sharedInventory.save("Thermal", {
+                    summaryData,
+                    recordsData,
+                    updatedAt: new Date().toISOString()
+                });
+                saveInventoryData(summaryData, recordsData, false);
+                updateSummaryDisplay(summaryData);
+                populateInventoryTable(recordsData);
+            } catch (error) {
+                console.error("Thermal summary entry could not be deleted.", error);
+                alert(`Unable to delete Thermal summary entry: ${error.message || "check your connection and permissions."}`);
+                button.disabled = false;
+            }
+        }
+
+        document.getElementById("posSummaryTableBody").addEventListener("click", event => {
+            const button = event.target.closest(".delete-thermal-summary");
+            if (button) void deleteThermalSummary(button);
         });
 
         function openFullInventoryModal() {
