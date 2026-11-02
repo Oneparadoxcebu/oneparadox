@@ -413,7 +413,7 @@
                     record.price ?? "-"
                 ];
                 return `<tr>${values.map((value, index) => {
-                    if (index === 5 && isStationAccount) {
+                    if (index === 5 && isStationAccount && record.stationRecordId && !record.sourceRecordKey) {
                         return `<td class="station-thermal-status-cell" data-record-id="${escapeRequestHtml(record.stationRecordId || "")}" data-record-index="${thermalRecords.indexOf(record)}" title="Double-click to edit payment status">${escapeRequestHtml(value)}</td>`;
                     }
                     return `<td>${index === 6
@@ -563,7 +563,7 @@
             const cell = event.target.closest("td.station-thermal-status-cell");
             if (!cell || cell.querySelector("select")) return;
             const sourceRecord = thermalRecords[Number(cell.dataset.recordIndex)];
-            if (!sourceRecord) return;
+            if (!sourceRecord || !sourceRecord.stationRecordId || sourceRecord.sourceRecordKey) return;
 
             const originalStatus = cell.textContent.trim();
             const select = document.createElement("select");

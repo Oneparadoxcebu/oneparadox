@@ -367,6 +367,7 @@ service cloud.firestore {
       allow update: if canManageOffice('Thermal')
         || (canReadStationThermal(station)
           && currentProfile().role == 'Station'
+          && !('sourceRecordKey' in resource.data)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
           && request.resource.data.status in ['Paid', 'Not Paid']);
       allow delete: if canDeleteOffice('Thermal');

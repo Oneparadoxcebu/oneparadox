@@ -693,45 +693,16 @@
         }
         const id = String(stationRecordId || "").trim();
         const recordsRef = db.collection(STATION_THERMAL_RECORDS).doc(station).collection("records");
-        if (id) {
-            const existingRecord = await recordsRef.doc(id).get();
-            if (existingRecord.exists) {
-                await existingRecord.ref.update({ status });
-                return id;
-            }
-        }
-        if (!sourceRecord || normalizeThermalStation(sourceRecord.rack) !== station) {
+        if (!id || !sourceRecord || sourceRecord.stationRecordId !== id ||
+            sourceRecord.sourceRecordKey || normalizeThermalStation(sourceRecord.rack) !== station) {
             throw new Error("Unable to identify this Thermal record.");
         }
-        const sourceRecordKey = stationThermalRecordKey(sourceRecord);
-        const recordRef = id ? recordsRef.doc(id) : recordsRef.doc();
-        const priceValue = sourceRecord.price === "" || sourceRecord.price === null || sourceRecord.price === undefined
-            ? ""
-            : Number(String(sourceRecord.price).replace(/,/g, "").trim());
-        const record = {
-            stationRecordId: recordRef.id,
-            sourceRecordKey,
-            rack: station,
-            posNo: String(sourceRecord.posNo ?? "").trim(),
-            posUnit: String(sourceRecord.posUnit || "").trim().toUpperCase(),
-            serialNumber: String(sourceRecord.serialNumber || ""),
-            fullName: String(sourceRecord.fullName || ""),
-            userId: String(sourceRecord.userId || ""),
-            address: String(sourceRecord.address || ""),
-            status,
-            lokals: String(sourceRecord.lokals || ""),
-            noteIssue: String(sourceRecord.noteIssue || ""),
-            price: Number.isFinite(priceValue) ? priceValue : "",
-            transferTo: String(sourceRecord.transferTo || ""),
-            columnJ: String(sourceRecord.columnJ || ""),
-            createdBy: profile.username,
-            recordDate: String(sourceRecord.recordDate || "")
-        };
-        if (!record.posNo || !["", "BOX", "ROLLS", "PCS"].includes(record.posUnit)) {
-            throw new Error("This Thermal record cannot be saved because its Released quantity or unit is invalid.");
+        const existingRecord = await recordsRef.doc(id).get();
+        if (!existingRecord.exists || existingRecord.data().sourceRecordKey) {
+            throw new Error("Only Thermal records entered by a Station account can be edited.");
         }
-        await recordRef.set(record);
-        return recordRef.id;
+        await existingRecord.ref.update({ status });
+        return id;
     }
 
     async function loadCollectorThermalInventory() {
