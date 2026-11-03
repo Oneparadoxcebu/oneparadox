@@ -71,6 +71,6 @@
     if (params.get("auth") === "profile") {
         showError("This account is not enabled for the app. Contact your administrator.");
     } else if (params.get("auth") === "expired") {
-        showError("Your 9-hour session has expired. Sign in again to continue.");
+        showError("This session has expired. Please Re-login.");
     }
 })();

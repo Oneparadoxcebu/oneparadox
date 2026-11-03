@@ -97,7 +97,7 @@
             console.error("The expired Firebase session could not be signed out.", error);
         }
         if (!isLoginPage) window.location.replace("index.html?auth=expired");
-        else showLoginError("Your 9-hour session has expired. Sign in again to continue.");
+        else showLoginError("This session has expired. Please Re-login.");
         document.documentElement.classList.add("auth-ready");
         readyResolve(null);
     }
