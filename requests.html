@@ -77,8 +77,8 @@
                 <div class="col-md-2">
                     <label for="thermalPaperUnit" class="form-label">Unit</label>
                     <select id="thermalPaperUnit" class="form-select" required>
-                        <option value="Boxes">Boxes</option>
-                        <option value="Rolls">Rolls</option>
+                        <option value="Boxes">Rolls</option>
+                        <option value="Rolls">Pcs</option>
                     </select>
                 </div>
                 <div class="col-12">
@@ -188,8 +188,8 @@
                                     <div class="input-group">
                                         <input id="stationThermalRecordReleased" class="form-control" type="number" min="0" step="any" maxlength="120" required>
                                         <select id="stationThermalRecordUnit" class="form-select" aria-label="Released unit" required>
-                                            <option value="BOX">BOX</option>
-                                            <option value="ROLLS">ROLLS</option>
+                                            <option value="BOX">ROLLS</option>
+                                            <option value="ROLLS" hidden>ROLLS</option>
                                             <option value="PCS">PCS</option>
                                         </select>
                                     </div>
@@ -341,8 +341,8 @@
             document.getElementById("thermalPaperRequesteeField").hidden = true;
             requesteeInput.required = false;
             requesteeInput.value = account.name || username;
-            document.getElementById("requestThermalReleasedBoxesLabel").textContent = "Total Boxes";
-            document.getElementById("requestThermalReleasedBoxesSubtitle").textContent = "Total Boxes";
+            document.getElementById("requestThermalReleasedBoxesLabel").textContent = "Total Rolls";
+            document.getElementById("requestThermalReleasedBoxesSubtitle").textContent = "Total Rolls";
             document.getElementById("requestThermalReleasedRollsLabel").textContent = "Total Released Rolls";
             document.getElementById("requestThermalReleasedRollsSubtitle").textContent = "Total Released Rolls";
             stationInput.value = account.office || "";
@@ -399,8 +399,9 @@
 
             thermalRecordsBody.innerHTML = filteredRecords.map(record => {
                 const status = String(record.status || "-");
+                const unit = record.posUnit === "BOX" ? "ROLLS" : record.posUnit;
                 const released = record.posNo
-                    ? `${record.posNo}${["BOX", "ROLLS", "PCS"].includes(record.posUnit) ? ` ${record.posUnit}` : ""}`
+                    ? `${record.posNo}${["BOX", "ROLLS", "PCS"].includes(record.posUnit) ? ` ${unit}` : ""}`
                     : "-";
                 const values = [
                     record.rack || "-",
@@ -665,9 +666,10 @@
                 const rejectionNote = request.rejectionNote
                     ? `<br><span class="text-danger">${escapeRequestHtml(request.rejectionNote)}</span>`
                     : "";
+                const unitLabel = request.unit === "Boxes" ? "Rolls" : request.unit === "Rolls" ? "Pcs" : request.unit;
                 return `<tr>
                     <td>${escapeRequestHtml(request.item || "Thermal Paper")}</td>
-                    <td>${escapeRequestHtml(request.quantity)} ${escapeRequestHtml(request.unit)}</td>
+                    <td>${escapeRequestHtml(request.quantity)} ${escapeRequestHtml(unitLabel)}</td>
                     <td>${escapeRequestHtml(request.station || "-")}</td>
                     <td>${escapeRequestHtml(requestedDate)}</td>
                     <td><span class="badge ${getRequestStatusBadgeClass(status)}">${escapeRequestHtml(status)}</span></td>
@@ -772,7 +774,7 @@
                 requestForm.reset();
                 if (isStationAccount) stationInput.value = account.office || "";
                 unitInput.value = isCollectorAccount ? "Rolls" : "Boxes";
-                requestFormMessage.textContent = "Request submitted successfully and saved to Firebase.";
+                requestFormMessage.textContent = "Request submitted successfully. Please wait for approval!";
                 await loadSubmittedRequests();
             } catch (error) {
                 console.error("Unable to submit Thermal Paper request.", error);

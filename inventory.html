@@ -579,7 +579,7 @@
                     </div>
                     <div class="stat-label" id="totalProductsLabel">Total POS</div>
                     <div class="stat-value" id="totalProducts">156</div>
-                    <div class="stat-label-subtitle">Boxes Added</div>
+                    <div class="stat-label-subtitle">Rolls Added</div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6 mb-3">
@@ -589,10 +589,10 @@
                     </div>
                     <div class="stat-label" id="itemsInStockLabel">Active POS</div>
                     <div class="stat-value" id="itemsInStock">1,249</div>
-                    <div class="stat-label-subtitle">Released Boxes</div>
+                    <div class="stat-label-subtitle">Released Rolls</div>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6 mb-3">
+            <div class="col-md-3 col-sm-6 mb-3 thermal-hide-overview">
                 <div class="card stat-card">
                     <div class="icon-box">
                         <i class="bi bi-exclamation-triangle"></i>
@@ -617,9 +617,9 @@
                     <div class="icon-box">
                         <i class="bi bi-boxes"></i>
                     </div>
-                    <div class="stat-label">Remaining Boxes</div>
+                    <div class="stat-label">Remaining Rolls</div>
                     <div class="stat-value" id="remainingThermalBoxes">0</div>
-                    <div class="stat-label-subtitle">Total boxes not yet released</div>
+                    <div class="stat-label-subtitle">Total Rolls not yet Released</div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6 mb-3 thermal-only-overview">
@@ -726,7 +726,7 @@
                                 <table class="inventory-table">
                                     <thead>
                                         <tr>
-                                            <th>Boxes</th>
+                                            <th>Rolls</th>
                                             <th>Delivery Receipt / Invoice Number</th>
                                             <th>Recorded At</th>
                                             <th>Action</th>
@@ -986,7 +986,7 @@
                         <label id="summaryQuantityLabel" style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">Quantity</label>
                         <input type="number" id="summaryQuantity" value="0" min="0" required style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
                     </div>
-                    <div id="summaryDamageInputField">
+                    <div id="summaryDamageInputField" style="display: none;">
                         <label id="summaryDamageLabel" style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">Damage</label>
                         <input type="number" id="summaryDamage" value="0" min="0" style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
                     </div>
@@ -1003,7 +1003,7 @@
                         <input type="number" id="summaryCharger" value="0" min="0" style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
                     </div>
                     <div id="summaryReplenishmentCountField" style="display: none;">
-                        <label for="summaryReplenishmentCount" style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">Number of Boxes</label>
+                        <label for="summaryReplenishmentCount" style="display: block; margin-bottom: 6px; color: #1e3a5f; font-weight: 600;">Number of Rolls</label>
                         <input type="number" id="summaryReplenishmentCount" min="1" step="1" value="1" required style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
                     </div>
                     <div id="summaryReceiptInvoiceField" style="display: none;">
@@ -1038,8 +1038,8 @@
 
                     <div id="formPosNoInputGroup" style="display: flex; gap: 8px;">
                         <select id="formPosUnit" aria-label="Released unit" style="display: none; flex: 0 0 130px; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
-                            <option value="BOX">BOX</option>
-                            <option value="ROLLS">ROLLS</option>
+                            <option value="BOX">ROLLS</option>
+                            <option value="ROLLS" hidden>ROLLS</option>
                             <option value="PCS">PCS</option>
                         </select>
                         <input type="text" id="formPosNo" required style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
@@ -1297,8 +1297,9 @@
         function getReleasedDisplayValue(record) {
             const posNo = record?.posNo || "-";
             const unit = record?.posUnit;
+            const unitLabel = unit === "BOX" ? "ROLLS" : unit;
             return getCurrentUserOffice() === "Thermal" && ["BOX", "ROLLS", "PCS"].includes(unit)
-                ? `${posNo} ${unit}`
+                ? `${posNo} ${unitLabel}`
                 : posNo;
         }
 
@@ -1682,9 +1683,10 @@
                 const rejectionNote = request.rejectionNote
                     ? `<br><span class="text-danger">${escapeHtml(request.rejectionNote)}</span>`
                     : "";
+                const unitLabel = request.unit === "Boxes" ? "Rolls" : request.unit === "Rolls" ? "Pcs" : request.unit;
                 return `<tr>
                     <td>${escapeHtml(request.item || "Thermal Paper")}</td>
-                    <td>${escapeHtml(request.quantity)} ${escapeHtml(request.unit)}</td>
+                    <td>${escapeHtml(request.quantity)} ${escapeHtml(unitLabel)}</td>
                     <td>${escapeHtml(request.station || "-")}</td>
                     <td>${escapeHtml(request.requestee || "")}</td>
                     <td>${escapeHtml(request.requestedBy || "")}</td>
@@ -1865,6 +1867,13 @@
             body:not(.thermal-inventory) .thermal-only-overview {
                 display: none !important;
             }
+            body.thermal-inventory .thermal-hide-overview {
+                display: none !important;
+            }
+            body.thermal-inventory #summaryDamageColumnLabel,
+            body.thermal-inventory #posSummaryTableBody td:nth-child(3) {
+                display: none !important;
+            }
         `;
         document.head.appendChild(officeInventoryColumnStyles);
 
@@ -1920,13 +1929,13 @@
                 document.getElementById("formSerialNumber").required = false;
                 document.getElementById("summarySectionTitle").textContent = "Total Thermal Inventory Summary";
                 document.getElementById("detailedRecordsTitle").textContent = "Detailed Released Thermal Records";
-                document.getElementById("totalProductsLabel").textContent = "Total Boxes of Thermal";
-                document.getElementById("itemsInStockLabel").textContent = "Total Released Boxes";
+                document.getElementById("totalProductsLabel").textContent = "Total Rolls of Thermal";
+                document.getElementById("itemsInStockLabel").textContent = "Total Released Rolls";
                 document.getElementById("lowStockItemsLabel").textContent = "Total Released Rolls";
-                document.getElementById("summaryModelColumnLabel").textContent = "Total Boxes";
-                document.getElementById("summaryModelLabel").textContent = "Total Boxes";
-                document.getElementById("summaryQuantityColumnLabel").textContent = "Released Boxes";
-                document.getElementById("summaryQuantityLabel").textContent = "Released Boxes";
+                document.getElementById("summaryModelColumnLabel").textContent = "Total Rolls";
+                document.getElementById("summaryModelLabel").textContent = "Total Rolls";
+                document.getElementById("summaryQuantityColumnLabel").textContent = "Released Rolls";
+                document.getElementById("summaryQuantityLabel").textContent = "Released Rolls";
                 document.getElementById("summaryDamageColumnLabel").textContent = "Released Rolls";
                 document.getElementById("summaryDamageLabel").textContent = "Released Rolls";
                 document.getElementById("summaryReleasedColumnLabel").textContent = "Released PCS";
@@ -2697,6 +2706,7 @@
                         const option = document.createElement("option");
                         option.value = unitOption.value;
                         option.textContent = unitOption.textContent;
+                        option.hidden = unitOption.hidden;
                         unitSelect.appendChild(option);
                     });
                     unitSelect.value = originalUnit || document.getElementById("formPosUnit").value;
@@ -3745,7 +3755,7 @@
             if (isInventoryReadOnly()) return;
             isThermalReplenishment = replenishment;
             document.getElementById("summaryRecordModalTitle").textContent = replenishment ? "Replenish" : "Add Thermal Record";
-            ["summaryModelField", "summaryQuantityInputField", "summaryDamageInputField", "summaryReleasedInputField"].forEach(id => {
+            ["summaryModelField", "summaryQuantityInputField", "summaryReleasedInputField"].forEach(id => {
                 document.getElementById(id).style.display = replenishment ? "none" : "";
             });
             document.getElementById("summaryModel").required = !replenishment;
