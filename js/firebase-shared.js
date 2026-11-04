@@ -69,8 +69,8 @@
                 permissions: ["inventory", "addAccount", "users"]
             },
             "IT Support": {
-                office: "Cebu",
-                inventoryAccess: ["Cebu"],
+                office: "Both",
+                inventoryAccess: ["Cebu", "Thermal"],
                 permissions: ["inventory", "addAccount", "users"]
             },
             Management: { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory"] },
@@ -404,18 +404,22 @@
             const roleOffices = {
                 "IT Admin": ["Cebu", "Thermal"],
                 "IT Manager": ["Cebu", "Thermal"],
-                "IT Support": ["Cebu"],
+                "IT Support": ["Cebu", "Thermal"],
                 Management: ["Cebu", "Thermal"],
                 Accounting: ["Cebu", "Thermal"],
                 HR: ["Cebu", "Thermal"]
             };
-            const allowedOffices = roleOffices[profile?.role] ||
+            const supportHasCustomAccess = profile?.role === "IT Support" && profile.customAccess;
+            const allowedOffices = supportHasCustomAccess
+                ? (profile.office === "Both" ? ["Cebu", "Thermal"] : profile.inventoryAccess || [])
+                : roleOffices[profile?.role] ||
                 (profile?.role === "Developer"
                     ? ["Cebu", "Thermal"]
                     : profile?.office === "Both"
                         ? ["Cebu", "Thermal"]
                         : profile?.inventoryAccess || []);
-            const hasRoleAccess = profile?.role === "Developer" || Object.prototype.hasOwnProperty.call(roleOffices, profile?.role);
+            const hasRoleAccess = profile?.role === "Developer" ||
+                (!supportHasCustomAccess && Object.prototype.hasOwnProperty.call(roleOffices, profile?.role));
             if (!profile || profile.disabled ||
                 (!hasRoleAccess && (!Array.isArray(profile.permissions) || !profile.permissions.includes("inventory"))) ||
                 !allowedOffices.includes(office)) {
@@ -427,7 +431,7 @@
 
     function canManageInventory(profile, office) {
         if (["Developer", "IT Admin", "IT Manager"].includes(profile?.role)) return ["Cebu", "Thermal"].includes(office);
-        if (profile?.role === "IT Support") return office === "Cebu";
+        if (profile?.role === "IT Support") return ["Cebu", "Thermal"].includes(office);
         if (["Management", "HR"].includes(profile?.role)) return office === "Thermal";
         return false;
     }
@@ -869,20 +873,29 @@
 
     function canManageRequests(profile) {
         return ["Developer", "IT Admin", "IT Manager", "Management", "Accounting", "HR"].includes(profile.role) ||
-            !["IT Support", "Accounting", "HR"].includes(profile.role) &&
+            !["Accounting", "HR", "IT Support"].includes(profile.role) &&
             (Array.isArray(profile.permissions) && profile.permissions.includes("inventory") &&
                 Array.isArray(profile.inventoryAccess) && profile.inventoryAccess.includes("Thermal"));
+    }
+
+    function canViewAllRequests(profile) {
+        return canManageRequests(profile) ||
+            (profile.role === "IT Support" &&
+                (!profile.customAccess ||
+                    (Array.isArray(profile.permissions) && profile.permissions.includes("inventory") &&
+                        (profile.office === "Both" ||
+                            (Array.isArray(profile.inventoryAccess) && profile.inventoryAccess.includes("Thermal"))))));
     }
 
     async function loadRequests() {
         const profile = await getProfile();
         const user = requireSignedIn();
-        if (!profile || profile.disabled || (!canSubmitRequests(profile) && !canManageRequests(profile))) {
+        if (!profile || profile.disabled || (!canSubmitRequests(profile) && !canViewAllRequests(profile))) {
             throw new Error("Your account does not have access to Requests.");
         }
 
         let query = db.collection("workspaceRequests");
-        if (!canManageRequests(profile)) query = query.where("createdByUid", "==", user.uid);
+        if (!canViewAllRequests(profile)) query = query.where("createdByUid", "==", user.uid);
         const snapshot = await query.get();
         return snapshot.docs
             .map(document => ({ id: document.id, ...document.data() }))

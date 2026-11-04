@@ -19,7 +19,7 @@ The app uses Firebase Authentication and Cloud Firestore directly. Its privilege
    firebase deploy --only functions:api --project oneparadox-c5c48
    ```
 
-6. Create an Authentication user for each person and an enabled profile at `users/{uid}`. Each profile should include `username`, `name`, `email`, `role`, `permissions`, `inventoryAccess`, `office`, and `disabled`. The app applies these role policies: IT Admin has Developer-equivalent access; IT Manager can manage Cebu and Thermal inventory and user profiles; IT Support can manage Cebu inventory and user profiles; Management, Accounting, and HR have read-only access to Cebu and Thermal inventory.
+6. Create an Authentication user for each person and an enabled profile at `users/{uid}`. Each profile should include `username`, `name`, `email`, `role`, `permissions`, `inventoryAccess`, `office`, and `disabled`. The app applies these role policies: IT Admin has Developer-equivalent access; IT Manager can manage Cebu and Thermal inventory and user profiles; IT Support can manage Cebu and Thermal inventory and user profiles, but cannot delete Thermal records or replenishments; Management, Accounting, and HR have read-only access to Cebu and Thermal inventory.
 
 The sign-in form accepts email addresses and uses Firebase Email/Password Authentication. Developer and IT Admin accounts can permanently delete other users through the Admin SDK endpoint; IT Admin cannot delete Developer accounts, and no account can delete itself. IT Manager and IT Support can disable profiles only within the lower-privilege roles they are allowed to manage. Users can change their own password after signing in.
 

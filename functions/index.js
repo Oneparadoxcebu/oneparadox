@@ -43,7 +43,12 @@ function requireAccountManager(claims) {
 
 function canManageRequests(claims) {
     return claims.role === "Developer" ||
+        claims.role !== "IT Support" &&
         (claims.permissions.includes("inventory") && claims.inventoryAccess.includes("Thermal"));
+}
+
+function canViewAllRequests(claims) {
+    return canManageRequests(claims) || claims.role === "IT Support";
 }
 
 function canSubmitRequests(claims) {
@@ -271,12 +276,12 @@ async function handleFirebaseUserDeletion(request, response, claims, pathSegment
 
 async function handleRequests(request, response, claims, uid, pathSegments) {
     if (pathSegments.length === 1 && request.method === "GET") {
-        if (!canSubmitRequests(claims) && !canManageRequests(claims)) {
+        if (!canSubmitRequests(claims) && !canViewAllRequests(claims)) {
             return sendJson(response, 403, { message: "Requests access is required." });
         }
         const snapshot = await requestsCollection.orderBy("createdAt", "desc").limit(1000).get();
         const requests = snapshot.docs.map(document => ({ id: document.id, ...document.data() }));
-        const visibleRequests = canManageRequests(claims)
+        const visibleRequests = canViewAllRequests(claims)
             ? requests
             : requests.filter(item => item.createdByUid === uid);
         return sendJson(response, 200, { requests: visibleRequests });

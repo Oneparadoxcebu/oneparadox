@@ -41,7 +41,8 @@ service cloud.firestore {
           || (currentProfile().role == 'IT Manager'
             && office in ['Cebu', 'Thermal'])
           || (currentProfile().role == 'IT Support'
-            && office == 'Cebu')
+            && currentProfile().customAccess != true
+            && office in ['Cebu', 'Thermal'])
           || (currentProfile().role in ['Management', 'Accounting', 'HR']
             && office in ['Cebu', 'Thermal'])
           || (currentProfile().permissions is list
@@ -60,7 +61,8 @@ service cloud.firestore {
 
     function canDeleteOffice(office) {
       return canManageOffice(office)
-        && currentProfile().role in ['Developer', 'IT Admin', 'IT Manager', 'IT Support'];
+        && (currentProfile().role in ['Developer', 'IT Admin', 'IT Manager']
+          || (office == 'Cebu' && currentProfile().role == 'IT Support'));
     }
 
     function canManageUsers() {
@@ -108,10 +110,11 @@ service cloud.firestore {
           && profile.permissions.size() == 3
           && profile.permissions.hasAll(['inventory', 'addAccount', 'users']))
         || (profile.role == 'IT Support'
-          && profile.office == 'Cebu'
+          && profile.office == 'Both'
           && profile.inventoryAccess is list
-          && profile.inventoryAccess.size() == 1
+          && profile.inventoryAccess.size() == 2
           && 'Cebu' in profile.inventoryAccess
+          && 'Thermal' in profile.inventoryAccess
           && profile.permissions is list
           && profile.permissions.size() == 3
           && profile.permissions.hasAll(['inventory', 'addAccount', 'users']))
@@ -165,6 +168,13 @@ service cloud.firestore {
             && currentProfile().inventoryAccess is list
             && 'Thermal' in currentProfile().inventoryAccess
             && !(currentProfile().role in ['Management', 'Accounting', 'HR', 'IT Support'])));
+    }
+
+    function canViewAllRequests() {
+      return canManageRequests()
+        || (enabledUser()
+          && currentProfile().role == 'IT Support'
+          && canAccessOffice('Thermal'));
     }
 
     function canChangeRequestStatus() {
@@ -374,7 +384,7 @@ service cloud.firestore {
     }
 
     match /workspaceRequests/{requestId} {
-      allow get, list: if canManageRequests()
+      allow get, list: if canViewAllRequests()
         || (canSubmitRequests() && resource.data.createdByUid == request.auth.uid);
       allow create: if canSubmitRequests()
         && request.resource.data.keys().hasAll([

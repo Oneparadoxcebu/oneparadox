@@ -1038,8 +1038,9 @@
 
                     <div id="formPosNoInputGroup" style="display: flex; gap: 8px;">
                         <select id="formPosUnit" aria-label="Released unit" style="display: none; flex: 0 0 130px; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
-                            <option value="BOX">ROLLS</option>
-                            <option value="ROLLS" hidden>ROLLS</option>
+                            <option value="" disabled selected>-- Select Unit --</option>
+                            <option value="BOX">Total Rolls</option>
+                            <option value="ROLLS">Released Rolls</option>
                             <option value="PCS">PCS</option>
                         </select>
                         <input type="text" id="formPosNo" required style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
@@ -1266,6 +1267,7 @@
                 document.getElementById("fullInventoryPosNoColumnLabel").textContent = "Released";
                 document.getElementById("formPosNoLabel").textContent = "Released *";
                 document.getElementById("formPosUnit").style.display = "block";
+                document.getElementById("formPosUnit").required = true;
                 document.getElementById("formPosNo").style.width = "0";
                 document.getElementById("formPosNo").style.flex = "1";
                 document.querySelector(".detailed-records-scroll th:nth-child(9)").textContent = "Note";
@@ -1321,10 +1323,23 @@
             return `<Cell><Data ss:Type="String"${/^\s|\s$/.test(String(value ?? "")) ? ' xml:space="preserve"' : ""}>${text}</Data></Cell>`;
         }
 
+        function excelDateTime(value) {
+            const date = new Date(value);
+            if (!Number.isFinite(date.getTime())) return { type: "String", value: value ?? "" };
+            const pad = (part, length = 2) => String(part).padStart(length, "0");
+            const localDateTime = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+                `T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${pad(date.getMilliseconds(), 3)}`;
+            return { type: "DateTime", value: localDateTime };
+        }
+
         function excelRow(values) {
-            return `<Row>${values.map(value => Array.isArray(value)
-                ? excelCell(value[0], value[1])
-                : excelCell(value)).join("")}</Row>`;
+            return `<Row>${values.map(value => {
+                if (value?.type === "DateTime") {
+                    return `<Cell ss:StyleID="DateTime"><Data ss:Type="DateTime">${escapeExcelXml(value.value)}</Data></Cell>`;
+                }
+                if (value?.type === "String") return excelCell(value.value);
+                return Array.isArray(value) ? excelCell(value[0], value[1]) : excelCell(value);
+            }).join("")}</Row>`;
         }
 
         function createThermalExcelWorkbook(inventory) {
@@ -1333,7 +1348,7 @@
             const summaryRows = [
                 excelRow(["Thermal Inventory Report"]),
                 excelRow(["Generated", new Date().toLocaleString()]),
-                excelRow(["Metric", "Quantity", "Damage / Rolls", "Released / PCS", "Remaining", "Charger"])
+                excelRow(["Rolls", "Quantity", "Released Rolls", "Released Pcs", "Remaining"])
             ];
             const replenishmentRows = [
                 excelRow(["Detailed Replenishment History"]),
@@ -1345,8 +1360,7 @@
                     [values?.quantity ?? "", true],
                     [values?.damage ?? "", true],
                     [values?.released ?? "", true],
-                    [values?.remaining ?? "", true],
-                    [values?.charger ?? "", true]
+                    [values?.remaining ?? "", true]
                 ]));
             });
             Object.entries(summary).forEach(([model, values]) => {
@@ -1364,7 +1378,7 @@
 
             const recordRows = [
                 excelRow(["Thermal Inventory Records"]),
-                excelRow(["Station", "Released", "Unit", "Serial Number", "Full Name", "User ID", "Address", "Status", "LOKALS", "Note / Issue", "Price", "Transfer To", "Column J", "Created By", "Record Date"])
+                excelRow(["Station", "Released", "Unit", "Serial Number", "Full Name", "User ID", "Address", "Status", "LOKALS", "Note", "Price", "Transfer To", "Column J", "Created By", "Record Date"])
             ];
             records.forEach(record => recordRows.push(excelRow([
                 record.rack || "",
@@ -1381,7 +1395,7 @@
                 record.transferTo || "",
                 record.columnJ || "",
                 record.createdBy || "",
-                record.recordDate || ""
+                excelDateTime(record.recordDate || "")
             ])));
 
             return `<?xml version="1.0" encoding="UTF-8"?>
@@ -1391,6 +1405,7 @@
  xmlns:x="urn:schemas-microsoft-com:office:excel"
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles><Style ss:ID="DateTime"><NumberFormat ss:Format="yyyy-mm-dd hh:mm:ss.000"/></Style></Styles>
  <Worksheet ss:Name="Summary"><Table>${summaryRows.join("")}</Table></Worksheet>
  <Worksheet ss:Name="Replenishment History"><Table>${replenishmentRows.join("")}</Table></Worksheet>
  <Worksheet ss:Name="Thermal Records"><Table>${recordRows.join("")}</Table></Worksheet>
@@ -1401,7 +1416,7 @@
             const records = Array.isArray(inventory?.recordsData) ? inventory.recordsData : [];
             const recordRows = [
                 excelRow(["Detailed Released Thermal Records"]),
-                excelRow(["Station", "Released", "Unit", "Full Name", "User ID", "Address", "Status", "Note / Issue", "Price", "Created By", "Record Date"])
+                excelRow(["Station", "Released", "Unit", "Full Name", "User ID", "Address", "Status", "Note", "Price", "Created By", "Record Date"])
             ];
             records.forEach(record => recordRows.push(excelRow([
                 record.rack || "",
@@ -1414,7 +1429,7 @@
                 record.noteIssue || "",
                 [record.price ?? "", true],
                 record.createdBy || "",
-                record.recordDate || ""
+                excelDateTime(record.recordDate || "")
             ])));
 
             return `<?xml version="1.0" encoding="UTF-8"?>
@@ -1424,6 +1439,7 @@
  xmlns:x="urn:schemas-microsoft-com:office:excel"
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles><Style ss:ID="DateTime"><NumberFormat ss:Format="yyyy-mm-dd hh:mm:ss.000"/></Style></Styles>
  <Worksheet ss:Name="Released Thermal Records"><Table>${recordRows.join("")}</Table></Worksheet>
 </Workbook>`;
         }
@@ -1502,7 +1518,7 @@
             return {
                 "IT Admin": { office: "Both", inventoryAccess: ["Cebu", "Thermal", "Requests"], permissions: ["dashboard", "analytics", "reports", "inventory", "settings", "addAccount", "users", "assignedTasks", "administrator"] },
                 "IT Manager": { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory", "addAccount", "users"] },
-                "IT Support": { office: "Cebu", inventoryAccess: ["Cebu"], permissions: ["inventory", "addAccount", "users"] },
+                "IT Support": { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory", "addAccount", "users"] },
                 Management: { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory"] },
                 Accounting: { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory"] },
                 HR: { office: "Both", inventoryAccess: ["Cebu", "Thermal"], permissions: ["inventory"] }
@@ -3955,6 +3971,19 @@
             }
         });
 
+        function getThermalRecordSummaryField(record) {
+            switch (record?.posUnit) {
+                case "BOX":
+                    return "quantity";
+                case "ROLLS":
+                    return record.stationRecordId && !record.sourceRecordKey ? "damage" : "quantity";
+                case "PCS":
+                    return "released";
+                default:
+                    return "";
+            }
+        }
+
         function handleAddRecordSubmit(e, idPrefix = "") {
             e.preventDefault();
             if (isInventoryReadOnly()) return;
@@ -3988,8 +4017,7 @@
             
             const currentSummary = JSON.parse(localStorage.getItem(storageKeys.summaryKey) || "{}");
             if (storageKeys.office === "Thermal") {
-                const summaryFieldByUnit = { BOX: "quantity", ROLLS: "damage", PCS: "released" };
-                const summaryField = summaryFieldByUnit[newRecord.posUnit];
+                const summaryField = getThermalRecordSummaryField(newRecord);
                 const releasedQuantity = Number(String(newRecord.posNo).trim());
                 if (summaryField && Number.isFinite(releasedQuantity)) {
                     const overviewTotals = currentSummary.TOTAL || {};
@@ -4143,8 +4171,7 @@
 
                 const [deletedRecord] = recordsData.splice(currentIndex, 1);
                 const summaryData = currentInventory.summaryData || {};
-                const summaryFieldByUnit = { BOX: "quantity", ROLLS: "damage", PCS: "released" };
-                const summaryField = summaryFieldByUnit[deletedRecord.posUnit];
+                const summaryField = getThermalRecordSummaryField(deletedRecord);
                 const deletedQuantity = Number(String(deletedRecord.posNo || "").trim());
                 if (summaryField && Number.isFinite(deletedQuantity)) {
                     const totals = summaryData.TOTAL || {};

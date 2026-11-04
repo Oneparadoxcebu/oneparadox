@@ -188,8 +188,9 @@
                                     <div class="input-group">
                                         <input id="stationThermalRecordReleased" class="form-control" type="number" min="0" step="any" maxlength="120" required>
                                         <select id="stationThermalRecordUnit" class="form-select" aria-label="Released unit" required>
-                                            <option value="BOX">ROLLS</option>
-                                            <option value="ROLLS" hidden>ROLLS</option>
+                                            <option value="" disabled selected>-- Select Unit --</option>
+                                            <option value="BOX">Total Rolls</option>
+                                            <option value="ROLLS">Released Rolls</option>
                                             <option value="PCS">PCS</option>
                                         </select>
                                     </div>
