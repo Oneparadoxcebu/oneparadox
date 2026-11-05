@@ -1302,16 +1302,12 @@
         }
 
         function getReleasedUnitDisplayValue(record) {
-            const unit = String(record?.posUnit || "").trim();
-            switch (unit.toUpperCase()) {
-                case "BOX":
-                case "ROLLS":
-                    return "ROLLS";
-                case "PCS":
-                    return "PCS";
-                default:
-                    return unit;
-            }
+            const unit = String(record?.posUnit || "").trim().toUpperCase();
+            return {
+                BOX: "Total Rolls",
+                ROLLS: "Released Rolls",
+                PCS: "PCS"
+            }[unit] || unit;
         }
 
         function getReleasedDisplayValue(record) {
@@ -1324,8 +1320,13 @@
         }
 
         function getReleasedUnitFromDisplayValue(releasedValue) {
-            const unit = String(releasedValue || "").trim().match(/(?:^|\s)(ROLLS|PCS)$/i)?.[1];
-            return unit ? unit.toUpperCase() : "";
+            const unitLabel = String(releasedValue || "").trim().match(/(?:^|\s)(TOTAL ROLLS|RELEASED ROLLS|ROLLS|PCS)$/i)?.[1]?.toUpperCase();
+            return {
+                "TOTAL ROLLS": "BOX",
+                "RELEASED ROLLS": "ROLLS",
+                ROLLS: "ROLLS",
+                PCS: "PCS"
+            }[unitLabel] || "";
         }
 
         function escapeExcelXml(value) {

@@ -386,9 +386,14 @@
         }
 
         function getThermalRecordDisplayValues(record) {
-            const unit = record.posUnit === "BOX" ? "ROLLS" : record.posUnit;
+            const unitLabels = {
+                BOX: "Total Rolls",
+                ROLLS: "Released Rolls",
+                PCS: "PCS"
+            };
+            const unitLabel = unitLabels[String(record.posUnit || "").trim().toUpperCase()];
             const released = record.posNo
-                ? `${record.posNo}${["BOX", "ROLLS", "PCS"].includes(record.posUnit) ? ` ${unit}` : ""}`
+                ? `${record.posNo}${unitLabel ? ` ${unitLabel}` : ""}`
                 : "-";
 
             return [
