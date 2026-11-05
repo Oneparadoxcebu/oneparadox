@@ -1296,13 +1296,31 @@
             };
         }
 
+        function getReleasedUnitDisplayValue(record) {
+            const unit = String(record?.posUnit || "").trim();
+            switch (unit.toUpperCase()) {
+                case "BOX":
+                case "ROLLS":
+                    return "ROLLS";
+                case "PCS":
+                    return "PCS";
+                default:
+                    return unit;
+            }
+        }
+
         function getReleasedDisplayValue(record) {
             const posNo = record?.posNo || "-";
-            const unit = record?.posUnit;
-            const unitLabel = unit === "BOX" ? "ROLLS" : unit;
+            const unit = String(record?.posUnit || "").trim().toUpperCase();
+            const unitLabel = getReleasedUnitDisplayValue(record);
             return getCurrentUserOffice() === "Thermal" && ["BOX", "ROLLS", "PCS"].includes(unit)
                 ? `${posNo} ${unitLabel}`
                 : posNo;
+        }
+
+        function getReleasedUnitFromDisplayValue(releasedValue) {
+            const unit = String(releasedValue || "").trim().match(/(?:^|\s)(ROLLS|PCS)$/i)?.[1];
+            return unit ? unit.toUpperCase() : "";
         }
 
         function escapeExcelXml(value) {
@@ -1383,7 +1401,7 @@
             records.forEach(record => recordRows.push(excelRow([
                 record.rack || "",
                 [record.posNo ?? "", true],
-                record.posUnit || "",
+                getReleasedUnitFromDisplayValue(getReleasedDisplayValue(record)),
                 record.serialNumber || "",
                 record.fullName || "",
                 record.userId || "",
@@ -1421,7 +1439,7 @@
             records.forEach(record => recordRows.push(excelRow([
                 record.rack || "",
                 [record.posNo ?? "", true],
-                record.posUnit || "",
+                getReleasedUnitFromDisplayValue(getReleasedDisplayValue(record)),
                 record.fullName || "",
                 record.userId || "",
                 record.address || "",
@@ -1491,7 +1509,7 @@
                 const objectUrl = URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = objectUrl;
-                link.download = `detailed-released-thermal-records-${new Date().toISOString().slice(0, 10)}.xls`;
+                link.download = `detailed-released-thermal-records-${new Date().toISOString().replace(/[:.]/g, "-")}.xls`;
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
