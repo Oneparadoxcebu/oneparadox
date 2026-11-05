@@ -755,7 +755,7 @@
                     </div>
                     <div class="card-body">
                         <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                            <input type="text" id="searchInventory" placeholder="Search by Station" style="flex: 1; padding: 8px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
+                            <input type="text" id="searchInventory" placeholder="Search" style="flex: 1; padding: 8px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
                             <button class="btn btn-light" id="exportThermalRecordsExcelButton" type="button" hidden><i class="bi bi-download me-2"></i>Export Excel</button>
                             <button class="btn btn-primary" id="addProductBtn"><i class="bi bi-plus-circle me-2"></i>Add Record</button>
                         </div>
@@ -763,6 +763,7 @@
                         <table class="inventory-table">
                             <thead>
                                 <tr>
+                                    <th class="thermal-only-overview">Date</th>
                                     <th id="inventoryStationColumnLabel">System</th>
                                     <th id="inventoryPosNoColumnLabel">POS NO.</th>
                                     <th>Serial Number</th>
@@ -780,6 +781,7 @@
                             </thead>
                             <tbody id="inventoryTableBody">
                                 <tr>
+                                    <td class="thermal-only-overview">-</td>
                                     <td>-</td>
                                     <td>P1</td>
                                     <td>V222232H21189</td>
@@ -792,6 +794,7 @@
                                     <td>-</td>
                                 </tr>
                                 <tr>
+                                    <td class="thermal-only-overview">-</td>
                                     <td>-</td>
                                     <td>P10</td>
                                     <td>V222232H20753</td>
@@ -804,6 +807,7 @@
                                     <td>-</td>
                                 </tr>
                                 <tr>
+                                    <td class="thermal-only-overview">-</td>
                                     <td>-</td>
                                     <td>P11</td>
                                     <td>V222232H21171</td>
@@ -882,7 +886,7 @@
         <div id="fullInventoryModalContent" style="background: white; border-radius: 12px; width: 96%; height: 90vh; max-width: 1600px; box-shadow: 0 20px 60px rgba(0,0,0,0.28); display: flex; flex-direction: column; overflow: hidden;">
             <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8c 100%); color: white; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between;">
                 <div>
-                    <h3 style="margin: 0; font-size: 24px; font-weight: 700;">Detailed POS Record Viewer</h3>
+                    <h3 style="margin: 0; font-size: 24px; font-weight: 700; color: white;">Detailed Record Viewer</h3>
                     <div style="font-size: 13px; opacity: 0.9; margin-top: 4px;">CSV fields from A to J are shown here</div>
                 </div>
                 <button id="closeFullInventoryModalBtn" class="btn btn-light btn-sm" type="button" style="background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25); color: white; font-weight: 600;">Close</button>
@@ -891,6 +895,7 @@
                 <table class="inventory-table" style="margin-top: 0; min-width: 1500px;">
                     <thead>
                         <tr>
+                            <th class="thermal-only-overview">Date</th>
                             <th id="fullInventoryStationColumnLabel">System</th>
                             <th id="fullInventoryPosNoColumnLabel">POS NO.</th>
                             <th>Serial Number</th>
@@ -1270,8 +1275,8 @@
                 document.getElementById("formPosUnit").required = true;
                 document.getElementById("formPosNo").style.width = "0";
                 document.getElementById("formPosNo").style.flex = "1";
-                document.querySelector(".detailed-records-scroll th:nth-child(9)").textContent = "Note";
-                document.querySelector("#fullInventoryModal th:nth-child(9)").textContent = "Note";
+                document.querySelector(".detailed-records-scroll th:nth-child(10)").textContent = "Note";
+                document.querySelector("#fullInventoryModal th:nth-child(10)").textContent = "Note";
                 document.getElementById("formNoteIssueLabel").textContent = "Note";
                 document.getElementById("formNoteIssue").placeholder = "Additional Notes";
                 document.getElementById("formStatus").innerHTML = `
@@ -1869,30 +1874,30 @@
             body.thermal-inventory #formTransferToField,
             body.thermal-inventory #fullInventoryModal th:last-child,
             body.thermal-inventory #fullInventoryModal td:last-child,
+            body.thermal-inventory .detailed-records-scroll th:nth-child(13),
+            body.thermal-inventory .detailed-records-scroll td:nth-child(13),
             body.thermal-inventory .detailed-records-scroll th:nth-child(12),
             body.thermal-inventory .detailed-records-scroll td:nth-child(12),
-            body.thermal-inventory .detailed-records-scroll th:nth-child(11),
-            body.thermal-inventory .detailed-records-scroll td:nth-child(11),
-            body.thermal-inventory #fullInventoryModal th:nth-child(11),
-            body.thermal-inventory #fullInventoryModal td:nth-child(11),
-            body.thermal-inventory .detailed-records-scroll th:nth-child(3),
-            body.thermal-inventory .detailed-records-scroll td:nth-child(3),
-            body.thermal-inventory #fullInventoryModal th:nth-child(3),
-            body.thermal-inventory #fullInventoryModal td:nth-child(3),
-            body.thermal-inventory .detailed-records-scroll th:nth-child(8),
-            body.thermal-inventory .detailed-records-scroll td:nth-child(8),
-            body.thermal-inventory #fullInventoryModal th:nth-child(8),
-            body.thermal-inventory #fullInventoryModal td:nth-child(8) {
+            body.thermal-inventory #fullInventoryModal th:nth-child(12),
+            body.thermal-inventory #fullInventoryModal td:nth-child(12),
+            body.thermal-inventory .detailed-records-scroll th:nth-child(4),
+            body.thermal-inventory .detailed-records-scroll td:nth-child(4),
+            body.thermal-inventory #fullInventoryModal th:nth-child(4),
+            body.thermal-inventory #fullInventoryModal td:nth-child(4),
+            body.thermal-inventory .detailed-records-scroll th:nth-child(9),
+            body.thermal-inventory .detailed-records-scroll td:nth-child(9),
+            body.thermal-inventory #fullInventoryModal th:nth-child(9),
+            body.thermal-inventory #fullInventoryModal td:nth-child(9) {
                 display: none !important;
             }
-            body.cebu-inventory .detailed-records-scroll th:nth-child(10),
-            body.cebu-inventory .detailed-records-scroll td:nth-child(10),
-            body.cebu-inventory #fullInventoryModal th:nth-child(10),
-            body.cebu-inventory #fullInventoryModal td:nth-child(10),
-            body.cebu-inventory .detailed-records-scroll th:nth-child(12),
-            body.cebu-inventory .detailed-records-scroll td:nth-child(12),
-            body.cebu-inventory #fullInventoryModal th:nth-child(12),
-            body.cebu-inventory #fullInventoryModal td:nth-child(12) {
+            body.cebu-inventory .detailed-records-scroll th:nth-child(11),
+            body.cebu-inventory .detailed-records-scroll td:nth-child(11),
+            body.cebu-inventory #fullInventoryModal th:nth-child(11),
+            body.cebu-inventory #fullInventoryModal td:nth-child(11),
+            body.cebu-inventory .detailed-records-scroll th:nth-child(13),
+            body.cebu-inventory .detailed-records-scroll td:nth-child(13),
+            body.cebu-inventory #fullInventoryModal th:nth-child(13),
+            body.cebu-inventory #fullInventoryModal td:nth-child(13) {
                 display: none !important;
             }
             body.cebu-inventory #formPriceField {
@@ -2172,7 +2177,7 @@
 
             const inventoryBody = document.getElementById("inventoryTableBody");
             if (inventoryBody) {
-                const columnCount = getCurrentUserOffice() === "Thermal" ? 13 : 12;
+                const columnCount = getCurrentUserOffice() === "Thermal" ? 14 : 12;
                 inventoryBody.innerHTML = `<tr><td colspan="${columnCount}" style="text-align:center;padding:20px;color:#697c8f;">No inventory data available</td></tr>`;
             }
 
@@ -2252,10 +2257,7 @@
 
         function saveInventoryData(summaryData, recordsData, syncShared = true) {
             const persistedSummary = summaryData || {};
-            const persistedRecords = (recordsData || []).map((record) => ({
-                ...record,
-                recordDate: record.recordDate || new Date().toISOString()
-            }));
+            const persistedRecords = (recordsData || []).map(record => ({ ...record }));
             const storageKeys = getInventoryStorageKeys();
 
             localStorage.removeItem(storageKeys.clearedKey);
@@ -2535,6 +2537,7 @@
                 
                 html += `
                     <tr data-record-index="${index}">
+                        <td class="thermal-only-overview">${escapeHtml(getRecordDateDisplay(record))}</td>
                         <td>${escapeHtml(displayRack)}</td>
                         <td>${escapeHtml(getReleasedDisplayValue(record))}</td>
                         <td>${record.serialNumber}</td>
@@ -2699,7 +2702,7 @@
                 const row = cell && cell.closest("tr[data-record-index]");
                 if (!cell || !row || cell.querySelector("input, select")) return;
 
-                const fieldNames = ["rack", "posNo", "serialNumber", "fullName", "userId", "address", "status", "lokals", "noteIssue", "transferTo"];
+                const fieldNames = [null, "rack", "posNo", "serialNumber", "fullName", "userId", "address", "status", "lokals", "noteIssue", "transferTo"];
                 const fieldName = fieldNames[cell.cellIndex];
                 if (!fieldName) return;
 
@@ -2889,6 +2892,14 @@
             if (record.createdAt) return record.createdAt;
             if (record.updatedAt) return record.updatedAt;
             return null;
+        }
+
+        function getRecordDateDisplay(record) {
+            const recordDate = record?.recordDate || record?.dateAdded || record?.createdAt;
+            if (!recordDate) return "-";
+
+            const parsedDate = new Date(recordDate);
+            return Number.isNaN(parsedDate.getTime()) ? "-" : parsedDate.toLocaleDateString();
         }
 
         function toggleClearInventoryCustomRange() {
@@ -4075,6 +4086,7 @@
             const row = tbody.insertRow(0);
             row.dataset.recordIndex = String(recordIndex);
             row.innerHTML = `
+                <td class="thermal-only-overview">${escapeHtml(getRecordDateDisplay(record))}</td>
                 <td>${escapeHtml(displayRack)}</td>
                 <td>${escapeHtml(getReleasedDisplayValue(record))}</td>
                 <td>${record.serialNumber}</td>
@@ -4360,7 +4372,8 @@
             if (!tableBody) return;
 
             if (!records.length) {
-                tableBody.innerHTML = "<tr><td colspan='12' style='padding: 20px; text-align: center; color: #697c8f;'>No records available</td></tr>";
+                const columnCount = getCurrentUserOffice() === "Thermal" ? 13 : 12;
+                tableBody.innerHTML = `<tr><td colspan="${columnCount}" style="padding: 20px; text-align: center; color: #697c8f;">No records available</td></tr>`;
             } else {
                 tableBody.innerHTML = records.map(record => {
                     const statusClass = getStatusBadgeClass(record.status);
@@ -4373,6 +4386,7 @@
                     const displayRack = record.rack || "-";
                     return `
                         <tr>
+                            <td class="thermal-only-overview">${escapeHtml(getRecordDateDisplay(record))}</td>
                             <td>${escapeHtml(displayRack)}</td>
                             <td>${escapeHtml(getReleasedDisplayValue(record))}</td>
                             <td>${record.serialNumber || "-"}</td>

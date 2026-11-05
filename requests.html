@@ -118,6 +118,14 @@
                         <div class="stat-label-subtitle" id="requestThermalReleasedRollsSubtitle">Total Received Rolls</div>
                     </div>
                 </div>
+                <div class="col-md-3 col-sm-6 mb-3" id="requestThermalRemainingRollsCard">
+                    <div class="card stat-card">
+                        <div class="icon-box"><i class="bi bi-boxes"></i></div>
+                        <div class="stat-label">Remaining rolls</div>
+                        <div class="stat-value" id="requestThermalRemainingRolls">0</div>
+                        <div class="stat-label-subtitle">Total rolls not yet released</div>
+                    </div>
+                </div>
                 <div class="col-md-3 col-sm-6 mb-3">
                     <div class="card stat-card">
                         <div class="icon-box"><i class="bi bi-box-seam"></i></div>
@@ -147,12 +155,13 @@
                 </div>
                 <div class="card-body">
                     <div class="request-thermal-toolbar">
-                        <input id="requestThermalRecordSearch" type="search" placeholder="Search by Station" aria-label="Search Thermal records by station">
+                        <input id="requestThermalRecordSearch" type="search" placeholder="Search" aria-label="Search all Thermal record columns">
                     </div>
                     <div class="request-thermal-records-scroll">
                         <table class="inventory-table">
                             <thead>
                                 <tr>
+                                    <th scope="col">Date</th>
                                     <th scope="col">Station/Teller</th>
                                     <th scope="col">Released</th>
                                     <th scope="col">Full Name</th>
@@ -164,7 +173,7 @@
                                 </tr>
                             </thead>
                             <tbody id="requestThermalRecordsBody">
-                                <tr><td colspan="8" class="text-center text-muted py-4">Loading Thermal inventory…</td></tr>
+                                <tr><td colspan="9" class="text-center text-muted py-4">Loading Thermal inventory…</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -365,15 +374,45 @@
         const thermalInventoryMessage = document.getElementById("requestThermalInventoryMessage");
         let thermalRecords = [];
         if (isCollectorAccount) {
-            thermalRecordSearch.placeholder = "Search Collector records";
-            thermalRecordSearch.setAttribute("aria-label", "Search Collector Thermal records");
+            thermalRecordSearch.placeholder = "Search";
+            thermalRecordSearch.setAttribute("aria-label", "Search all Collector Thermal record columns");
+        }
+
+        function getThermalRecordDate(record) {
+            const value = record.recordDate || record.dateAdded || record.createdAt;
+            if (!value) return "-";
+            const date = new Date(value);
+            return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString();
+        }
+
+        function getThermalRecordDisplayValues(record) {
+            const unit = record.posUnit === "BOX" ? "ROLLS" : record.posUnit;
+            const released = record.posNo
+                ? `${record.posNo}${["BOX", "ROLLS", "PCS"].includes(record.posUnit) ? ` ${unit}` : ""}`
+                : "-";
+
+            return [
+                getThermalRecordDate(record),
+                record.rack || "-",
+                released,
+                String(record.fullName || "").trim() || "N/A",
+                record.userId || "-",
+                record.address || "-",
+                String(record.status || "-"),
+                record.noteIssue && record.noteIssue !== "-" ? record.noteIssue : "-",
+                record.price ?? "-"
+            ];
         }
 
         function renderThermalRecords(records) {
             const query = thermalRecordSearch.value.trim().toLowerCase();
-            const filteredRecords = records.filter(record =>
-                Object.values(record).some(value => String(value ?? "").toLowerCase().includes(query))
-            );
+            const filteredRecords = records.filter(record => {
+                const searchableValues = [
+                    ...Object.values(record),
+                    ...getThermalRecordDisplayValues(record)
+                ];
+                return searchableValues.some(value => String(value ?? "").toLowerCase().includes(query));
+            });
             const statusClass = status => {
                 switch (String(status || "").trim().toUpperCase()) {
                     case "ACTIVE": return "text-bg-success";
@@ -394,31 +433,18 @@
                         : isStationAccount
                             ? `No Thermal records are assigned to ${escapeRequestHtml(account.office || "this station")}.`
                             : "No Thermal inventory records available.";
-                thermalRecordsBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">${emptyMessage}</td></tr>`;
+                thermalRecordsBody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">${emptyMessage}</td></tr>`;
                 return;
             }
 
             thermalRecordsBody.innerHTML = filteredRecords.map(record => {
                 const status = String(record.status || "-");
-                const unit = record.posUnit === "BOX" ? "ROLLS" : record.posUnit;
-                const released = record.posNo
-                    ? `${record.posNo}${["BOX", "ROLLS", "PCS"].includes(record.posUnit) ? ` ${unit}` : ""}`
-                    : "-";
-                const values = [
-                    record.rack || "-",
-                    released,
-                    String(record.fullName || "").trim() || "N/A",
-                    record.userId || "-",
-                    record.address || "-",
-                    status,
-                    record.noteIssue && record.noteIssue !== "-" ? record.noteIssue : "-",
-                    record.price ?? "-"
-                ];
+                const values = getThermalRecordDisplayValues(record);
                 return `<tr>${values.map((value, index) => {
-                    if (index === 5 && isStationAccount && record.stationRecordId && !record.sourceRecordKey) {
+                    if (index === 6 && isStationAccount && record.stationRecordId && !record.sourceRecordKey) {
                         return `<td class="station-thermal-status-cell" data-record-id="${escapeRequestHtml(record.stationRecordId || "")}" data-record-index="${thermalRecords.indexOf(record)}" title="Double-click to edit payment status">${escapeRequestHtml(value)}</td>`;
                     }
-                    return `<td>${index === 6
+                    return `<td>${index === 7
                         ? `<span class="badge ${statusClass(status)}">${escapeRequestHtml(value)}</span>`
                         : escapeRequestHtml(value)}</td>`;
                 }).join("")}</tr>`;
@@ -456,8 +482,11 @@
                         return total + (Number.isFinite(price) ? price : 0);
                     }, 0);
                     document.getElementById("requestThermalTotalBoxes").textContent = thermalRecords.length;
-                    document.getElementById("requestThermalReleasedBoxes").textContent = sumReleasedForUnit("BOX");
-                    document.getElementById("requestThermalReleasedRolls").textContent = sumReleasedForUnit("ROLLS");
+                    const totalRolls = sumReleasedForUnit("BOX");
+                    const totalReleasedRolls = sumReleasedForUnit("ROLLS");
+                    document.getElementById("requestThermalReleasedBoxes").textContent = totalRolls;
+                    document.getElementById("requestThermalReleasedRolls").textContent = totalReleasedRolls;
+                    document.getElementById("requestThermalRemainingRolls").textContent = totalRolls - totalReleasedRolls;
                     document.getElementById("requestThermalReleasedPcs").textContent = sumByStatus(thermalRecords, "paid");
                     document.getElementById("requestThermalReceivables").textContent = sumByStatus(thermalRecords, "not paid");
                     renderThermalRecords(thermalRecords);
@@ -466,19 +495,20 @@
                 }
                 const summary = inventory?.summaryData || {};
                 const totals = summary.TOTAL || {};
-                let totalBoxes = 0;
+                let totalBoxes = Number(totals.replenishmentBoxes) || 0;
                 let releasedBoxes = Number.parseInt(totals.quantity, 10) || 0;
                 let releasedRolls = Number.parseInt(totals.damage, 10) || 0;
                 for (const [model, values] of Object.entries(summary)) {
                     if (model === "TOTAL") continue;
                     const count = Number(model);
-                    if (Number.isFinite(count)) totalBoxes += count;
+                    if (!values.replenishmentOnly && Number.isFinite(count)) totalBoxes += count;
                     releasedBoxes += Number.parseInt(values.quantity, 10) || 0;
                     releasedRolls += Number.parseInt(values.damage, 10) || 0;
                 }
                 document.getElementById("requestThermalTotalBoxes").textContent = totalBoxes;
                 document.getElementById("requestThermalReleasedBoxes").textContent = releasedBoxes;
                 document.getElementById("requestThermalReleasedRolls").textContent = releasedRolls;
+                document.getElementById("requestThermalRemainingRolls").textContent = releasedBoxes - releasedRolls;
                 thermalRecords = Array.isArray(inventory?.recordsData) ? inventory.recordsData : [];
                 const paidRevenue = thermalRecords.reduce((total, record) => {
                     if (String(record.status || "").trim().toLowerCase() !== "paid") return total;
@@ -496,10 +526,10 @@
                 thermalInventoryMessage.textContent = "";
             } catch (error) {
                 console.error("Unable to load Thermal inventory overview.", error);
-                ["requestThermalTotalBoxes", "requestThermalReleasedBoxes", "requestThermalReleasedRolls", "requestThermalReleasedPcs", "requestThermalReceivables"]
+                ["requestThermalTotalBoxes", "requestThermalReleasedBoxes", "requestThermalReleasedRolls", "requestThermalRemainingRolls", "requestThermalReleasedPcs", "requestThermalReceivables"]
                     .forEach(id => { document.getElementById(id).textContent = "Unavailable"; });
                 thermalRecordCount.textContent = "Unavailable";
-                thermalRecordsBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Unable to load Thermal inventory.</td></tr>';
+                thermalRecordsBody.innerHTML = '<tr><td colspan="9" class="text-center text-danger py-4">Unable to load Thermal inventory.</td></tr>';
                 const reason = error instanceof Error ? error.message : String(error);
                 thermalInventoryMessage.textContent = `Thermal inventory could not be loaded: ${reason} Existing account permissions were not changed.`;
             }
