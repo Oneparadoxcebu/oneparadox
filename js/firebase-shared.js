@@ -647,12 +647,25 @@
         const quantity = Number(posNo);
         const posUnit = String(input.posUnit || "").trim().toUpperCase();
         const status = String(input.status || "").trim();
+        const recordDate = String(input.recordDate || "").trim();
+        const dateParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(recordDate);
+        const parsedRecordDate = dateParts ? new Date(0) : null;
+        if (parsedRecordDate) {
+            parsedRecordDate.setFullYear(Number(dateParts[1]), Number(dateParts[2]) - 1, Number(dateParts[3]));
+            parsedRecordDate.setHours(0, 0, 0, 0);
+        }
         if (!posNo || posNo.length > 120 || !Number.isFinite(quantity) || quantity < 0) {
             throw new Error("Enter a valid Released quantity.");
         }
         if (!["BOX", "ROLLS", "PCS"].includes(posUnit)) throw new Error("Select a valid Released unit.");
         if (!["Paid", "Not Paid"].includes(status)) {
             throw new Error("Select a valid record status.");
+        }
+        if (!parsedRecordDate ||
+            parsedRecordDate.getFullYear() !== Number(dateParts[1]) ||
+            parsedRecordDate.getMonth() !== Number(dateParts[2]) - 1 ||
+            parsedRecordDate.getDate() !== Number(dateParts[3])) {
+            throw new Error("Select a valid record date.");
         }
 
         const reference = db.collection(STATION_THERMAL_RECORDS).doc(station).collection("records").doc();
@@ -672,7 +685,7 @@
             transferTo: "",
             columnJ: "",
             createdBy: profile.username,
-            recordDate: new Date().toISOString()
+            recordDate
         };
         if ((!Number.isFinite(record.price) && record.price !== "") || (record.price !== "" && record.price < 0)) {
             throw new Error("Enter a valid price.");

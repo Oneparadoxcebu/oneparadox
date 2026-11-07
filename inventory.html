@@ -154,6 +154,7 @@
         .inventory-container input[type="text"],
         .inventory-container input[type="number"],
         .inventory-container input[type="file"],
+        .inventory-container input[type="date"],
         .inventory-container select,
         .inventory-container textarea {
             border-color: #c8dce6 !important;
@@ -167,6 +168,136 @@
             background-color: #ffffff;
             box-shadow: 0 0 0 0.2rem rgba(34, 184, 207, 0.13);
             outline: none;
+        }
+        .record-date-picker {
+            position: relative;
+        }
+        .record-date-trigger {
+            width: 100%;
+            padding: 10px 44px 10px 12px;
+            border: 1px solid var(--ui-border, #c8dce6);
+            border-radius: 8px;
+            color: var(--ui-text, #18344a);
+            background: var(--ui-surface-raised, #fff);
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 180ms ease, box-shadow 180ms ease;
+        }
+        .record-date-trigger:hover,
+        .record-date-trigger[aria-expanded="true"] {
+            border-color: var(--ui-primary, #0e7490);
+        }
+        .record-date-trigger:focus-visible,
+        .record-calendar button:focus-visible {
+            outline: 3px solid color-mix(in srgb, var(--ui-primary, #0e7490) 28%, transparent);
+            outline-offset: 2px;
+        }
+        .record-date-icon {
+            position: absolute;
+            top: 50%;
+            right: 14px;
+            transform: translateY(-50%);
+            color: var(--ui-primary, #0e7490);
+            pointer-events: none;
+        }
+        .record-calendar {
+            position: absolute;
+            z-index: 20;
+            top: calc(100% + 8px);
+            left: 0;
+            width: min(320px, 90vw);
+            padding: 16px;
+            border: 1px solid var(--ui-border, #d7e1e8);
+            border-radius: 14px;
+            color: var(--ui-text, #18344a);
+            background: var(--ui-surface, #fff);
+            box-shadow: 0 16px 40px rgba(8, 47, 73, 0.2);
+        }
+        .record-calendar[hidden] {
+            display: none;
+        }
+        .record-calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .record-calendar-month {
+            color: var(--ui-text, #18344a);
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .record-calendar-nav {
+            display: grid;
+            width: 34px;
+            height: 34px;
+            place-items: center;
+            border: 0;
+            border-radius: 9px;
+            color: var(--ui-text, #18344a);
+            background: transparent;
+            cursor: pointer;
+        }
+        .record-calendar-nav:hover {
+            background: color-mix(in srgb, var(--ui-primary, #0e7490) 12%, transparent);
+        }
+        .record-calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 4px;
+            text-align: center;
+        }
+        .record-calendar-weekday {
+            padding: 5px 0;
+            color: var(--ui-muted, #718096);
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .record-calendar-day {
+            display: grid;
+            width: 34px;
+            height: 34px;
+            margin: auto;
+            place-items: center;
+            border: 0;
+            border-radius: 10px;
+            color: var(--ui-text, #18344a);
+            background: transparent;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .record-calendar-day:hover {
+            background: color-mix(in srgb, var(--ui-primary, #0e7490) 13%, transparent);
+        }
+        .record-calendar-day.is-today {
+            box-shadow: inset 0 0 0 1px var(--ui-primary, #0e7490);
+        }
+        .record-calendar-day.is-selected {
+            color: #fff;
+            background: linear-gradient(135deg, #0891b2, #2563eb);
+            font-weight: 700;
+        }
+        .record-calendar-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ui-border, #d7e1e8);
+        }
+        .record-calendar-selected {
+            color: var(--ui-muted, #718096);
+            font-size: 12px;
+        }
+        .record-calendar-today {
+            padding: 6px 10px;
+            border: 0;
+            border-radius: 8px;
+            color: var(--ui-primary, #0e7490);
+            background: color-mix(in srgb, var(--ui-primary, #0e7490) 11%, transparent);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
         }
         #searchInventory {
             border-radius: 10px !important;
@@ -1034,6 +1165,27 @@
             
             <form id="addRecordForm" style="display: flex; flex-direction: column; gap: 15px;">
                 <div>
+                    <label for="formRecordDateDisplay" style="color: #1e3a5f; font-weight: 600; font-size: 14px; margin-bottom: 5px; display: block;">Record Date *</label>
+                    <div class="record-date-picker" id="recordDatePicker">
+                        <input type="hidden" id="formRecordDate">
+                        <button type="button" class="record-date-trigger" id="formRecordDateDisplay" aria-haspopup="dialog" aria-expanded="false" aria-controls="recordDateCalendar">Select a date</button>
+                        <i class="bi bi-calendar3 record-date-icon" aria-hidden="true"></i>
+                        <div class="record-calendar" id="recordDateCalendar" role="dialog" aria-label="Choose record date" hidden>
+                            <div class="record-calendar-header">
+                                <button type="button" class="record-calendar-nav" id="recordCalendarPrevious" aria-label="Previous month"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+                                <div class="record-calendar-month" id="recordCalendarMonth" aria-live="polite"></div>
+                                <button type="button" class="record-calendar-nav" id="recordCalendarNext" aria-label="Next month"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+                            </div>
+                            <div class="record-calendar-grid" id="recordCalendarGrid"></div>
+                            <div class="record-calendar-footer">
+                                <span class="record-calendar-selected" id="recordCalendarSelected"></span>
+                                <button type="button" class="record-calendar-today" id="recordCalendarToday">Today</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
                     <label id="systemSelectLabel" style="color: #1e3a5f; font-weight: 600; font-size: 14px; margin-bottom: 5px; display: block;">SYSTEM</label>
                     <input type="text" id="formRack" placeholder="Enter Station or Teller Name" style="width: 100%; padding: 10px 12px; border: 1px solid #e8eef7; border-radius: 6px; font-size: 14px;">
                 </div>
@@ -1348,7 +1500,10 @@
         }
 
         function excelDateTime(value) {
-            const date = new Date(value);
+            const dateValue = value ?? "";
+            const date = /^\d{4}-\d{2}-\d{2}$/.test(String(dateValue))
+                ? new Date(`${dateValue}T00:00:00`)
+                : new Date(dateValue);
             if (!Number.isFinite(date.getTime())) return { type: "String", value: value ?? "" };
             const pad = (part, length = 2) => String(part).padStart(length, "0");
             const localDateTime = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
@@ -2895,11 +3050,17 @@
             return null;
         }
 
+        function parseRecordDate(value) {
+            return /^\d{4}-\d{2}-\d{2}$/.test(String(value))
+                ? new Date(`${value}T00:00:00`)
+                : new Date(value);
+        }
+
         function getRecordDateDisplay(record) {
             const recordDate = record?.recordDate || record?.dateAdded || record?.createdAt;
             if (!recordDate) return "-";
 
-            const parsedDate = new Date(recordDate);
+            const parsedDate = parseRecordDate(recordDate);
             return Number.isNaN(parsedDate.getTime()) ? "-" : parsedDate.toLocaleDateString();
         }
 
@@ -2995,7 +3156,7 @@
                     return true;
                 }
 
-                const parsedRecordDate = new Date(recordDate);
+                const parsedRecordDate = parseRecordDate(recordDate);
                 if (Number.isNaN(parsedRecordDate.getTime())) {
                     return true;
                 }
@@ -3985,9 +4146,120 @@
             
             document.getElementById("addRecordModal").style.display = "flex";
             document.getElementById("addRecordForm").reset();
+            const today = new Date();
+            setRecordDateValue(formatRecordDate(today));
         }
 
         document.getElementById("addProductBtn").addEventListener("click", openAddRecordModal);
+
+        const recordDatePicker = document.getElementById("recordDatePicker");
+        const recordDateDisplay = document.getElementById("formRecordDateDisplay");
+        const recordDateValueInput = document.getElementById("formRecordDate");
+        const recordCalendar = document.getElementById("recordDateCalendar");
+        const recordCalendarGrid = document.getElementById("recordCalendarGrid");
+        let recordCalendarMonth = new Date();
+
+        function formatRecordDate(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        }
+
+        function parseLocalRecordDate(value) {
+            const [year, month, day] = value.split("-").map(Number);
+            return new Date(year, month - 1, day);
+        }
+
+        function setRecordDateValue(value) {
+            const date = parseLocalRecordDate(value);
+            recordDateValueInput.value = value;
+            recordDateDisplay.textContent = date.toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            });
+            renderRecordCalendar();
+        }
+
+        function renderRecordCalendar() {
+            const year = recordCalendarMonth.getFullYear();
+            const month = recordCalendarMonth.getMonth();
+            const firstWeekday = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const selectedValue = recordDateValueInput.value;
+            const todayValue = formatRecordDate(new Date());
+            const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+            document.getElementById("recordCalendarMonth").textContent =
+                recordCalendarMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+            document.getElementById("recordCalendarSelected").textContent = selectedValue
+                ? `Selected: ${parseLocalRecordDate(selectedValue).toLocaleDateString()}`
+                : "Choose a date";
+            recordCalendarGrid.innerHTML = weekdays
+                .map(day => `<span class="record-calendar-weekday" aria-hidden="true">${day}</span>`)
+                .join("");
+
+            for (let blank = 0; blank < firstWeekday; blank += 1) {
+                recordCalendarGrid.insertAdjacentHTML("beforeend", '<span aria-hidden="true"></span>');
+            }
+            for (let day = 1; day <= daysInMonth; day += 1) {
+                const value = formatRecordDate(new Date(year, month, day));
+                const classes = [
+                    "record-calendar-day",
+                    value === todayValue ? "is-today" : "",
+                    value === selectedValue ? "is-selected" : ""
+                ].filter(Boolean).join(" ");
+                recordCalendarGrid.insertAdjacentHTML("beforeend",
+                    `<button type="button" class="${classes}" data-date="${value}" aria-pressed="${value === selectedValue}">${day}</button>`);
+            }
+        }
+
+        function openRecordDateCalendar() {
+            recordCalendarMonth = recordDateValueInput.value
+                ? parseLocalRecordDate(recordDateValueInput.value)
+                : new Date();
+            recordCalendarMonth = new Date(recordCalendarMonth.getFullYear(), recordCalendarMonth.getMonth(), 1);
+            renderRecordCalendar();
+            recordCalendar.hidden = false;
+            recordDateDisplay.setAttribute("aria-expanded", "true");
+        }
+
+        function closeRecordDateCalendar() {
+            recordCalendar.hidden = true;
+            recordDateDisplay.setAttribute("aria-expanded", "false");
+        }
+
+        recordDateDisplay.addEventListener("click", function () {
+            if (recordCalendar.hidden) openRecordDateCalendar();
+            else closeRecordDateCalendar();
+        });
+        document.getElementById("recordCalendarPrevious").addEventListener("click", function () {
+            recordCalendarMonth.setMonth(recordCalendarMonth.getMonth() - 1);
+            renderRecordCalendar();
+        });
+        document.getElementById("recordCalendarNext").addEventListener("click", function () {
+            recordCalendarMonth.setMonth(recordCalendarMonth.getMonth() + 1);
+            renderRecordCalendar();
+        });
+        document.getElementById("recordCalendarToday").addEventListener("click", function () {
+            setRecordDateValue(formatRecordDate(new Date()));
+            closeRecordDateCalendar();
+            recordDateDisplay.focus();
+        });
+        recordCalendarGrid.addEventListener("click", function (event) {
+            const dayButton = event.target.closest("button[data-date]");
+            if (!dayButton) return;
+            setRecordDateValue(dayButton.dataset.date);
+            closeRecordDateCalendar();
+            recordDateDisplay.focus();
+        });
+        document.addEventListener("click", function (event) {
+            if (!recordDatePicker.contains(event.target)) closeRecordDateCalendar();
+        });
+        recordDateDisplay.addEventListener("keydown", function (event) {
+            if (event.key === "Escape" && !recordCalendar.hidden) {
+                closeRecordDateCalendar();
+                recordDateDisplay.focus();
+            }
+        });
 
         // Close Add Record modal
         document.getElementById("closeAddRecordBtn").addEventListener("click", function () {
@@ -4019,6 +4291,12 @@
             if (isInventoryReadOnly()) return;
             const form = e.currentTarget;
             const field = id => form.querySelector(`#${idPrefix ? `${idPrefix}${id.charAt(0).toUpperCase()}${id.slice(1)}` : id}`);
+            const selectedRecordDate = field("formRecordDate")?.value || "";
+            if (!selectedRecordDate) {
+                alert("Please select a record date.");
+                openRecordDateCalendar();
+                return;
+            }
             const loggedIn = getLoggedInDisplayName();
             
             const newRecord = {
@@ -4036,7 +4314,7 @@
                 transferTo: field("formTransferTo")?.value || "",
                 columnJ: field("formColumnJ")?.value || "",
                 createdBy: loggedIn?.username || localStorage.getItem("loggedInUser") || sessionStorage.getItem("loggedInUser") || "Unknown",
-                recordDate: new Date().toISOString()
+                recordDate: selectedRecordDate
             };
             
             const storageKeys = getInventoryStorageKeys();
