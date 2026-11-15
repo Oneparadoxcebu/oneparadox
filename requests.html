@@ -3,6 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -257,8 +260,9 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="request-thermal-toolbar">
-                        <input id="requestThermalRecordSearch" type="search" placeholder="Search" aria-label="Search all Thermal record columns">
+                    <div class="request-thermal-toolbar" style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
+                        <input id="requestThermalRecordDateFilter" class="form-control" type="date" aria-label="Filter Thermal records by date" style="max-width: 220px;">
+                        <input id="requestThermalRecordSearch" type="search" placeholder="Search" aria-label="Search all Thermal record columns" style="flex: 1; min-width: 180px;">
                     </div>
                     <div class="request-thermal-records-scroll">
                         <table class="inventory-table">
@@ -368,6 +372,9 @@
         </div>
         <section class="card p-4" aria-labelledby="submittedThermalPaperRequestsTitle">
             <h2 class="h5 mb-3" id="submittedThermalPaperRequestsTitle"><i class="bi bi-inbox me-2"></i>Submitted Thermal Paper Requests</h2>
+            <div class="mb-3">
+                <input id="submittedThermalPaperRequestDateFilter" class="form-control" type="date" aria-label="Filter submitted requests by date" style="max-width: 220px;">
+            </div>
             <div class="table-responsive">
                 <table class="table align-middle mb-0">
                     <thead>
@@ -493,9 +500,21 @@
         }
         const thermalRecordsBody = document.getElementById("requestThermalRecordsBody");
         const thermalRecordSearch = document.getElementById("requestThermalRecordSearch");
+        const thermalRecordDateFilter = document.getElementById("requestThermalRecordDateFilter");
         const thermalRecordCount = document.getElementById("requestThermalRecordCount");
         const thermalInventoryMessage = document.getElementById("requestThermalInventoryMessage");
+        const submittedRequestDateFilter = document.getElementById("submittedThermalPaperRequestDateFilter");
         let thermalRecords = [];
+        let submittedRequests = [];
+        const formatDateFilterValue = date =>
+            `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        const getDateFilterValue = value => {
+            const stringValue = String(value ?? "").trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(stringValue)) return stringValue;
+            const date = new Date(value);
+            return Number.isNaN(date.getTime()) ? "" : formatDateFilterValue(date);
+        };
+        thermalRecordDateFilter.value = formatDateFilterValue(new Date());
         if (isCollectorAccount) {
             thermalRecordSearch.placeholder = "Search";
             thermalRecordSearch.setAttribute("aria-label", "Search all Collector Thermal record columns");
@@ -536,7 +555,10 @@
 
         function renderThermalRecords(records) {
             const query = thermalRecordSearch.value.trim().toLowerCase();
+            const selectedDate = thermalRecordDateFilter.value;
             const filteredRecords = records.filter(record => {
+                const recordDate = getDateFilterValue(record.recordDate || record.dateAdded || record.createdAt);
+                if (selectedDate && recordDate !== selectedDate) return false;
                 const searchableValues = [
                     ...Object.values(record),
                     ...getThermalRecordDisplayValues(record)
@@ -829,6 +851,7 @@
         });
 
         thermalRecordSearch.addEventListener("input", () => renderThermalRecords(thermalRecords));
+        thermalRecordDateFilter.addEventListener("input", () => renderThermalRecords(thermalRecords));
 
         thermalRecordsBody.addEventListener("dblclick", event => {
             if (!isStationAccount) return;
@@ -924,9 +947,14 @@
         }
 
         function renderSubmittedRequests(requests) {
-            const sortedRequests = [...requests].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+            const selectedDate = submittedRequestDateFilter.value;
+            const sortedRequests = [...requests]
+                .filter(request => !selectedDate || getDateFilterValue(request.createdAt) === selectedDate)
+                .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
             if (!sortedRequests.length) {
-                submittedRequestsBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No Thermal Paper requests submitted yet.</td></tr>';
+                submittedRequestsBody.innerHTML = selectedDate
+                    ? '<tr><td colspan="6" class="text-center text-muted py-4">No Thermal Paper requests found for this date.</td></tr>'
+                    : '<tr><td colspan="6" class="text-center text-muted py-4">No Thermal Paper requests submitted yet.</td></tr>';
                 return;
             }
 
@@ -951,12 +979,15 @@
 
         async function loadSubmittedRequests() {
             try {
-                renderSubmittedRequests(await window.sharedRequests.load());
+                submittedRequests = await window.sharedRequests.load();
+                renderSubmittedRequests(submittedRequests);
             } catch (error) {
                 console.error("Unable to load submitted Thermal Paper requests.", error);
                 const reason = error instanceof Error ? error.message : String(error);
                 submittedRequestsBody.innerHTML = `<tr>                <td colspan="6" class="text-center text-danger py-4">Unable to load requests: ${escapeRequestHtml(reason)}</td></tr>`;
             }
+
+            submittedRequestDateFilter.addEventListener("input", () => renderSubmittedRequests(submittedRequests));
         }
 
         const requiredRequestFields = [

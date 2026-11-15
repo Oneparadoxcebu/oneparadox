@@ -98,7 +98,11 @@
 
     function renderIcons(root) {
         const replacements = collectIcons(root).map(createLucidePlaceholder);
-        if (replacements.length && window.lucide?.createIcons) {
+        return replacements.length > 0;
+    }
+
+    function createLucideIcons() {
+        if (window.lucide?.createIcons) {
             window.lucide.createIcons({ icons: window.lucide.icons, attrs: svgAttributes, root: document });
         }
     }
@@ -115,9 +119,13 @@
     };
 
     function observeDynamicIcons() {
-        renderIcons(document);
+        if (renderIcons(document)) createLucideIcons();
         const observer = new MutationObserver(records => {
-            records.forEach(record => record.addedNodes.forEach(node => renderIcons(node)));
+            let hasNewIcons = false;
+            records.forEach(record => record.addedNodes.forEach(node => {
+                hasNewIcons = renderIcons(node) || hasNewIcons;
+            }));
+            if (hasNewIcons) createLucideIcons();
         });
         observer.observe(document.body, { childList: true, subtree: true });
     }
