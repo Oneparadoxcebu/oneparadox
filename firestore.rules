@@ -286,14 +286,21 @@ service cloud.firestore {
         && getAfter(profilePath(request.resource.data.uid)).data.role == request.resource.data.role;
       allow update: if isItAdmin()
         && resource.data.status == 'Pending'
-        && request.resource.data.status == 'Approved'
-        && request.resource.data.approvedBy == currentProfile().username
-        && request.resource.data.approvedAt is string
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'status', 'approvedBy', 'approvedAt'
-        ])
-        && getAfter(profilePath(resource.data.uid)).data.disabled == false
-        && getAfter(profilePath(resource.data.uid)).data.pendingApproval == false;
+        && ((request.resource.data.status == 'Approved'
+            && request.resource.data.approvedBy == currentProfile().username
+            && request.resource.data.approvedAt is string
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'approvedBy', 'approvedAt'
+            ])
+            && getAfter(profilePath(resource.data.uid)).data.disabled == false
+            && getAfter(profilePath(resource.data.uid)).data.pendingApproval == false)
+          || (request.resource.data.status == 'Cleared'
+            && currentProfile().role == 'Developer'
+            && request.resource.data.clearedBy == currentProfile().username
+            && request.resource.data.clearedAt is string
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'clearedBy', 'clearedAt'
+            ])));
       allow delete: if false;
     }
 

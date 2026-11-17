@@ -10,7 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js?v=20261024-1"></script>
-    <script src="js/firebase-shared.js?v=20261117-2"></script>
+    <script src="js/firebase-shared.js?v=20261117-4"></script>
     <script src="js/auth-session.js?v=20261101-1"></script>
     <meta name="description" content="Inventory Management">
     <meta name="author" content="">
@@ -1306,7 +1306,8 @@
     <div class="account-modal-overlay" id="accountApprovalModal">
         <div class="account-modal users-modal">
             <h2><i class="bi bi-person-check me-2"></i>Added Account Approval</h2>
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                <button type="button" class="btn btn-outline-danger btn-sm" id="clearAccountApprovalsBtn" hidden><i class="bi bi-x-circle me-1"></i>Clear</button>
                 <button type="button" class="btn btn-outline-primary btn-sm" id="refreshAccountApprovalsBtn"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
             </div>
             <div id="accountApprovalRequestsTable">Loading approval requests...</div>
@@ -3606,6 +3607,7 @@
                 alert("Only Developer and IT Admin accounts can access account approvals.");
                 return;
             }
+            document.getElementById("clearAccountApprovalsBtn").hidden = getCurrentUserRole() !== "Developer";
             document.getElementById("accountApprovalModal").style.display = "flex";
             await loadAccountApprovalRequests();
         }
@@ -3664,6 +3666,24 @@
 
         document.getElementById("accountApprovalMenuBtn")?.addEventListener("click", () => {
             void openAccountApprovalModal();
+        });
+        document.getElementById("clearAccountApprovalsBtn")?.addEventListener("click", async event => {
+            const button = event.currentTarget;
+            if (getCurrentUserRole() !== "Developer" ||
+                !confirm("Clear all pending approvals from this list? Accounts and request records will remain stored, and the accounts will stay disabled.")) return;
+            button.disabled = true;
+            try {
+                const clearedCount = await window.sharedAccounts.clearPendingApprovals();
+                await loadAccountApprovalRequests();
+                alert(clearedCount
+                    ? `${clearedCount} approval request(s) cleared. Accounts remain stored and disabled.`
+                    : "There are no pending approvals to clear.");
+            } catch (error) {
+                console.error("Account approvals could not be cleared.", error);
+                alert(`Unable to clear account approvals: ${error.message || "check Firestore rules and Firebase setup."}`);
+            } finally {
+                button.disabled = false;
+            }
         });
         document.getElementById("refreshAccountApprovalsBtn")?.addEventListener("click", () => {
             void loadAccountApprovalRequests();

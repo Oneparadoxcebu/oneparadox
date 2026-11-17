@@ -29,7 +29,7 @@ Management, HR, and Accounting can fully use the Thermal Inventory, including ad
 firebase deploy --only firestore:rules --project oneparadox-c5c48
 ```
 
-Accounts created by IT Manager or IT Support are registered with a disabled profile and a request in `accountApprovalRequests`. Developer and IT Admin accounts can view and approve these requests; approval enables the account. The request document does not contain the account password. Deploy the updated `firestore.rules` before using this workflow.
+Accounts created by IT Manager or IT Support are registered with a disabled profile and a request in `accountApprovalRequests`. Developer and IT Admin accounts can view and approve these requests; approval enables the account. Only Developer accounts can use Clear, which marks pending requests as `Cleared` without deleting their request records or accounts; cleared accounts remain disabled. The request document does not contain the account password. Deploy the updated `firestore.rules` before using this workflow.
 
 Rizal inventory has been decommissioned from the application. Its existing Firestore data is retained and is not cleared, but Firestore rules no longer permit access to it. Reassign users previously assigned to Rizal to Cebu or Thermal as appropriate.
 

@@ -235,6 +235,27 @@
         return snapshot.docs.map(document => ({ id: document.id, ...document.data() }));
     }
 
+    async function clearPendingAccountApprovals() {
+        const actor = await getProfile();
+        if (!actor || actor.disabled || actor.role !== "Developer") {
+            throw new Error("Only enabled Developer accounts can clear account approval requests.");
+        }
+        const snapshot = await db.collection(ACCOUNT_APPROVALS).where("status", "==", "Pending").get();
+        const clearedAt = new Date().toISOString();
+        for (let index = 0; index < snapshot.docs.length; index += 400) {
+            const batch = db.batch();
+            snapshot.docs.slice(index, index + 400).forEach(document => {
+                batch.update(document.ref, {
+                    status: "Cleared",
+                    clearedBy: actor.username,
+                    clearedAt
+                });
+            });
+            await batch.commit();
+        }
+        return snapshot.size;
+    }
+
     async function approveAccountApproval(requestId) {
         const actor = await getProfile();
         if (!actor || actor.disabled || !["Developer", "IT Admin"].includes(actor.role)) {
@@ -1036,6 +1057,7 @@
         create: createAccount,
         createPendingApproval: createPendingAccountApproval,
         loadPendingApprovals: loadPendingAccountApprovals,
+        clearPendingApprovals: clearPendingAccountApprovals,
         approveAccountApproval,
         declineAccountApproval,
         delete: deleteAccount,
