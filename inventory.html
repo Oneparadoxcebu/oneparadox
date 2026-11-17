@@ -10,7 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js?v=20261024-1"></script>
-    <script src="js/firebase-shared.js?v=20261030-3"></script>
+    <script src="js/firebase-shared.js?v=20261117-2"></script>
     <script src="js/auth-session.js?v=20261101-1"></script>
     <meta name="description" content="Inventory Management">
     <meta name="author" content="">
@@ -613,6 +613,13 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
+        }
+        .account-approval-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            white-space: nowrap;
         }
         .inventory-users-table th,
         .inventory-users-table td {
@@ -3616,7 +3623,7 @@
                     table.textContent = "There are no pending account approvals.";
                     return;
                 }
-                table.innerHTML = `<table class="inventory-users-table"><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Office</th><th>Requested By</th><th>Requested At</th><th>Action</th></tr></thead><tbody>${requests.map(request => `<tr><td>${escapeHtml(request.name || "")}</td><td>${escapeHtml(request.username || "")}</td><td>${escapeHtml(request.email || "")}</td><td>${escapeHtml(request.role || "")}</td><td>${escapeHtml(request.office || "")}</td><td>${escapeHtml(request.requestedBy || "")}</td><td>${escapeHtml(request.requestedAt ? new Date(request.requestedAt).toLocaleString() : "")}</td><td><button type="button" class="btn btn-success btn-sm approve-account-request" data-request-id="${escapeHtml(request.id)}"><i class="bi bi-check-circle me-1"></i>Approve</button></td></tr>`).join("")}</tbody></table>`;
+                table.innerHTML = `<table class="inventory-users-table"><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Office</th><th>Requested By</th><th>Requested At</th><th>Action</th></tr></thead><tbody>${requests.map(request => `<tr><td>${escapeHtml(request.name || "")}</td><td>${escapeHtml(request.username || "")}</td><td>${escapeHtml(request.email || "")}</td><td>${escapeHtml(request.role || "")}</td><td>${escapeHtml(request.office || "")}</td><td>${escapeHtml(request.requestedBy || "")}</td><td>${escapeHtml(request.requestedAt ? new Date(request.requestedAt).toLocaleString() : "")}</td><td><div class="account-approval-actions"><button type="button" class="btn btn-success btn-sm approve-account-request" data-request-id="${escapeHtml(request.id)}"><i class="bi bi-check-circle me-1"></i>Approve</button><button type="button" class="btn btn-danger btn-sm decline-account-request" data-request-id="${escapeHtml(request.id)}"><i class="bi bi-x-circle me-1"></i>Decline</button></div></td></tr>`).join("")}</tbody></table>`;
                 table.querySelectorAll(".approve-account-request").forEach(button => {
                     button.addEventListener("click", async () => {
                         if (!["Developer", "IT Admin"].includes(getCurrentUserRole()) || !confirm(`Approve account ${button.closest("tr").cells[1].textContent}?`)) return;
@@ -3629,6 +3636,23 @@
                             console.error("Account approval failed.", error);
                             button.disabled = false;
                             alert(`Unable to approve account: ${error.message || "check Firestore rules and Firebase setup."}`);
+                        }
+                    });
+                });
+                table.querySelectorAll(".decline-account-request").forEach(button => {
+                    button.addEventListener("click", async () => {
+                        const username = button.closest("tr").cells[1].textContent;
+                        if (!["Developer", "IT Admin"].includes(getCurrentUserRole()) ||
+                            !confirm(`Decline the request for ${username} and permanently delete the account?`)) return;
+                        button.disabled = true;
+                        try {
+                            await window.sharedAccounts.declineAccountApproval(button.dataset.requestId);
+                            await loadAccountApprovalRequests();
+                            alert("Account request declined and account deleted successfully.");
+                        } catch (error) {
+                            console.error("Account decline failed.", error);
+                            button.disabled = false;
+                            alert(`Unable to decline account request: ${error.message || "check Firestore rules and Firebase setup."}`);
                         }
                     });
                 });

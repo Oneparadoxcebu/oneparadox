@@ -242,24 +242,60 @@
         }
         if (!requestId) throw new Error("An account approval request ID is required.");
         const requestRef = db.collection(ACCOUNT_APPROVALS).doc(requestId);
-        await db.runTransaction(async transaction => {
-            const requestSnapshot = await transaction.get(requestRef);
-            if (!requestSnapshot.exists || requestSnapshot.data().status !== "Pending") {
-                throw new Error("This approval request is no longer pending.");
+        const maxAttempts = 3;
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+            try {
+                await db.runTransaction(async transaction => {
+                    const requestSnapshot = await transaction.get(requestRef);
+                    if (!requestSnapshot.exists || requestSnapshot.data().status !== "Pending") {
+                        throw new Error("This approval request is no longer pending.");
+                    }
+                    const request = requestSnapshot.data();
+                    const profileRef = db.collection(USERS).doc(request.uid);
+                    const profileSnapshot = await transaction.get(profileRef);
+                    if (!profileSnapshot.exists || profileSnapshot.data().pendingApproval !== true) {
+                        throw new Error("The requested account profile is missing or has already been processed.");
+                    }
+                    transaction.update(profileRef, { disabled: false, pendingApproval: false });
+                    transaction.update(requestRef, {
+                        status: "Approved",
+                        approvedBy: actor.username,
+                        approvedAt: new Date().toISOString()
+                    });
+                });
+                return;
+            } catch (error) {
+                const rateLimited = error?.code === "resource-exhausted" ||
+                    Number(error?.status) === 429 ||
+                    /\b429\b/.test(String(error?.message || ""));
+                if (!rateLimited) throw error;
+                if (attempt === maxAttempts - 1) {
+                    throw new Error("Firestore is rate-limiting account approvals. Wait a moment and try again.");
+                }
+                await new Promise(resolve => setTimeout(resolve, 500 * (2 ** attempt)));
             }
-            const request = requestSnapshot.data();
-            const profileRef = db.collection(USERS).doc(request.uid);
-            const profileSnapshot = await transaction.get(profileRef);
-            if (!profileSnapshot.exists || profileSnapshot.data().pendingApproval !== true) {
-                throw new Error("The requested account profile is missing or has already been processed.");
-            }
-            transaction.update(profileRef, { disabled: false, pendingApproval: false });
-            transaction.update(requestRef, {
-                status: "Approved",
-                approvedBy: actor.username,
-                approvedAt: new Date().toISOString()
-            });
-        });
+        }
+    }
+
+    async function declineAccountApproval(requestId) {
+        const actor = await getProfile();
+        if (!actor || actor.disabled || !["Developer", "IT Admin"].includes(actor.role)) {
+            throw new Error("Only Developer and IT Admin accounts can decline account requests.");
+        }
+        if (!requestId) throw new Error("An account approval request ID is required.");
+
+        const requestSnapshot = await db.collection(ACCOUNT_APPROVALS).doc(requestId).get();
+        if (!requestSnapshot.exists || requestSnapshot.data().status !== "Pending") {
+            throw new Error("This approval request is no longer pending.");
+        }
+        const request = requestSnapshot.data();
+        const target = await getProfileByUsername(request.username);
+        if (request.uid !== requestId || !target || target.uid !== request.uid ||
+            target.pendingApproval !== true || target.disabled !== true) {
+            throw new Error("The requested account profile is missing or has already been processed.");
+        }
+
+        await deleteAccount(request.username, { requireAuthenticationDeletion: true });
     }
 
     async function saveOne(username, profile) {
@@ -281,7 +317,7 @@
         return clean;
     }
 
-    async function deleteAccount(username) {
+    async function deleteAccount(username, { requireAuthenticationDeletion = false } = {}) {
         const actor = await getProfile();
         if (!actor || actor.disabled || !["Developer", "IT Admin"].includes(actor.role)) {
             throw new Error("Only enabled Developer and IT Admin accounts can delete users.");
@@ -323,10 +359,12 @@
             if (response.ok) return true;
         }
 
-        // Cloud Functions cannot be deployed on projects without an active billing account.
-        // If the endpoint is unavailable, remove the profile so the account can no longer
-        // access the app; Firebase Authentication cleanup must be done in Firebase Console.
+        // Regular account deletion can fall back to removing the profile when Cloud Functions
+        // are unavailable; declines require Authentication deletion and must not use this fallback.
         if (!response || response.status === 404) {
+            if (requireAuthenticationDeletion) {
+                throw new Error("The Firebase account deletion service is unavailable. The account was not deleted.");
+            }
             await db.collection(USERS).doc(target.uid).delete();
             return true;
         }
@@ -999,6 +1037,7 @@
         createPendingApproval: createPendingAccountApproval,
         loadPendingApprovals: loadPendingAccountApprovals,
         approveAccountApproval,
+        declineAccountApproval,
         delete: deleteAccount,
         clearOtherProfiles: clearOtherAccountProfiles,
         saveTheme
